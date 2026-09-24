@@ -7,8 +7,8 @@ suggests a species for each event, and sends the photos it can't label
 reliably to a human for review. See [`docs/requirements.md`](docs/requirements.md)
 for the product contract.
 
-> Status: early development. The foundation (package, shared contracts,
-> configuration, CI) is in place; ingestion, training, and serving are not built yet.
+> Status: early development. Foundation (package, contracts, configuration, CI)
+> and data acquisition are in place; training and serving are not built yet.
 
 ## Setup
 
@@ -71,6 +71,38 @@ Unknown fields are rejected, so a typo can't silently fall back to a default.
 `configs/example.yaml` uses **placeholder** species and an unpinned dataset
 manifest until the dataset stage selects the supported species from
 training-set counts. Automatic filtering and acceptance are disabled by default.
+
+## Data acquisition (CCT20)
+
+```bash
+uv run wildinbox data acquire      # download -> extract -> ingest -> lock check -> report
+```
+
+or step by step: `data download`, `data ingest`, `data report`. Sources, sizes,
+and MD5s are pinned in [`configs/sources/cct20.yaml`](configs/sources/cct20.yaml).
+
+- **Resumable.** Downloads go to `*.part` and continue from the last byte on
+  re-run (HTTP Range). A file is only renamed to its final name after its size
+  and MD5 match; extraction writes each file under a temporary name first.
+- **Idempotent.** Re-running ingestion upserts by source id and reuses checks
+  for unchanged files; the same inputs always give the same manifest version.
+- **Every record accounted for.** Each source image ends up `accepted`,
+  `quarantined` (missing/unreadable file, no annotation, unknown category,
+  conflicting annotations, missing camera or sequence), or `excluded`
+  (exact duplicate, configured exclusion), with reasons.
+- **Never silently empty.** A label is assigned only to accepted records with
+  annotations; the inventory database enforces this with CHECK constraints.
+- **Originals preserved.** Raw image and annotation records are stored
+  unchanged; normalized labels live in separate columns with their rule.
+
+Outputs (under `data/`, not committed): the SQLite inventory
+`data/inventory/cct20.sqlite` and the manifest
+`data/manifests/<version>.jsonl.gz`. Committed: the pin
+[`manifests/cct20.lock.json`](manifests/cct20.lock.json) (manifest version,
+archive checksums, counts) and the
+[data-quality report](reports/data_quality/cct20/README.md). If a re-run
+produces a different inventory, `data ingest` fails until you inspect the
+change and pass `--update-lock`.
 
 ## Data and weights
 
