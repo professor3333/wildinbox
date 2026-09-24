@@ -1,0 +1,232 @@
+"""PostgreSQL schema. Unique constraints make every processing step idempotent:
+re-running a job updates rows instead of duplicating them.
+
+Changes to this module need an Alembic migration (`migrations/`); CI fails if
+models and migrations disagree.
+"""
+
+from __future__ import annotations
+
+import uuid
+from datetime import datetime
+from typing import Any, ClassVar
+
+from sqlalchemy import (
+    BigInteger,
+    Boolean,
+    CheckConstraint,
+    DateTime,
+    Float,
+    ForeignKey,
+    Index,
+    Integer,
+    MetaData,
+    String,
+    Text,
+    UniqueConstraint,
+    func,
+    text,
+)
+from sqlalchemy.dialects.postgresql import JSONB
+from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
+
+NAMING = {
+    "ix": "ix_%(column_0_label)s",
+    "uq": "uq_%(table_name)s_%(column_0_N_name)s",
+    "ck": "ck_%(table_name)s_%(constraint_name)s",
+    "fk": "fk_%(table_name)s_%(column_0_name)s_%(referred_table_name)s",
+    "pk": "pk_%(table_name)s",
+}
+
+BATCH_STATUSES = ("queued", "processing", "completed", "completed_with_errors", "failed")
+IMAGE_STATUSES = ("pending", "valid", "invalid", "duplicate")
+JOB_STATUSES = ("queued", "running", "succeeded", "failed")
+DISPOSITIONS = ("likely_empty", "species_identified", "needs_review")
+REVIEW_OUTCOMES = ("confirmed", "corrected", "unresolved")
+
+
+def _in(column: str, values: tuple[str, ...]) -> str:
+    return f"{column} IN ({', '.join(repr(v) for v in values)})"
+
+
+class Base(DeclarativeBase):
+    metadata = MetaData(naming_convention=NAMING)
+    type_annotation_map: ClassVar[dict[Any, Any]] = {dict[str, Any]: JSONB, list[Any]: JSONB}
+
+
+def _now() -> Mapped[datetime]:
+    return mapped_column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+
+
+class ModelRelease(Base):
+    """Everything needed to reproduce a prediction: weights, classes, preprocessing,
+    calibration, and decision policy."""
+
+    __tablename__ = "model_releases"
+    id: Mapped[str] = mapped_column(String(100), primary_key=True)
+    kind: Mapped[str] = mapped_column(String(40))
+    is_test: Mapped[bool] = mapped_column(Boolean)
+    weights_key: Mapped[str | None] = mapped_column(Text)
+    class_names: Mapped[list[Any]]
+    class_map_fingerprint: Mapped[str] = mapped_column(String(64))
+    preprocessing: Mapped[dict[str, Any]]
+    preprocessing_version: Mapped[str] = mapped_column(String(64))
+    calibration: Mapped[dict[str, Any] | None]
+    policy: Mapped[dict[str, Any]]
+    policy_version: Mapped[str] = mapped_column(String(100))
+    notes: Mapped[str | None] = mapped_column(Text)
+    created_at: Mapped[datetime] = _now()
+
+
+class Batch(Base):
+    __tablename__ = "batches"
+    __table_args__ = (
+        UniqueConstraint("workspace", "request_key"),
+        CheckConstraint(_in("status", BATCH_STATUSES), name="status"),
+    )
+    id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
+    workspace: Mapped[str] = mapped_column(String(100))
+    request_key: Mapped[str] = mapped_column(String(200))
+    status: Mapped[str] = mapped_column(String(30))
+    manifest: Mapped[dict[str, Any]]
+    error: Mapped[str | None] = mapped_column(Text)
+    created_at: Mapped[datetime] = _now()
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
+    )
+    completed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+
+    images: Mapped[list[Image]] = relationship(back_populates="batch", order_by="Image.position")
+    jobs: Mapped[list[Job]] = relationship(back_populates="batch")
+
+
+class Image(Base):
+    __tablename__ = "images"
+    __table_args__ = (
+        UniqueConstraint("batch_id", "position"),
+        CheckConstraint(_in("validation_status", IMAGE_STATUSES), name="validation_status"),
+        CheckConstraint(
+            "validation_status != 'invalid' OR validation_error IS NOT NULL", name="error_reason"
+        ),
+        Index("ix_images_sha256", "sha256"),
+    )
+    id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
+    batch_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("batches.id", ondelete="CASCADE"))
+    position: Mapped[int] = mapped_column(Integer)
+    original_filename: Mapped[str] = mapped_column(Text)
+    size_bytes: Mapped[int] = mapped_column(BigInteger)
+    sha256: Mapped[str | None] = mapped_column(String(64))
+    storage_key: Mapped[str | None] = mapped_column(Text)
+    content_type: Mapped[str | None] = mapped_column(String(50))
+    width: Mapped[int | None] = mapped_column(Integer)
+    height: Mapped[int | None] = mapped_column(Integer)
+    camera_id: Mapped[str | None] = mapped_column(String(200))
+    # Camera clocks have no time zone; stored as the camera's local time.
+    captured_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=False))
+    sequence_id: Mapped[str | None] = mapped_column(String(200))
+    user_metadata: Mapped[dict[str, Any]] = mapped_column(JSONB, server_default=text("'{}'"))
+    validation_status: Mapped[str] = mapped_column(String(20))
+    validation_error: Mapped[str | None] = mapped_column(Text)
+    duplicate_of: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("images.id"))
+    event_id: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey("events.id", ondelete="SET NULL"), index=True
+    )
+    created_at: Mapped[datetime] = _now()
+
+    batch: Mapped[Batch] = relationship(back_populates="images")
+    event: Mapped[Event | None] = relationship(back_populates="images")
+
+
+class Event(Base):
+    __tablename__ = "events"
+    __table_args__ = (UniqueConstraint("batch_id", "group_key"),)
+    id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
+    batch_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("batches.id", ondelete="CASCADE"))
+    camera_id: Mapped[str | None] = mapped_column(String(200))
+    grouping_rule: Mapped[str] = mapped_column(String(100))
+    group_key: Mapped[str] = mapped_column(String(64))
+    start_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=False))
+    end_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=False))
+    created_at: Mapped[datetime] = _now()
+
+    images: Mapped[list[Image]] = relationship(back_populates="event", order_by="Image.position")
+    decisions: Mapped[list[Decision]] = relationship(back_populates="event")
+    reviews: Mapped[list[Review]] = relationship(
+        back_populates="event", order_by="Review.created_at"
+    )
+
+
+class Job(Base):
+    __tablename__ = "jobs"
+    __table_args__ = (
+        UniqueConstraint("batch_id", "kind"),
+        CheckConstraint(_in("status", JOB_STATUSES), name="status"),
+    )
+    id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
+    batch_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("batches.id", ondelete="CASCADE"))
+    kind: Mapped[str] = mapped_column(String(40))
+    status: Mapped[str] = mapped_column(String(20))
+    attempts: Mapped[int] = mapped_column(Integer, default=0)
+    max_attempts: Mapped[int] = mapped_column(Integer, default=3)
+    error: Mapped[str | None] = mapped_column(Text)
+    model_release_id: Mapped[str] = mapped_column(ForeignKey("model_releases.id"))
+    created_at: Mapped[datetime] = _now()
+    started_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    finished_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+
+    batch: Mapped[Batch] = relationship(back_populates="jobs")
+    release: Mapped[ModelRelease] = relationship()
+
+
+class Prediction(Base):
+    __tablename__ = "predictions"
+    __table_args__ = (UniqueConstraint("image_id", "model_release_id"),)
+    id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
+    image_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("images.id", ondelete="CASCADE"))
+    event_id: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey("events.id", ondelete="SET NULL"), index=True
+    )
+    model_release_id: Mapped[str] = mapped_column(ForeignKey("model_releases.id"))
+    class_probabilities: Mapped[dict[str, Any]]
+    suggested_label: Mapped[str] = mapped_column(String(100))
+    confidence: Mapped[float] = mapped_column(Float)
+    created_at: Mapped[datetime] = _now()
+
+
+class Decision(Base):
+    __tablename__ = "decisions"
+    __table_args__ = (
+        UniqueConstraint("event_id", "model_release_id", "policy_version"),
+        CheckConstraint(_in("disposition", DISPOSITIONS), name="disposition"),
+    )
+    id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
+    event_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("events.id", ondelete="CASCADE"))
+    model_release_id: Mapped[str] = mapped_column(ForeignKey("model_releases.id"))
+    policy_version: Mapped[str] = mapped_column(String(100))
+    disposition: Mapped[str] = mapped_column(String(30))
+    suggested_label: Mapped[str | None] = mapped_column(String(100))
+    confidence: Mapped[float | None] = mapped_column(Float)
+    reasons: Mapped[list[Any]]
+    created_at: Mapped[datetime] = _now()
+
+    event: Mapped[Event] = relationship(back_populates="decisions")
+
+
+class Review(Base):
+    """Human verdicts are appended, never overwritten; each points at the review it supersedes."""
+
+    __tablename__ = "reviews"
+    __table_args__ = (CheckConstraint(_in("outcome", REVIEW_OUTCOMES), name="outcome"),)
+    id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
+    event_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("events.id", ondelete="CASCADE"))
+    reviewer: Mapped[str] = mapped_column(String(200))
+    outcome: Mapped[str] = mapped_column(String(20))
+    suggested_label: Mapped[str | None] = mapped_column(String(100))
+    confirmed_label: Mapped[str | None] = mapped_column(String(100))
+    note: Mapped[str | None] = mapped_column(Text)
+    previous_review_id: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey("reviews.id"), unique=True
+    )
+    created_at: Mapped[datetime] = _now()
+
+    event: Mapped[Event] = relationship(back_populates="reviews")

@@ -162,7 +162,24 @@ def main(argv: Sequence[str] | None = None) -> int:
     )
     p_build.add_argument("--report-dir", default="reports/splits")
 
+    p_api = sub.add_parser("api", help="Serve the HTTP API.")
+    p_api.add_argument("--host", default="127.0.0.1")
+    p_api.add_argument("--port", type=int, default=8000)
+    sub.add_parser("worker", help="Run a batch-processing worker (Redis/RQ).")
+
     args = parser.parse_args(argv)
+    if args.command == "api":
+        import uvicorn
+
+        from wildinbox.api.app import create_app
+
+        uvicorn.run(create_app(), host=args.host, port=args.port)
+        return 0
+    if args.command == "worker":
+        from wildinbox.workers.dispatch import run_worker
+
+        run_worker(Settings())
+        return 0
     if args.command == "dataset":
         return _dataset(args)
     if args.command == "validate-config":

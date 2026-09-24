@@ -1,0 +1,79 @@
+# Local deployment: `docker compose up -d --build --wait`, then open http://localhost:8000
+# Credentials below are local-development defaults only; override via .env for
+# anything reachable by others.
+x-app-env: &app-env
+  WILDINBOX_DATABASE_URL: postgresql+psycopg://wildinbox:${POSTGRES_PASSWORD:-wildinbox}@postgres:5432/wildinbox
+  WILDINBOX_REDIS_URL: redis://redis:6379/0
+  WILDINBOX_OBJECT_STORE_BACKEND: s3
+  WILDINBOX_OBJECT_STORE_URL: http://minio:9000
+  WILDINBOX_OBJECT_STORE_BUCKET: wildinbox
+  WILDINBOX_OBJECT_STORE_ACCESS_KEY: ${MINIO_ROOT_USER:-wildinbox}
+  WILDINBOX_OBJECT_STORE_SECRET_KEY: ${MINIO_ROOT_PASSWORD:-wildinbox-local-only}
+  WILDINBOX_DISPATCH: rq
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: wildinbox
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-wildinbox}
+      POSTGRES_DB: wildinbox
+    volumes: [postgres:/var/lib/postgresql/data]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U wildinbox"]
+      interval: 2s
+      retries: 30
+
+  redis:
+    image: redis:7-alpine
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 2s
+      retries: 30
+
+  minio:
+    # Docker Hub no longer carries MinIO images; the official quay.io build is used.
+    image: quay.io/minio/minio:RELEASE.2025-09-07T16-13-09Z
+    command: server /data --console-address :9001
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:-wildinbox}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-wildinbox-local-only}
+    volumes: [minio:/data]
+    ports: ["127.0.0.1:9001:9001"]
+    healthcheck:
+      test: ["CMD", "mc", "ready", "local"]
+      interval: 2s
+      retries: 30
+
+  migrate:
+    build: .
+    command: ["alembic", "upgrade", "head"]
+    environment: *app-env
+    depends_on:
+      postgres: {condition: service_healthy}
+
+  api:
+    build: .
+    environment: *app-env
+    ports: ["127.0.0.1:8000:8000"]
+    depends_on:
+      migrate: {condition: service_completed_successfully}
+      redis: {condition: service_healthy}
+      minio: {condition: service_healthy}
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"]
+      interval: 3s
+      retries: 40
+
+  worker:
+    build: .
+    command: ["wildinbox", "worker"]
+    environment: *app-env
+    depends_on:
+      migrate: {condition: service_completed_successfully}
+      redis: {condition: service_healthy}
+      minio: {condition: service_healthy}
+
+volumes:
+  postgres:
+  minio:

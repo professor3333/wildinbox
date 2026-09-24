@@ -10,6 +10,19 @@ permissions:
 jobs:
   ci:
     runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: wildinbox
+          POSTGRES_PASSWORD: wildinbox
+          POSTGRES_DB: wildinbox
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U wildinbox" --health-interval 2s --health-retries 30
+    env:
+      WILDINBOX_TEST_DATABASE_URL: postgresql+psycopg://wildinbox:wildinbox@localhost:5432/wildinbox
+      WILDINBOX_DATABASE_URL: postgresql+psycopg://wildinbox:wildinbox@localhost:5432/wildinbox
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
@@ -40,5 +53,36 @@ jobs:
             exit 1
           }
 
-      - name: Unit tests
+      - name: Migrations apply and match the models
+        run: |
+          uv run alembic upgrade head
+          uv run alembic check
+          uv run alembic downgrade base
+
+      - name: Tests (unit + API against Postgres)
         run: uv run pytest -m "not slow"
+
+  compose-smoke:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7 # v10.2.0
+        with:
+          enable-cache: true
+
+      - name: Start the stack
+        run: docker compose up -d --build --wait
+
+      - name: Upload -> process -> results
+        run: |
+          uv sync --locked
+          uv run python scripts/smoke.py
+
+      - name: Logs on failure
+        if: failure()
+        run: docker compose logs --no-color
+
+      - name: Stop
+        if: always()
+        run: docker compose down -v
