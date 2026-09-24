@@ -7,8 +7,9 @@ suggests a species for each event, and sends the photos it can't label
 reliably to a human for review. See [`docs/requirements.md`](docs/requirements.md)
 for the product contract.
 
-> Status: early development. Foundation, data acquisition, and evaluation splits
-> are in place; training and serving are not built yet.
+> Status: early development. Data acquisition, evaluation splits, and a thin
+> upload-to-result application are in place. **No model is trained yet:** the app
+> runs a clearly labeled test predictor whose scores are meaningless.
 
 ## Setup
 
@@ -21,6 +22,38 @@ cd wildinbox
 uv sync --locked          # create .venv with exact locked versions
 cp .env.example .env      # local settings; contains no secrets
 ```
+
+## Run the application
+
+```bash
+docker compose up -d --build --wait    # Postgres, Redis, MinIO, migrations, API, worker
+open http://localhost:8000             # upload form -> batch status page
+uv run python scripts/smoke.py         # upload -> process -> results, end to end
+docker compose down                    # add -v to delete stored data
+```
+
+| Endpoint | Purpose |
+|---|---|
+| `POST /batches` | Multipart upload: `files` (JPEG/PNG) plus optional `metadata` JSON (`camera_id`, per-file `camera_id` / `captured_at` / `sequence_id`). Returns `202` with the batch and job id. Send `Idempotency-Key` to make retries safe; identical re-uploads are recognised without it. |
+| `GET /batches/{id}` | Status, counts, job, and model release |
+| `GET /batches/{id}/images` | Every file with its validation status and error |
+| `GET /batches/{id}/view` | Batch-status page |
+| `GET /jobs/{id}` | Job status, attempts, error |
+| `GET /events?batch_id=&camera_id=&disposition=` | Capture events with decisions |
+| `GET /events/{id}` | Event frames, per-image predictions, review history |
+| `POST /events/{id}/reviews` | Record a review (`confirmed` / `corrected` / `unresolved`); reviews are appended, never overwritten |
+| `GET /images/{id}/original` | The stored original file |
+
+**Limits** (configurable, see `.env.example`): 2,000 files and 1 GiB per batch,
+20 MiB per file. Batches over the limit are rejected whole with `413`.
+Unsupported, empty, oversized, or corrupt files get individual error records
+and the rest of the batch is processed.
+
+**Test predictor.** Until a model is trained, batches use release
+`test-predictor-v0`: pseudo-random scores derived from file hashes, used to
+exercise the pipeline. It is flagged `is_test` in the database, every API
+response and the status page carry a warning, and its policy sends every event
+to review. Nothing it produces is ML performance.
 
 ## Checks
 
@@ -35,6 +68,16 @@ uv run wildinbox export-schemas && git diff --exit-code docs/schemas
 uv run pytest -m "not slow"                         # unit tests
 ```
 
+The API tests need a PostgreSQL they may wipe; without one they are skipped
+locally (CI always runs them):
+
+```bash
+docker run -d --name wildinbox-test-pg -p 55432:5432 -e POSTGRES_USER=wildinbox \
+  -e POSTGRES_PASSWORD=wildinbox -e POSTGRES_DB=wildinbox postgres:16-alpine
+export WILDINBOX_TEST_DATABASE_URL=postgresql+psycopg://wildinbox:wildinbox@localhost:55432/wildinbox
+uv run pytest
+```
+
 ## Layout
 
 ```
@@ -45,12 +88,19 @@ src/wildinbox/
   schemas.py         shared contracts: image metadata, predictions, decisions, reviews
   settings.py        deployment settings from environment variables
   cli.py             `wildinbox` command
-  ingestion/ datasets/ training/ evaluation/ inference/
-  policy/ api/ workers/ monitoring/                  components (later stages)
+  ingestion/         dataset download, validation, inventory
+  datasets/          events, event labels, splits, leakage checks
+  api/               FastAPI app, upload validation, HTML pages
+  workers/           batch processing and job dispatch (Redis/RQ)
+  inference/         model releases; the test predictor
+  policy/            decision policies
+  storage/           PostgreSQL models, object storage
+  training/ evaluation/ monitoring/                  later stages
 ui/                  review interface
 configs/             run configurations (YAML)
 tests/
-migrations/          database migrations
+migrations/          Alembic database migrations
+scripts/smoke.py     end-to-end check against a running deployment
 docs/                requirements, generated JSON Schemas
 ```
 
