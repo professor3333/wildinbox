@@ -1,0 +1,64 @@
+{
+  "checks_passed": true,
+  "grouping_rule": "sequence_id/v1",
+  "inventory_manifest_version": "cct20-396eb43cc6ce",
+  "partitions": {
+    "calibration": {
+      "empty": 184,
+      "events": 908,
+      "images": 2641,
+      "supported_species": 521,
+      "unsupported_animal": 203
+    },
+    "excluded": {
+      "contains_quarantined_frame": 2,
+      "no_usable_images": 7
+    },
+    "final_test": {
+      "empty": 715,
+      "events": 8982,
+      "images": 23275,
+      "mixed_species": 12,
+      "non_animal": 1113,
+      "supported_species": 6548,
+      "unsupported_animal": 594
+    },
+    "policy_validation": {
+      "empty": 86,
+      "events": 939,
+      "images": 2732,
+      "mixed_species": 22,
+      "supported_species": 708,
+      "unsupported_animal": 123
+    },
+    "seen_camera_diagnostic": {
+      "empty": 101,
+      "events": 1746,
+      "images": 4313,
+      "mixed_species": 3,
+      "non_animal": 204,
+      "supported_species": 1235,
+      "unsupported_animal": 203
+    },
+    "train": {
+      "empty": 534,
+      "events": 10135,
+      "images": 24894,
+      "mixed_species": 7,
+      "non_animal": 1296,
+      "supported_species": 7061,
+      "unsupported_animal": 1237
+    }
+  },
+  "split_version": "cct20-splits-v1-7de740aba75f",
+  "supported_classes": [
+    "empty",
+    "bobcat",
+    "cat",
+    "coyote",
+    "dog",
+    "opossum",
+    "rabbit",
+    "raccoon"
+  ]
+}

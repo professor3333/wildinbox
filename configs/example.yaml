@@ -1,9 +1,7 @@
 # Example run configuration. Validate with: uv run wildinbox validate-config configs/example.yaml
 #
-# PLACEHOLDERS until the dataset stage:
-#   - classes: real supported species are chosen from CCT20 training-set counts.
-#   - thresholds: chosen on validation data; automation stays disabled until
-#     evaluation supports an operating point.
+# PLACEHOLDER: thresholds are chosen later on the policy-validation partition;
+# automation stays disabled until evaluation supports an operating point.
 
 config_version: 1
 seed: 20260924
@@ -24,15 +22,18 @@ preprocessing:
   mean: [0.485, 0.456, 0.406]
   std: [0.229, 0.224, 0.225]
 
-# Model output order. Changing order changes the class-map fingerprint.
+# Model output order: `supported_classes` from manifests/cct20-splits-v1.lock.json,
+# chosen by the species-selection rule in configs/splits/cct20.yaml.
+# Changing order changes the class-map fingerprint.
 classes:
   - empty
-  - opossum
-  - raccoon
-  - coyote
   - bobcat
+  - cat
+  - coyote
+  - dog
+  - opossum
   - rabbit
-  - squirrel
+  - raccoon
 
 policy_version: policy-v0
 

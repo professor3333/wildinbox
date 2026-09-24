@@ -7,8 +7,8 @@ suggests a species for each event, and sends the photos it can't label
 reliably to a human for review. See [`docs/requirements.md`](docs/requirements.md)
 for the product contract.
 
-> Status: early development. Foundation (package, contracts, configuration, CI)
-> and data acquisition are in place; training and serving are not built yet.
+> Status: early development. Foundation, data acquisition, and evaluation splits
+> are in place; training and serving are not built yet.
 
 ## Setup
 
@@ -103,6 +103,22 @@ archive checksums, counts) and the
 [data-quality report](reports/data_quality/cct20/README.md). If a re-run
 produces a different inventory, `data ingest` fails until you inspect the
 change and pass `--update-lock`.
+
+## Events, labels, and splits
+
+```bash
+uv run wildinbox dataset build     # events -> ground truth -> species -> partitions -> leakage checks
+```
+
+Groups images into capture events, applies conservative event labels, selects
+supported species from the training partition, and assigns camera-disjoint
+partitions (train, calibration, policy validation, locked final test). The
+build fails unless every leakage check passes. Rules and rationale:
+[`docs/dataset.md`](docs/dataset.md); results:
+[`reports/splits/cct20/README.md`](reports/splits/cct20/README.md); pin:
+[`manifests/cct20-splits-v1.lock.json`](manifests/cct20-splits-v1.lock.json).
+
+Supported classes: `empty`, bobcat, cat, coyote, dog, opossum, rabbit, raccoon.
 
 ## Data and weights
 
