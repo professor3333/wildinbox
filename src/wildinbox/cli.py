@@ -162,12 +162,50 @@ def main(argv: Sequence[str] | None = None) -> int:
     )
     p_build.add_argument("--report-dir", default="reports/splits")
 
+    p_base = sub.add_parser("baseline", help="Frozen-embedding baseline.")
+    base_sub = p_base.add_subparsers(dest="baseline_command", required=True)
+    p_train = base_sub.add_parser("train", help="Embed, fit, and save the baseline artifact.")
+    p_train.add_argument("--config", type=Path, default=Path("configs/experiments/baseline.yaml"))
+    p_train.add_argument("--models-dir", type=Path, default=Path("models"))
+    p_train.add_argument("--device", choices=["cpu", "mps", "cuda"], default=None)
+    p_train.add_argument("--no-cache", action="store_true", help="Recompute all embeddings.")
+
+    p_eval = sub.add_parser("evaluate", help="Evaluate a model on development partitions.")
+    p_eval.add_argument(
+        "--model", type=Path, default=Path("models/baseline-frozen-effnetb0-logreg-v1")
+    )
+    p_eval.add_argument("--config", type=Path, default=Path("configs/experiments/baseline.yaml"))
+    p_eval.add_argument("--report-dir", type=Path, default=Path("reports/baseline"))
+    p_eval.add_argument(
+        "--compare-to",
+        type=Path,
+        default=None,
+        help="Reference metrics.json; fail if results differ beyond tolerance.",
+    )
+    p_eval.add_argument("--no-benchmark", action="store_true", help="Skip the latency benchmark.")
+
     p_api = sub.add_parser("api", help="Serve the HTTP API.")
     p_api.add_argument("--host", default="127.0.0.1")
     p_api.add_argument("--port", type=int, default=8000)
     sub.add_parser("worker", help="Run a batch-processing worker (Redis/RQ).")
 
     args = parser.parse_args(argv)
+    if args.command == "baseline":
+        from wildinbox.training.run import train_baseline
+
+        out = train_baseline(
+            args.config,
+            Settings().data_dir,
+            args.models_dir,
+            device=args.device,
+            use_cache=not args.no_cache,
+        )
+        print(f"baseline artifact -> {out}")
+        return 0
+    if args.command == "evaluate":
+        from wildinbox.evaluation.run import evaluate_cli
+
+        return evaluate_cli(args)
     if args.command == "api":
         import uvicorn
 

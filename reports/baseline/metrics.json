@@ -1,0 +1,2720 @@
+{
+  "model": "baseline-frozen-effnetb0-logreg-v1",
+  "split_version": "cct20-splits-v1-7de740aba75f",
+  "classes": [
+    "empty",
+    "bobcat",
+    "cat",
+    "coyote",
+    "dog",
+    "opossum",
+    "rabbit",
+    "raccoon"
+  ],
+  "reference_thresholds": {
+    "empty_filter": 0.9,
+    "species_accept": 0.9
+  },
+  "groups": {
+    "unseen_cameras": {
+      "image": {
+        "n": 4336,
+        "macro_f1": 0.257903,
+        "balanced_accuracy": 0.309838,
+        "accuracy_context_only": 0.283672,
+        "min_species_recall": 0.100095,
+        "animal_image_recall": 0.833605,
+        "animal_images_predicted_empty": 613,
+        "per_class": {
+          "empty": {
+            "precision": 0.321903,
+            "recall": 0.446319,
+            "f1": 0.374036,
+            "support": 652,
+            "predicted": 904
+          },
+          "bobcat": {
+            "precision": 0.352349,
+            "recall": 0.100095,
+            "f1": 0.155902,
+            "support": 1049,
+            "predicted": 298
+          },
+          "cat": {
+            "precision": 0.159875,
+            "recall": 0.140496,
+            "f1": 0.14956,
+            "support": 363,
+            "predicted": 319
+          },
+          "coyote": {
+            "precision": 0.209302,
+            "recall": 0.435986,
+            "f1": 0.282828,
+            "support": 289,
+            "predicted": 602
+          },
+          "dog": {
+            "precision": 0.230032,
+            "recall": 0.533333,
+            "f1": 0.321429,
+            "support": 135,
+            "predicted": 313
+          },
+          "opossum": {
+            "precision": 0.443992,
+            "recall": 0.364244,
+            "f1": 0.400184,
+            "support": 1197,
+            "predicted": 982
+          },
+          "rabbit": {
+            "precision": 0.200692,
+            "recall": 0.17737,
+            "f1": 0.188312,
+            "support": 327,
+            "predicted": 289
+          },
+          "raccoon": {
+            "precision": 0.144674,
+            "recall": 0.280864,
+            "f1": 0.190976,
+            "support": 324,
+            "predicted": 629
+          }
+        },
+        "confusion": {
+          "classes": [
+            "empty",
+            "bobcat",
+            "cat",
+            "coyote",
+            "dog",
+            "opossum",
+            "rabbit",
+            "raccoon"
+          ],
+          "matrix": [
+            [
+              291,
+              68,
+              82,
+              81,
+              26,
+              28,
+              38,
+              38
+            ],
+            [
+              35,
+              105,
+              92,
+              146,
+              117,
+              327,
+              47,
+              180
+            ],
+            [
+              51,
+              27,
+              51,
+              122,
+              32,
+              23,
+              8,
+              49
+            ],
+            [
+              61,
+              12,
+              12,
+              126,
+              3,
+              28,
+              22,
+              25
+            ],
+            [
+              16,
+              4,
+              5,
+              27,
+              72,
+              8,
+              0,
+              3
+            ],
+            [
+              331,
+              43,
+              28,
+              49,
+              19,
+              436,
+              80,
+              211
+            ],
+            [
+              58,
+              35,
+              40,
+              37,
+              44,
+              23,
+              58,
+              32
+            ],
+            [
+              61,
+              4,
+              9,
+              14,
+              0,
+              109,
+              36,
+              91
+            ]
+          ]
+        }
+      },
+      "unsupported_images": {
+        "n": 976,
+        "predicted": {
+          "empty": 247,
+          "bobcat": 196,
+          "coyote": 194,
+          "opossum": 109,
+          "rabbit": 86,
+          "cat": 70,
+          "dog": 39,
+          "raccoon": 35
+        },
+        "predicted_known_species_at_reference": 540
+      },
+      "event_reference": {
+        "thresholds": {
+          "empty_filter": 0.9,
+          "species_accept": 0.9
+        },
+        "events": 1847,
+        "animal_events": 1577,
+        "false_empty": 164,
+        "false_empty_rate": 0.103995,
+        "false_empty_rate_ci95": [
+          0.089879,
+          0.120036
+        ],
+        "animal_event_retention": 0.896005,
+        "filtered": 263,
+        "filtered_true_empty": 99,
+        "filtered_non_animal": 0,
+        "empty_events": 270,
+        "accepted": 728,
+        "accepted_correct": 162,
+        "accepted_precision": 0.222527,
+        "accepted_precision_ci95": [
+          0.193813,
+          0.254155
+        ],
+        "accepted_wrong_by_true_role": {
+          "other_supported_species": 313,
+          "unsupported_animal": 144,
+          "empty": 101,
+          "mixed_species": 8
+        },
+        "unsupported_events": 326,
+        "unsupported_accepted_as_known": 144,
+        "needs_review": 856,
+        "review_fraction": 0.463454
+      },
+      "event_empty_sweep": [
+        {
+          "thresholds": {
+            "empty_filter": 0.5,
+            "species_accept": 0.9
+          },
+          "events": 1847,
+          "animal_events": 1577,
+          "false_empty": 193,
+          "false_empty_rate": 0.122384,
+          "false_empty_rate_ci95": [
+            0.10712,
+            0.139484
+          ],
+          "animal_event_retention": 0.877616,
+          "filtered": 304,
+          "filtered_true_empty": 111,
+          "filtered_non_animal": 0,
+          "empty_events": 270,
+          "accepted": 728,
+          "accepted_correct": 162,
+          "accepted_precision": 0.222527,
+          "accepted_precision_ci95": [
+            0.193813,
+            0.254155
+          ],
+          "accepted_wrong_by_true_role": {
+            "other_supported_species": 313,
+            "unsupported_animal": 144,
+            "empty": 101,
+            "mixed_species": 8
+          },
+          "unsupported_events": 326,
+          "unsupported_accepted_as_known": 144,
+          "needs_review": 815,
+          "review_fraction": 0.441256
+        },
+        {
+          "thresholds": {
+            "empty_filter": 0.7,
+            "species_accept": 0.9
+          },
+          "events": 1847,
+          "animal_events": 1577,
+          "false_empty": 181,
+          "false_empty_rate": 0.114775,
+          "false_empty_rate_ci95": [
+            0.09997,
+            0.131452
+          ],
+          "animal_event_retention": 0.885225,
+          "filtered": 288,
+          "filtered_true_empty": 107,
+          "filtered_non_animal": 0,
+          "empty_events": 270,
+          "accepted": 728,
+          "accepted_correct": 162,
+          "accepted_precision": 0.222527,
+          "accepted_precision_ci95": [
+            0.193813,
+            0.254155
+          ],
+          "accepted_wrong_by_true_role": {
+            "other_supported_species": 313,
+            "unsupported_animal": 144,
+            "empty": 101,
+            "mixed_species": 8
+          },
+          "unsupported_events": 326,
+          "unsupported_accepted_as_known": 144,
+          "needs_review": 831,
+          "review_fraction": 0.449919
+        },
+        {
+          "thresholds": {
+            "empty_filter": 0.8,
+            "species_accept": 0.9
+          },
+          "events": 1847,
+          "animal_events": 1577,
+          "false_empty": 176,
+          "false_empty_rate": 0.111604,
+          "false_empty_rate_ci95": [
+            0.096997,
+            0.128099
+          ],
+          "animal_event_retention": 0.888396,
+          "filtered": 279,
+          "filtered_true_empty": 103,
+          "filtered_non_animal": 0,
+          "empty_events": 270,
+          "accepted": 728,
+          "accepted_correct": 162,
+          "accepted_precision": 0.222527,
+          "accepted_precision_ci95": [
+            0.193813,
+            0.254155
+          ],
+          "accepted_wrong_by_true_role": {
+            "other_supported_species": 313,
+            "unsupported_animal": 144,
+            "empty": 101,
+            "mixed_species": 8
+          },
+          "unsupported_events": 326,
+          "unsupported_accepted_as_known": 144,
+          "needs_review": 840,
+          "review_fraction": 0.454792
+        },
+        {
+          "thresholds": {
+            "empty_filter": 0.9,
+            "species_accept": 0.9
+          },
+          "events": 1847,
+          "animal_events": 1577,
+          "false_empty": 164,
+          "false_empty_rate": 0.103995,
+          "false_empty_rate_ci95": [
+            0.089879,
+            0.120036
+          ],
+          "animal_event_retention": 0.896005,
+          "filtered": 263,
+          "filtered_true_empty": 99,
+          "filtered_non_animal": 0,
+          "empty_events": 270,
+          "accepted": 728,
+          "accepted_correct": 162,
+          "accepted_precision": 0.222527,
+          "accepted_precision_ci95": [
+            0.193813,
+            0.254155
+          ],
+          "accepted_wrong_by_true_role": {
+            "other_supported_species": 313,
+            "unsupported_animal": 144,
+            "empty": 101,
+            "mixed_species": 8
+          },
+          "unsupported_events": 326,
+          "unsupported_accepted_as_known": 144,
+          "needs_review": 856,
+          "review_fraction": 0.463454
+        },
+        {
+          "thresholds": {
+            "empty_filter": 0.95,
+            "species_accept": 0.9
+          },
+          "events": 1847,
+          "animal_events": 1577,
+          "false_empty": 154,
+          "false_empty_rate": 0.097654,
+          "false_empty_rate_ci95": [
+            0.083966,
+            0.113297
+          ],
+          "animal_event_retention": 0.902346,
+          "filtered": 247,
+          "filtered_true_empty": 93,
+          "filtered_non_animal": 0,
+          "empty_events": 270,
+          "accepted": 728,
+          "accepted_correct": 162,
+          "accepted_precision": 0.222527,
+          "accepted_precision_ci95": [
+            0.193813,
+            0.254155
+          ],
+          "accepted_wrong_by_true_role": {
+            "other_supported_species": 313,
+            "unsupported_animal": 144,
+            "empty": 101,
+            "mixed_species": 8
+          },
+          "unsupported_events": 326,
+          "unsupported_accepted_as_known": 144,
+          "needs_review": 872,
+          "review_fraction": 0.472117
+        },
+        {
+          "thresholds": {
+            "empty_filter": 0.99,
+            "species_accept": 0.9
+          },
+          "events": 1847,
+          "animal_events": 1577,
+          "false_empty": 127,
+          "false_empty_rate": 0.080533,
+          "false_empty_rate_ci95": [
+            0.068099,
+            0.095005
+          ],
+          "animal_event_retention": 0.919467,
+          "filtered": 215,
+          "filtered_true_empty": 88,
+          "filtered_non_animal": 0,
+          "empty_events": 270,
+          "accepted": 728,
+          "accepted_correct": 162,
+          "accepted_precision": 0.222527,
+          "accepted_precision_ci95": [
+            0.193813,
+            0.254155
+          ],
+          "accepted_wrong_by_true_role": {
+            "other_supported_species": 313,
+            "unsupported_animal": 144,
+            "empty": 101,
+            "mixed_species": 8
+          },
+          "unsupported_events": 326,
+          "unsupported_accepted_as_known": 144,
+          "needs_review": 904,
+          "review_fraction": 0.489442
+        }
+      ],
+      "event_species_sweep": [
+        {
+          "thresholds": {
+            "empty_filter": 0.9,
+            "species_accept": 0.5
+          },
+          "events": 1847,
+          "animal_events": 1577,
+          "false_empty": 164,
+          "false_empty_rate": 0.103995,
+          "false_empty_rate_ci95": [
+            0.089879,
+            0.120036
+          ],
+          "animal_event_retention": 0.896005,
+          "filtered": 263,
+          "filtered_true_empty": 99,
+          "filtered_non_animal": 0,
+          "empty_events": 270,
+          "accepted": 966,
+          "accepted_correct": 208,
+          "accepted_precision": 0.215321,
+          "accepted_precision_ci95": [
+            0.190554,
+            0.242343
+          ],
+          "accepted_wrong_by_true_role": {
+            "other_supported_species": 417,
+            "unsupported_animal": 194,
+            "empty": 138,
+            "mixed_species": 9
+          },
+          "unsupported_events": 326,
+          "unsupported_accepted_as_known": 194,
+          "needs_review": 618,
+          "review_fraction": 0.334597
+        },
+        {
+          "thresholds": {
+            "empty_filter": 0.9,
+            "species_accept": 0.7
+          },
+          "events": 1847,
+          "animal_events": 1577,
+          "false_empty": 164,
+          "false_empty_rate": 0.103995,
+          "false_empty_rate_ci95": [
+            0.089879,
+            0.120036
+          ],
+          "animal_event_retention": 0.896005,
+          "filtered": 263,
+          "filtered_true_empty": 99,
+          "filtered_non_animal": 0,
+          "empty_events": 270,
+          "accepted": 921,
+          "accepted_correct": 201,
+          "accepted_precision": 0.218241,
+          "accepted_precision_ci95": [
+            0.192765,
+            0.246058
+          ],
+          "accepted_wrong_by_true_role": {
+            "other_supported_species": 399,
+            "unsupported_animal": 185,
+            "empty": 127,
+            "mixed_species": 9
+          },
+          "unsupported_events": 326,
+          "unsupported_accepted_as_known": 185,
+          "needs_review": 663,
+          "review_fraction": 0.35896
+        },
+        {
+          "thresholds": {
+            "empty_filter": 0.9,
+            "species_accept": 0.8
+          },
+          "events": 1847,
+          "animal_events": 1577,
+          "false_empty": 164,
+          "false_empty_rate": 0.103995,
+          "false_empty_rate_ci95": [
+            0.089879,
+            0.120036
+          ],
+          "animal_event_retention": 0.896005,
+          "filtered": 263,
+          "filtered_true_empty": 99,
+          "filtered_non_animal": 0,
+          "empty_events": 270,
+          "accepted": 842,
+          "accepted_correct": 188,
+          "accepted_precision": 0.223278,
+          "accepted_precision_ci95": [
+            0.196441,
+            0.252628
+          ],
+          "accepted_wrong_by_true_role": {
+            "other_supported_species": 361,
+            "unsupported_animal": 169,
+            "empty": 115,
+            "mixed_species": 9
+          },
+          "unsupported_events": 326,
+          "unsupported_accepted_as_known": 169,
+          "needs_review": 742,
+          "review_fraction": 0.401733
+        },
+        {
+          "thresholds": {
+            "empty_filter": 0.9,
+            "species_accept": 0.9
+          },
+          "events": 1847,
+          "animal_events": 1577,
+          "false_empty": 164,
+          "false_empty_rate": 0.103995,
+          "false_empty_rate_ci95": [
+            0.089879,
+            0.120036
+          ],
+          "animal_event_retention": 0.896005,
+          "filtered": 263,
+          "filtered_true_empty": 99,
+          "filtered_non_animal": 0,
+          "empty_events": 270,
+          "accepted": 728,
+          "accepted_correct": 162,
+          "accepted_precision": 0.222527,
+          "accepted_precision_ci95": [
+            0.193813,
+            0.254155
+          ],
+          "accepted_wrong_by_true_role": {
+            "other_supported_species": 313,
+            "unsupported_animal": 144,
+            "empty": 101,
+            "mixed_species": 8
+          },
+          "unsupported_events": 326,
+          "unsupported_accepted_as_known": 144,
+          "needs_review": 856,
+          "review_fraction": 0.463454
+        },
+        {
+          "thresholds": {
+            "empty_filter": 0.9,
+            "species_accept": 0.95
+          },
+          "events": 1847,
+          "animal_events": 1577,
+          "false_empty": 164,
+          "false_empty_rate": 0.103995,
+          "false_empty_rate_ci95": [
+            0.089879,
+            0.120036
+          ],
+          "animal_event_retention": 0.896005,
+          "filtered": 263,
+          "filtered_true_empty": 99,
+          "filtered_non_animal": 0,
+          "empty_events": 270,
+          "accepted": 640,
+          "accepted_correct": 144,
+          "accepted_precision": 0.225,
+          "accepted_precision_ci95": [
+            0.194343,
+            0.258938
+          ],
+          "accepted_wrong_by_true_role": {
+            "other_supported_species": 270,
+            "unsupported_animal": 129,
+            "empty": 90,
+            "mixed_species": 7
+          },
+          "unsupported_events": 326,
+          "unsupported_accepted_as_known": 129,
+          "needs_review": 944,
+          "review_fraction": 0.511099
+        },
+        {
+          "thresholds": {
+            "empty_filter": 0.9,
+            "species_accept": 0.99
+          },
+          "events": 1847,
+          "animal_events": 1577,
+          "false_empty": 164,
+          "false_empty_rate": 0.103995,
+          "false_empty_rate_ci95": [
+            0.089879,
+            0.120036
+          ],
+          "animal_event_retention": 0.896005,
+          "filtered": 263,
+          "filtered_true_empty": 99,
+          "filtered_non_animal": 0,
+          "empty_events": 270,
+          "accepted": 487,
+          "accepted_correct": 108,
+          "accepted_precision": 0.221766,
+          "accepted_precision_ci95": [
+            0.187126,
+            0.260761
+          ],
+          "accepted_wrong_by_true_role": {
+            "other_supported_species": 199,
+            "unsupported_animal": 103,
+            "empty": 72,
+            "mixed_species": 5
+          },
+          "unsupported_events": 326,
+          "unsupported_accepted_as_known": 103,
+          "needs_review": 1097,
+          "review_fraction": 0.593936
+        }
+      ]
+    },
+    "calibration": {
+      "image": {
+        "n": 2032,
+        "macro_f1": 0.290026,
+        "balanced_accuracy": 0.374824,
+        "accuracy_context_only": 0.335138,
+        "min_species_recall": 0.050725,
+        "animal_image_recall": 0.726397,
+        "animal_images_predicted_empty": 426,
+        "per_class": {
+          "empty": {
+            "precision": 0.369822,
+            "recall": 0.526316,
+            "f1": 0.434405,
+            "support": 475,
+            "predicted": 676
+          },
+          "bobcat": {
+            "precision": 0.435294,
+            "recall": 0.123333,
+            "f1": 0.192208,
+            "support": 300,
+            "predicted": 85
+          },
+          "cat": {
+            "precision": 0.0,
+            "recall": 0.0,
+            "f1": 0.0,
+            "support": 0,
+            "predicted": 131
+          },
+          "coyote": {
+            "precision": 0.4,
+            "recall": 0.385965,
+            "f1": 0.392857,
+            "support": 171,
+            "predicted": 165
+          },
+          "dog": {
+            "precision": 0.178295,
+            "recall": 0.958333,
+            "f1": 0.300654,
+            "support": 24,
+            "predicted": 129
+          },
+          "opossum": {
+            "precision": 0.525164,
+            "recall": 0.375587,
+            "f1": 0.437956,
+            "support": 639,
+            "predicted": 457
+          },
+          "rabbit": {
+            "precision": 0.251082,
+            "recall": 0.203509,
+            "f1": 0.224806,
+            "support": 285,
+            "predicted": 231
+          },
+          "raccoon": {
+            "precision": 0.044304,
+            "recall": 0.050725,
+            "f1": 0.047297,
+            "support": 138,
+            "predicted": 158
+          }
+        },
+        "confusion": {
+          "classes": [
+            "empty",
+            "bobcat",
+            "cat",
+            "coyote",
+            "dog",
+            "opossum",
+            "rabbit",
+            "raccoon"
+          ],
+          "matrix": [
+            [
+              250,
+              21,
+              70,
+              31,
+              21,
+              14,
+              37,
+              31
+            ],
+            [
+              17,
+              37,
+              14,
+              44,
+              29,
+              104,
+              27,
+              28
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            [
+              48,
+              2,
+              3,
+              66,
+              2,
+              22,
+              14,
+              14
+            ],
+            [
+              1,
+              0,
+              0,
+              0,
+              23,
+              0,
+              0,
+              0
+            ],
+            [
+              266,
+              2,
+              4,
+              6,
+              11,
+              240,
+              64,
+              46
+            ],
+            [
+              50,
+              23,
+              40,
+              16,
+              43,
+              23,
+              58,
+              32
+            ],
+            [
+              44,
+              0,
+              0,
+              2,
+              0,
+              54,
+              31,
+              7
+            ]
+          ]
+        }
+      },
+      "unsupported_images": {
+        "n": 609,
+        "predicted": {
+          "empty": 214,
+          "opossum": 84,
+          "rabbit": 74,
+          "coyote": 73,
+          "cat": 55,
+          "bobcat": 51,
+          "dog": 37,
+          "raccoon": 21
+        },
+        "predicted_known_species_at_reference": 275
+      },
+      "event_reference": {
+        "thresholds": {
+          "empty_filter": 0.9,
+          "species_accept": 0.9
+        },
+        "events": 908,
+        "animal_events": 724,
+        "false_empty": 143,
+        "false_empty_rate": 0.197514,
+        "false_empty_rate_ci95": [
+          0.170143,
+          0.228078
+        ],
+        "animal_event_retention": 0.802486,
+        "filtered": 218,
+        "filtered_true_empty": 75,
+        "filtered_non_animal": 0,
+        "empty_events": 184,
+        "accepted": 320,
+        "accepted_correct": 85,
+        "accepted_precision": 0.265625,
+        "accepted_precision_ci95": [
+          0.220221,
+          0.31659
+        ],
+        "accepted_wrong_by_true_role": {
+          "other_supported_species": 92,
+          "unsupported_animal": 78,
+          "empty": 65
+        },
+        "unsupported_events": 203,
+        "unsupported_accepted_as_known": 78,
+        "needs_review": 370,
+        "review_fraction": 0.407489
+      },
+      "event_empty_sweep": [
+        {
+          "thresholds": {
+            "empty_filter": 0.5,
+            "species_accept": 0.9
+          },
+          "events": 908,
+          "animal_events": 724,
+          "false_empty": 165,
+          "false_empty_rate": 0.227901,
+          "false_empty_rate_ci95": [
+            0.198828,
+            0.259846
+          ],
+          "animal_event_retention": 0.772099,
+          "filtered": 252,
+          "filtered_true_empty": 87,
+          "filtered_non_animal": 0,
+          "empty_events": 184,
+          "accepted": 320,
+          "accepted_correct": 85,
+          "accepted_precision": 0.265625,
+          "accepted_precision_ci95": [
+            0.220221,
+            0.31659
+          ],
+          "accepted_wrong_by_true_role": {
+            "other_supported_species": 92,
+            "unsupported_animal": 78,
+            "empty": 65
+          },
+          "unsupported_events": 203,
+          "unsupported_accepted_as_known": 78,
+          "needs_review": 336,
+          "review_fraction": 0.370044
+        },
+        {
+          "thresholds": {
+            "empty_filter": 0.7,
+            "species_accept": 0.9
+          },
+          "events": 908,
+          "animal_events": 724,
+          "false_empty": 158,
+          "false_empty_rate": 0.218232,
+          "false_empty_rate_ci95": [
+            0.189674,
+            0.249764
+          ],
+          "animal_event_retention": 0.781768,
+          "filtered": 241,
+          "filtered_true_empty": 83,
+          "filtered_non_animal": 0,
+          "empty_events": 184,
+          "accepted": 320,
+          "accepted_correct": 85,
+          "accepted_precision": 0.265625,
+          "accepted_precision_ci95": [
+            0.220221,
+            0.31659
+          ],
+          "accepted_wrong_by_true_role": {
+            "other_supported_species": 92,
+            "unsupported_animal": 78,
+            "empty": 65
+          },
+          "unsupported_events": 203,
+          "unsupported_accepted_as_known": 78,
+          "needs_review": 347,
+          "review_fraction": 0.382159
+        },
+        {
+          "thresholds": {
+            "empty_filter": 0.8,
+            "species_accept": 0.9
+          },
+          "events": 908,
+          "animal_events": 724,
+          "false_empty": 154,
+          "false_empty_rate": 0.212707,
+          "false_empty_rate_ci95": [
+            0.184455,
+            0.243992
+          ],
+          "animal_event_retention": 0.787293,
+          "filtered": 233,
+          "filtered_true_empty": 79,
+          "filtered_non_animal": 0,
+          "empty_events": 184,
+          "accepted": 320,
+          "accepted_correct": 85,
+          "accepted_precision": 0.265625,
+          "accepted_precision_ci95": [
+            0.220221,
+            0.31659
+          ],
+          "accepted_wrong_by_true_role": {
+            "other_supported_species": 92,
+            "unsupported_animal": 78,
+            "empty": 65
+          },
+          "unsupported_events": 203,
+          "unsupported_accepted_as_known": 78,
+          "needs_review": 355,
+          "review_fraction": 0.390969
+        },
+        {
+          "thresholds": {
+            "empty_filter": 0.9,
+            "species_accept": 0.9
+          },
+          "events": 908,
+          "animal_events": 724,
+          "false_empty": 143,
+          "false_empty_rate": 0.197514,
+          "false_empty_rate_ci95": [
+            0.170143,
+            0.228078
+          ],
+          "animal_event_retention": 0.802486,
+          "filtered": 218,
+          "filtered_true_empty": 75,
+          "filtered_non_animal": 0,
+          "empty_events": 184,
+          "accepted": 320,
+          "accepted_correct": 85,
+          "accepted_precision": 0.265625,
+          "accepted_precision_ci95": [
+            0.220221,
+            0.31659
+          ],
+          "accepted_wrong_by_true_role": {
+            "other_supported_species": 92,
+            "unsupported_animal": 78,
+            "empty": 65
+          },
+          "unsupported_events": 203,
+          "unsupported_accepted_as_known": 78,
+          "needs_review": 370,
+          "review_fraction": 0.407489
+        },
+        {
+          "thresholds": {
+            "empty_filter": 0.95,
+            "species_accept": 0.9
+          },
+          "events": 908,
+          "animal_events": 724,
+          "false_empty": 134,
+          "false_empty_rate": 0.185083,
+          "false_empty_rate_ci95": [
+            0.158481,
+            0.215009
+          ],
+          "animal_event_retention": 0.814917,
+          "filtered": 204,
+          "filtered_true_empty": 70,
+          "filtered_non_animal": 0,
+          "empty_events": 184,
+          "accepted": 320,
+          "accepted_correct": 85,
+          "accepted_precision": 0.265625,
+          "accepted_precision_ci95": [
+            0.220221,
+            0.31659
+          ],
+          "accepted_wrong_by_true_role": {
+            "other_supported_species": 92,
+            "unsupported_animal": 78,
+            "empty": 65
+          },
+          "unsupported_events": 203,
+          "unsupported_accepted_as_known": 78,
+          "needs_review": 384,
+          "review_fraction": 0.422907
+        },
+        {
+          "thresholds": {
+            "empty_filter": 0.99,
+            "species_accept": 0.9
+          },
+          "events": 908,
+          "animal_events": 724,
+          "false_empty": 113,
+          "false_empty_rate": 0.156077,
+          "false_empty_rate_ci95": [
+            0.131463,
+            0.184322
+          ],
+          "animal_event_retention": 0.843923,
+          "filtered": 178,
+          "filtered_true_empty": 65,
+          "filtered_non_animal": 0,
+          "empty_events": 184,
+          "accepted": 320,
+          "accepted_correct": 85,
+          "accepted_precision": 0.265625,
+          "accepted_precision_ci95": [
+            0.220221,
+            0.31659
+          ],
+          "accepted_wrong_by_true_role": {
+            "other_supported_species": 92,
+            "unsupported_animal": 78,
+            "empty": 65
+          },
+          "unsupported_events": 203,
+          "unsupported_accepted_as_known": 78,
+          "needs_review": 410,
+          "review_fraction": 0.451542
+        }
+      ],
+      "event_species_sweep": [
+        {
+          "thresholds": {
+            "empty_filter": 0.9,
+            "species_accept": 0.5
+          },
+          "events": 908,
+          "animal_events": 724,
+          "false_empty": 143,
+          "false_empty_rate": 0.197514,
+          "false_empty_rate_ci95": [
+            0.170143,
+            0.228078
+          ],
+          "animal_event_retention": 0.802486,
+          "filtered": 218,
+          "filtered_true_empty": 75,
+          "filtered_non_animal": 0,
+          "empty_events": 184,
+          "accepted": 448,
+          "accepted_correct": 114,
+          "accepted_precision": 0.254464,
+          "accepted_precision_ci95": [
+            0.216336,
+            0.296768
+          ],
+          "accepted_wrong_by_true_role": {
+            "other_supported_species": 135,
+            "unsupported_animal": 113,
+            "empty": 86
+          },
+          "unsupported_events": 203,
+          "unsupported_accepted_as_known": 113,
+          "needs_review": 242,
+          "review_fraction": 0.26652
+        },
+        {
+          "thresholds": {
+            "empty_filter": 0.9,
+            "species_accept": 0.7
+          },
+          "events": 908,
+          "animal_events": 724,
+          "false_empty": 143,
+          "false_empty_rate": 0.197514,
+          "false_empty_rate_ci95": [
+            0.170143,
+            0.228078
+          ],
+          "animal_event_retention": 0.802486,
+          "filtered": 218,
+          "filtered_true_empty": 75,
+          "filtered_non_animal": 0,
+          "empty_events": 184,
+          "accepted": 421,
+          "accepted_correct": 109,
+          "accepted_precision": 0.258907,
+          "accepted_precision_ci95": [
+            0.219377,
+            0.302798
+          ],
+          "accepted_wrong_by_true_role": {
+            "other_supported_species": 126,
+            "unsupported_animal": 105,
+            "empty": 81
+          },
+          "unsupported_events": 203,
+          "unsupported_accepted_as_known": 105,
+          "needs_review": 269,
+          "review_fraction": 0.296256
+        },
+        {
+          "thresholds": {
+            "empty_filter": 0.9,
+            "species_accept": 0.8
+          },
+          "events": 908,
+          "animal_events": 724,
+          "false_empty": 143,
+          "false_empty_rate": 0.197514,
+          "false_empty_rate_ci95": [
+            0.170143,
+            0.228078
+          ],
+          "animal_event_retention": 0.802486,
+          "filtered": 218,
+          "filtered_true_empty": 75,
+          "filtered_non_animal": 0,
+          "empty_events": 184,
+          "accepted": 381,
+          "accepted_correct": 102,
+          "accepted_precision": 0.267717,
+          "accepted_precision_ci95": [
+            0.225737,
+            0.314334
+          ],
+          "accepted_wrong_by_true_role": {
+            "other_supported_species": 112,
+            "unsupported_animal": 93,
+            "empty": 74
+          },
+          "unsupported_events": 203,
+          "unsupported_accepted_as_known": 93,
+          "needs_review": 309,
+          "review_fraction": 0.340308
+        },
+        {
+          "thresholds": {
+            "empty_filter": 0.9,
+            "species_accept": 0.9
+          },
+          "events": 908,
+          "animal_events": 724,
+          "false_empty": 143,
+          "false_empty_rate": 0.197514,
+          "false_empty_rate_ci95": [
+            0.170143,
+            0.228078
+          ],
+          "animal_event_retention": 0.802486,
+          "filtered": 218,
+          "filtered_true_empty": 75,
+          "filtered_non_animal": 0,
+          "empty_events": 184,
+          "accepted": 320,
+          "accepted_correct": 85,
+          "accepted_precision": 0.265625,
+          "accepted_precision_ci95": [
+            0.220221,
+            0.31659
+          ],
+          "accepted_wrong_by_true_role": {
+            "other_supported_species": 92,
+            "unsupported_animal": 78,
+            "empty": 65
+          },
+          "unsupported_events": 203,
+          "unsupported_accepted_as_known": 78,
+          "needs_review": 370,
+          "review_fraction": 0.407489
+        },
+        {
+          "thresholds": {
+            "empty_filter": 0.9,
+            "species_accept": 0.95
+          },
+          "events": 908,
+          "animal_events": 724,
+          "false_empty": 143,
+          "false_empty_rate": 0.197514,
+          "false_empty_rate_ci95": [
+            0.170143,
+            0.228078
+          ],
+          "animal_event_retention": 0.802486,
+          "filtered": 218,
+          "filtered_true_empty": 75,
+          "filtered_non_animal": 0,
+          "empty_events": 184,
+          "accepted": 278,
+          "accepted_correct": 78,
+          "accepted_precision": 0.280576,
+          "accepted_precision_ci95": [
+            0.231028,
+            0.336105
+          ],
+          "accepted_wrong_by_true_role": {
+            "other_supported_species": 73,
+            "unsupported_animal": 70,
+            "empty": 57
+          },
+          "unsupported_events": 203,
+          "unsupported_accepted_as_known": 70,
+          "needs_review": 412,
+          "review_fraction": 0.453744
+        },
+        {
+          "thresholds": {
+            "empty_filter": 0.9,
+            "species_accept": 0.99
+          },
+          "events": 908,
+          "animal_events": 724,
+          "false_empty": 143,
+          "false_empty_rate": 0.197514,
+          "false_empty_rate_ci95": [
+            0.170143,
+            0.228078
+          ],
+          "animal_event_retention": 0.802486,
+          "filtered": 218,
+          "filtered_true_empty": 75,
+          "filtered_non_animal": 0,
+          "empty_events": 184,
+          "accepted": 210,
+          "accepted_correct": 57,
+          "accepted_precision": 0.271429,
+          "accepted_precision_ci95": [
+            0.21579,
+            0.33528
+          ],
+          "accepted_wrong_by_true_role": {
+            "unsupported_animal": 54,
+            "other_supported_species": 51,
+            "empty": 48
+          },
+          "unsupported_events": 203,
+          "unsupported_accepted_as_known": 54,
+          "needs_review": 480,
+          "review_fraction": 0.528634
+        }
+      ]
+    },
+    "policy_validation": {
+      "image": {
+        "n": 2304,
+        "macro_f1": 0.211881,
+        "balanced_accuracy": 0.276963,
+        "accuracy_context_only": 0.238281,
+        "min_species_recall": 0.0,
+        "animal_image_recall": 0.912083,
+        "animal_images_predicted_empty": 187,
+        "per_class": {
+          "empty": {
+            "precision": 0.179825,
+            "recall": 0.231638,
+            "f1": 0.202469,
+            "support": 177,
+            "predicted": 228
+          },
+          "bobcat": {
+            "precision": 0.319249,
+            "recall": 0.090788,
+            "f1": 0.141372,
+            "support": 749,
+            "predicted": 213
+          },
+          "cat": {
+            "precision": 0.271277,
+            "recall": 0.140496,
+            "f1": 0.185118,
+            "support": 363,
+            "predicted": 188
+          },
+          "coyote": {
+            "precision": 0.1373,
+            "recall": 0.508475,
+            "f1": 0.216216,
+            "support": 118,
+            "predicted": 437
+          },
+          "dog": {
+            "precision": 0.266304,
+            "recall": 0.441441,
+            "f1": 0.332203,
+            "support": 111,
+            "predicted": 184
+          },
+          "opossum": {
+            "precision": 0.373333,
+            "recall": 0.351254,
+            "f1": 0.361958,
+            "support": 558,
+            "predicted": 525
+          },
+          "rabbit": {
+            "precision": 0.0,
+            "recall": 0.0,
+            "f1": 0.0,
+            "support": 42,
+            "predicted": 58
+          },
+          "raccoon": {
+            "precision": 0.178344,
+            "recall": 0.451613,
+            "f1": 0.255708,
+            "support": 186,
+            "predicted": 471
+          }
+        },
+        "confusion": {
+          "classes": [
+            "empty",
+            "bobcat",
+            "cat",
+            "coyote",
+            "dog",
+            "opossum",
+            "rabbit",
+            "raccoon"
+          ],
+          "matrix": [
+            [
+              41,
+              47,
+              12,
+              50,
+              5,
+              14,
+              1,
+              7
+            ],
+            [
+              18,
+              68,
+              78,
+              102,
+              88,
+              223,
+              20,
+              152
+            ],
+            [
+              51,
+              27,
+              51,
+              122,
+              32,
+              23,
+              8,
+              49
+            ],
+            [
+              13,
+              10,
+              9,
+              60,
+              1,
+              6,
+              8,
+              11
+            ],
+            [
+              15,
+              4,
+              5,
+              27,
+              49,
+              8,
+              0,
+              3
+            ],
+            [
+              65,
+              41,
+              24,
+              43,
+              8,
+              196,
+              16,
+              165
+            ],
+            [
+              8,
+              12,
+              0,
+              21,
+              1,
+              0,
+              0,
+              0
+            ],
+            [
+              17,
+              4,
+              9,
+              12,
+              0,
+              55,
+              5,
+              84
+            ]
+          ]
+        }
+      },
+      "unsupported_images": {
+        "n": 367,
+        "predicted": {
+          "bobcat": 145,
+          "coyote": 121,
+          "empty": 33,
+          "opossum": 25,
+          "cat": 15,
+          "raccoon": 14,
+          "rabbit": 12,
+          "dog": 2
+        },
+        "predicted_known_species_at_reference": 265
+      },
+      "event_reference": {
+        "thresholds": {
+          "empty_filter": 0.9,
+          "species_accept": 0.9
+        },
+        "events": 939,
+        "animal_events": 853,
+        "false_empty": 21,
+        "false_empty_rate": 0.024619,
+        "false_empty_rate_ci95": [
+          0.016158,
+          0.037343
+        ],
+        "animal_event_retention": 0.975381,
+        "filtered": 45,
+        "filtered_true_empty": 24,
+        "filtered_non_animal": 0,
+        "empty_events": 86,
+        "accepted": 408,
+        "accepted_correct": 77,
+        "accepted_precision": 0.188725,
+        "accepted_precision_ci95": [
+          0.153726,
+          0.229532
+        ],
+        "accepted_wrong_by_true_role": {
+          "other_supported_species": 221,
+          "unsupported_animal": 66,
+          "empty": 36,
+          "mixed_species": 8
+        },
+        "unsupported_events": 123,
+        "unsupported_accepted_as_known": 66,
+        "needs_review": 486,
+        "review_fraction": 0.517572
+      },
+      "event_empty_sweep": [
+        {
+          "thresholds": {
+            "empty_filter": 0.5,
+            "species_accept": 0.9
+          },
+          "events": 939,
+          "animal_events": 853,
+          "false_empty": 28,
+          "false_empty_rate": 0.032825,
+          "false_empty_rate_ci95": [
+            0.022807,
+            0.047033
+          ],
+          "animal_event_retention": 0.967175,
+          "filtered": 52,
+          "filtered_true_empty": 24,
+          "filtered_non_animal": 0,
+          "empty_events": 86,
+          "accepted": 408,
+          "accepted_correct": 77,
+          "accepted_precision": 0.188725,
+          "accepted_precision_ci95": [
+            0.153726,
+            0.229532
+          ],
+          "accepted_wrong_by_true_role": {
+            "other_supported_species": 221,
+            "unsupported_animal": 66,
+            "empty": 36,
+            "mixed_species": 8
+          },
+          "unsupported_events": 123,
+          "unsupported_accepted_as_known": 66,
+          "needs_review": 479,
+          "review_fraction": 0.510117
+        },
+        {
+          "thresholds": {
+            "empty_filter": 0.7,
+            "species_accept": 0.9
+          },
+          "events": 939,
+          "animal_events": 853,
+          "false_empty": 23,
+          "false_empty_rate": 0.026964,
+          "false_empty_rate_ci95": [
+            0.018033,
+            0.040136
+          ],
+          "animal_event_retention": 0.973036,
+          "filtered": 47,
+          "filtered_true_empty": 24,
+          "filtered_non_animal": 0,
+          "empty_events": 86,
+          "accepted": 408,
+          "accepted_correct": 77,
+          "accepted_precision": 0.188725,
+          "accepted_precision_ci95": [
+            0.153726,
+            0.229532
+          ],
+          "accepted_wrong_by_true_role": {
+            "other_supported_species": 221,
+            "unsupported_animal": 66,
+            "empty": 36,
+            "mixed_species": 8
+          },
+          "unsupported_events": 123,
+          "unsupported_accepted_as_known": 66,
+          "needs_review": 484,
+          "review_fraction": 0.515442
+        },
+        {
+          "thresholds": {
+            "empty_filter": 0.8,
+            "species_accept": 0.9
+          },
+          "events": 939,
+          "animal_events": 853,
+          "false_empty": 22,
+          "false_empty_rate": 0.025791,
+          "false_empty_rate_ci95": [
+            0.017093,
+            0.038742
+          ],
+          "animal_event_retention": 0.974209,
+          "filtered": 46,
+          "filtered_true_empty": 24,
+          "filtered_non_animal": 0,
+          "empty_events": 86,
+          "accepted": 408,
+          "accepted_correct": 77,
+          "accepted_precision": 0.188725,
+          "accepted_precision_ci95": [
+            0.153726,
+            0.229532
+          ],
+          "accepted_wrong_by_true_role": {
+            "other_supported_species": 221,
+            "unsupported_animal": 66,
+            "empty": 36,
+            "mixed_species": 8
+          },
+          "unsupported_events": 123,
+          "unsupported_accepted_as_known": 66,
+          "needs_review": 485,
+          "review_fraction": 0.516507
+        },
+        {
+          "thresholds": {
+            "empty_filter": 0.9,
+            "species_accept": 0.9
+          },
+          "events": 939,
+          "animal_events": 853,
+          "false_empty": 21,
+          "false_empty_rate": 0.024619,
+          "false_empty_rate_ci95": [
+            0.016158,
+            0.037343
+          ],
+          "animal_event_retention": 0.975381,
+          "filtered": 45,
+          "filtered_true_empty": 24,
+          "filtered_non_animal": 0,
+          "empty_events": 86,
+          "accepted": 408,
+          "accepted_correct": 77,
+          "accepted_precision": 0.188725,
+          "accepted_precision_ci95": [
+            0.153726,
+            0.229532
+          ],
+          "accepted_wrong_by_true_role": {
+            "other_supported_species": 221,
+            "unsupported_animal": 66,
+            "empty": 36,
+            "mixed_species": 8
+          },
+          "unsupported_events": 123,
+          "unsupported_accepted_as_known": 66,
+          "needs_review": 486,
+          "review_fraction": 0.517572
+        },
+        {
+          "thresholds": {
+            "empty_filter": 0.95,
+            "species_accept": 0.9
+          },
+          "events": 939,
+          "animal_events": 853,
+          "false_empty": 20,
+          "false_empty_rate": 0.023447,
+          "false_empty_rate_ci95": [
+            0.015228,
+            0.035938
+          ],
+          "animal_event_retention": 0.976553,
+          "filtered": 43,
+          "filtered_true_empty": 23,
+          "filtered_non_animal": 0,
+          "empty_events": 86,
+          "accepted": 408,
+          "accepted_correct": 77,
+          "accepted_precision": 0.188725,
+          "accepted_precision_ci95": [
+            0.153726,
+            0.229532
+          ],
+          "accepted_wrong_by_true_role": {
+            "other_supported_species": 221,
+            "unsupported_animal": 66,
+            "empty": 36,
+            "mixed_species": 8
+          },
+          "unsupported_events": 123,
+          "unsupported_accepted_as_known": 66,
+          "needs_review": 488,
+          "review_fraction": 0.519702
+        },
+        {
+          "thresholds": {
+            "empty_filter": 0.99,
+            "species_accept": 0.9
+          },
+          "events": 939,
+          "animal_events": 853,
+          "false_empty": 14,
+          "false_empty_rate": 0.016413,
+          "false_empty_rate_ci95": [
+            0.009801,
+            0.02736
+          ],
+          "animal_event_retention": 0.983587,
+          "filtered": 37,
+          "filtered_true_empty": 23,
+          "filtered_non_animal": 0,
+          "empty_events": 86,
+          "accepted": 408,
+          "accepted_correct": 77,
+          "accepted_precision": 0.188725,
+          "accepted_precision_ci95": [
+            0.153726,
+            0.229532
+          ],
+          "accepted_wrong_by_true_role": {
+            "other_supported_species": 221,
+            "unsupported_animal": 66,
+            "empty": 36,
+            "mixed_species": 8
+          },
+          "unsupported_events": 123,
+          "unsupported_accepted_as_known": 66,
+          "needs_review": 494,
+          "review_fraction": 0.526092
+        }
+      ],
+      "event_species_sweep": [
+        {
+          "thresholds": {
+            "empty_filter": 0.9,
+            "species_accept": 0.5
+          },
+          "events": 939,
+          "animal_events": 853,
+          "false_empty": 21,
+          "false_empty_rate": 0.024619,
+          "false_empty_rate_ci95": [
+            0.016158,
+            0.037343
+          ],
+          "animal_event_retention": 0.975381,
+          "filtered": 45,
+          "filtered_true_empty": 24,
+          "filtered_non_animal": 0,
+          "empty_events": 86,
+          "accepted": 518,
+          "accepted_correct": 94,
+          "accepted_precision": 0.181467,
+          "accepted_precision_ci95": [
+            0.150661,
+            0.216963
+          ],
+          "accepted_wrong_by_true_role": {
+            "other_supported_species": 282,
+            "unsupported_animal": 81,
+            "empty": 52,
+            "mixed_species": 9
+          },
+          "unsupported_events": 123,
+          "unsupported_accepted_as_known": 81,
+          "needs_review": 376,
+          "review_fraction": 0.400426
+        },
+        {
+          "thresholds": {
+            "empty_filter": 0.9,
+            "species_accept": 0.7
+          },
+          "events": 939,
+          "animal_events": 853,
+          "false_empty": 21,
+          "false_empty_rate": 0.024619,
+          "false_empty_rate_ci95": [
+            0.016158,
+            0.037343
+          ],
+          "animal_event_retention": 0.975381,
+          "filtered": 45,
+          "filtered_true_empty": 24,
+          "filtered_non_animal": 0,
+          "empty_events": 86,
+          "accepted": 500,
+          "accepted_correct": 92,
+          "accepted_precision": 0.184,
+          "accepted_precision_ci95": [
+            0.152489,
+            0.22033
+          ],
+          "accepted_wrong_by_true_role": {
+            "other_supported_species": 273,
+            "unsupported_animal": 80,
+            "empty": 46,
+            "mixed_species": 9
+          },
+          "unsupported_events": 123,
+          "unsupported_accepted_as_known": 80,
+          "needs_review": 394,
+          "review_fraction": 0.419595
+        },
+        {
+          "thresholds": {
+            "empty_filter": 0.9,
+            "species_accept": 0.8
+          },
+          "events": 939,
+          "animal_events": 853,
+          "false_empty": 21,
+          "false_empty_rate": 0.024619,
+          "false_empty_rate_ci95": [
+            0.016158,
+            0.037343
+          ],
+          "animal_event_retention": 0.975381,
+          "filtered": 45,
+          "filtered_true_empty": 24,
+          "filtered_non_animal": 0,
+          "empty_events": 86,
+          "accepted": 461,
+          "accepted_correct": 86,
+          "accepted_precision": 0.186551,
+          "accepted_precision_ci95": [
+            0.153633,
+            0.224649
+          ],
+          "accepted_wrong_by_true_role": {
+            "other_supported_species": 249,
+            "unsupported_animal": 76,
+            "empty": 41,
+            "mixed_species": 9
+          },
+          "unsupported_events": 123,
+          "unsupported_accepted_as_known": 76,
+          "needs_review": 433,
+          "review_fraction": 0.461129
+        },
+        {
+          "thresholds": {
+            "empty_filter": 0.9,
+            "species_accept": 0.9
+          },
+          "events": 939,
+          "animal_events": 853,
+          "false_empty": 21,
+          "false_empty_rate": 0.024619,
+          "false_empty_rate_ci95": [
+            0.016158,
+            0.037343
+          ],
+          "animal_event_retention": 0.975381,
+          "filtered": 45,
+          "filtered_true_empty": 24,
+          "filtered_non_animal": 0,
+          "empty_events": 86,
+          "accepted": 408,
+          "accepted_correct": 77,
+          "accepted_precision": 0.188725,
+          "accepted_precision_ci95": [
+            0.153726,
+            0.229532
+          ],
+          "accepted_wrong_by_true_role": {
+            "other_supported_species": 221,
+            "unsupported_animal": 66,
+            "empty": 36,
+            "mixed_species": 8
+          },
+          "unsupported_events": 123,
+          "unsupported_accepted_as_known": 66,
+          "needs_review": 486,
+          "review_fraction": 0.517572
+        },
+        {
+          "thresholds": {
+            "empty_filter": 0.9,
+            "species_accept": 0.95
+          },
+          "events": 939,
+          "animal_events": 853,
+          "false_empty": 21,
+          "false_empty_rate": 0.024619,
+          "false_empty_rate_ci95": [
+            0.016158,
+            0.037343
+          ],
+          "animal_event_retention": 0.975381,
+          "filtered": 45,
+          "filtered_true_empty": 24,
+          "filtered_non_animal": 0,
+          "empty_events": 86,
+          "accepted": 362,
+          "accepted_correct": 66,
+          "accepted_precision": 0.18232,
+          "accepted_precision_ci95": [
+            0.14595,
+            0.225362
+          ],
+          "accepted_wrong_by_true_role": {
+            "other_supported_species": 197,
+            "unsupported_animal": 59,
+            "empty": 33,
+            "mixed_species": 7
+          },
+          "unsupported_events": 123,
+          "unsupported_accepted_as_known": 59,
+          "needs_review": 532,
+          "review_fraction": 0.56656
+        },
+        {
+          "thresholds": {
+            "empty_filter": 0.9,
+            "species_accept": 0.99
+          },
+          "events": 939,
+          "animal_events": 853,
+          "false_empty": 21,
+          "false_empty_rate": 0.024619,
+          "false_empty_rate_ci95": [
+            0.016158,
+            0.037343
+          ],
+          "animal_event_retention": 0.975381,
+          "filtered": 45,
+          "filtered_true_empty": 24,
+          "filtered_non_animal": 0,
+          "empty_events": 86,
+          "accepted": 277,
+          "accepted_correct": 51,
+          "accepted_precision": 0.184116,
+          "accepted_precision_ci95": [
+            0.142901,
+            0.233972
+          ],
+          "accepted_wrong_by_true_role": {
+            "other_supported_species": 148,
+            "unsupported_animal": 49,
+            "empty": 24,
+            "mixed_species": 5
+          },
+          "unsupported_events": 123,
+          "unsupported_accepted_as_known": 49,
+          "needs_review": 617,
+          "review_fraction": 0.657082
+        }
+      ]
+    },
+    "seen_camera_diagnostic": {
+      "image": {
+        "n": 3568,
+        "macro_f1": 0.723946,
+        "balanced_accuracy": 0.732117,
+        "accuracy_context_only": 0.763173,
+        "min_species_recall": 0.635204,
+        "animal_image_recall": 0.957904,
+        "animal_images_predicted_empty": 139,
+        "per_class": {
+          "empty": {
+            "precision": 0.477444,
+            "recall": 0.477444,
+            "f1": 0.477444,
+            "support": 266,
+            "predicted": 266
+          },
+          "bobcat": {
+            "precision": 0.590717,
+            "recall": 0.756757,
+            "f1": 0.663507,
+            "support": 185,
+            "predicted": 237
+          },
+          "cat": {
+            "precision": 0.693593,
+            "recall": 0.635204,
+            "f1": 0.663116,
+            "support": 392,
+            "predicted": 359
+          },
+          "coyote": {
+            "precision": 0.812183,
+            "recall": 0.792079,
+            "f1": 0.802005,
+            "support": 404,
+            "predicted": 394
+          },
+          "dog": {
+            "precision": 0.793991,
+            "recall": 0.80786,
+            "f1": 0.800866,
+            "support": 229,
+            "predicted": 233
+          },
+          "opossum": {
+            "precision": 0.851707,
+            "recall": 0.839423,
+            "f1": 0.845521,
+            "support": 1040,
+            "predicted": 1025
+          },
+          "rabbit": {
+            "precision": 0.823366,
+            "recall": 0.80985,
+            "f1": 0.816552,
+            "support": 731,
+            "predicted": 719
+          },
+          "raccoon": {
+            "precision": 0.707463,
+            "recall": 0.738318,
+            "f1": 0.722561,
+            "support": 321,
+            "predicted": 335
+          }
+        },
+        "confusion": {
+          "classes": [
+            "empty",
+            "bobcat",
+            "cat",
+            "coyote",
+            "dog",
+            "opossum",
+            "rabbit",
+            "raccoon"
+          ],
+          "matrix": [
+            [
+              127,
+              27,
+              15,
+              9,
+              12,
+              29,
+              31,
+              16
+            ],
+            [
+              9,
+              140,
+              0,
+              13,
+              2,
+              9,
+              2,
+              10
+            ],
+            [
+              11,
+              0,
+              249,
+              12,
+              18,
+              48,
+              42,
+              12
+            ],
+            [
+              9,
+              24,
+              4,
+              320,
+              5,
+              14,
+              13,
+              15
+            ],
+            [
+              12,
+              2,
+              11,
+              9,
+              185,
+              1,
+              7,
+              2
+            ],
+            [
+              30,
+              22,
+              45,
+              7,
+              3,
+              873,
+              25,
+              35
+            ],
+            [
+              45,
+              12,
+              25,
+              15,
+              8,
+              26,
+              592,
+              8
+            ],
+            [
+              23,
+              10,
+              10,
+              9,
+              0,
+              25,
+              7,
+              237
+            ]
+          ]
+        }
+      },
+      "unsupported_images": {
+        "n": 535,
+        "predicted": {
+          "rabbit": 159,
+          "empty": 154,
+          "cat": 50,
+          "coyote": 42,
+          "dog": 35,
+          "raccoon": 35,
+          "bobcat": 34,
+          "opossum": 26
+        },
+        "predicted_known_species_at_reference": 275
+      },
+      "event_reference": {
+        "thresholds": {
+          "empty_filter": 0.9,
+          "species_accept": 0.9
+        },
+        "events": 1746,
+        "animal_events": 1441,
+        "false_empty": 31,
+        "false_empty_rate": 0.021513,
+        "false_empty_rate_ci95": [
+          0.015196,
+          0.030374
+        ],
+        "animal_event_retention": 0.978487,
+        "filtered": 124,
+        "filtered_true_empty": 35,
+        "filtered_non_animal": 58,
+        "empty_events": 101,
+        "accepted": 1052,
+        "accepted_correct": 763,
+        "accepted_precision": 0.725285,
+        "accepted_precision_ci95": [
+          0.697528,
+          0.751403
+        ],
+        "accepted_wrong_by_true_role": {
+          "non_animal": 125,
+          "unsupported_animal": 90,
+          "other_supported_species": 51,
+          "empty": 21,
+          "mixed_species": 2
+        },
+        "unsupported_events": 203,
+        "unsupported_accepted_as_known": 90,
+        "needs_review": 570,
+        "review_fraction": 0.32646
+      },
+      "event_empty_sweep": [
+        {
+          "thresholds": {
+            "empty_filter": 0.5,
+            "species_accept": 0.9
+          },
+          "events": 1746,
+          "animal_events": 1441,
+          "false_empty": 57,
+          "false_empty_rate": 0.039556,
+          "false_empty_rate_ci95": [
+            0.030655,
+            0.050905
+          ],
+          "animal_event_retention": 0.960444,
+          "filtered": 164,
+          "filtered_true_empty": 43,
+          "filtered_non_animal": 64,
+          "empty_events": 101,
+          "accepted": 1052,
+          "accepted_correct": 763,
+          "accepted_precision": 0.725285,
+          "accepted_precision_ci95": [
+            0.697528,
+            0.751403
+          ],
+          "accepted_wrong_by_true_role": {
+            "non_animal": 125,
+            "unsupported_animal": 90,
+            "other_supported_species": 51,
+            "empty": 21,
+            "mixed_species": 2
+          },
+          "unsupported_events": 203,
+          "unsupported_accepted_as_known": 90,
+          "needs_review": 530,
+          "review_fraction": 0.303551
+        },
+        {
+          "thresholds": {
+            "empty_filter": 0.7,
+            "species_accept": 0.9
+          },
+          "events": 1746,
+          "animal_events": 1441,
+          "false_empty": 49,
+          "false_empty_rate": 0.034004,
+          "false_empty_rate_ci95": [
+            0.025816,
+            0.04467
+          ],
+          "animal_event_retention": 0.965996,
+          "filtered": 152,
+          "filtered_true_empty": 40,
+          "filtered_non_animal": 63,
+          "empty_events": 101,
+          "accepted": 1052,
+          "accepted_correct": 763,
+          "accepted_precision": 0.725285,
+          "accepted_precision_ci95": [
+            0.697528,
+            0.751403
+          ],
+          "accepted_wrong_by_true_role": {
+            "non_animal": 125,
+            "unsupported_animal": 90,
+            "other_supported_species": 51,
+            "empty": 21,
+            "mixed_species": 2
+          },
+          "unsupported_events": 203,
+          "unsupported_accepted_as_known": 90,
+          "needs_review": 542,
+          "review_fraction": 0.310424
+        },
+        {
+          "thresholds": {
+            "empty_filter": 0.8,
+            "species_accept": 0.9
+          },
+          "events": 1746,
+          "animal_events": 1441,
+          "false_empty": 44,
+          "false_empty_rate": 0.030534,
+          "false_empty_rate_ci95": [
+            0.022824,
+            0.040742
+          ],
+          "animal_event_retention": 0.969466,
+          "filtered": 143,
+          "filtered_true_empty": 38,
+          "filtered_non_animal": 61,
+          "empty_events": 101,
+          "accepted": 1052,
+          "accepted_correct": 763,
+          "accepted_precision": 0.725285,
+          "accepted_precision_ci95": [
+            0.697528,
+            0.751403
+          ],
+          "accepted_wrong_by_true_role": {
+            "non_animal": 125,
+            "unsupported_animal": 90,
+            "other_supported_species": 51,
+            "empty": 21,
+            "mixed_species": 2
+          },
+          "unsupported_events": 203,
+          "unsupported_accepted_as_known": 90,
+          "needs_review": 551,
+          "review_fraction": 0.315578
+        },
+        {
+          "thresholds": {
+            "empty_filter": 0.9,
+            "species_accept": 0.9
+          },
+          "events": 1746,
+          "animal_events": 1441,
+          "false_empty": 31,
+          "false_empty_rate": 0.021513,
+          "false_empty_rate_ci95": [
+            0.015196,
+            0.030374
+          ],
+          "animal_event_retention": 0.978487,
+          "filtered": 124,
+          "filtered_true_empty": 35,
+          "filtered_non_animal": 58,
+          "empty_events": 101,
+          "accepted": 1052,
+          "accepted_correct": 763,
+          "accepted_precision": 0.725285,
+          "accepted_precision_ci95": [
+            0.697528,
+            0.751403
+          ],
+          "accepted_wrong_by_true_role": {
+            "non_animal": 125,
+            "unsupported_animal": 90,
+            "other_supported_species": 51,
+            "empty": 21,
+            "mixed_species": 2
+          },
+          "unsupported_events": 203,
+          "unsupported_accepted_as_known": 90,
+          "needs_review": 570,
+          "review_fraction": 0.32646
+        },
+        {
+          "thresholds": {
+            "empty_filter": 0.95,
+            "species_accept": 0.9
+          },
+          "events": 1746,
+          "animal_events": 1441,
+          "false_empty": 29,
+          "false_empty_rate": 0.020125,
+          "false_empty_rate_ci95": [
+            0.014048,
+            0.028753
+          ],
+          "animal_event_retention": 0.979875,
+          "filtered": 120,
+          "filtered_true_empty": 34,
+          "filtered_non_animal": 57,
+          "empty_events": 101,
+          "accepted": 1052,
+          "accepted_correct": 763,
+          "accepted_precision": 0.725285,
+          "accepted_precision_ci95": [
+            0.697528,
+            0.751403
+          ],
+          "accepted_wrong_by_true_role": {
+            "non_animal": 125,
+            "unsupported_animal": 90,
+            "other_supported_species": 51,
+            "empty": 21,
+            "mixed_species": 2
+          },
+          "unsupported_events": 203,
+          "unsupported_accepted_as_known": 90,
+          "needs_review": 574,
+          "review_fraction": 0.328751
+        },
+        {
+          "thresholds": {
+            "empty_filter": 0.99,
+            "species_accept": 0.9
+          },
+          "events": 1746,
+          "animal_events": 1441,
+          "false_empty": 24,
+          "false_empty_rate": 0.016655,
+          "false_empty_rate_ci95": [
+            0.011217,
+            0.024663
+          ],
+          "animal_event_retention": 0.983345,
+          "filtered": 99,
+          "filtered_true_empty": 26,
+          "filtered_non_animal": 49,
+          "empty_events": 101,
+          "accepted": 1052,
+          "accepted_correct": 763,
+          "accepted_precision": 0.725285,
+          "accepted_precision_ci95": [
+            0.697528,
+            0.751403
+          ],
+          "accepted_wrong_by_true_role": {
+            "non_animal": 125,
+            "unsupported_animal": 90,
+            "other_supported_species": 51,
+            "empty": 21,
+            "mixed_species": 2
+          },
+          "unsupported_events": 203,
+          "unsupported_accepted_as_known": 90,
+          "needs_review": 595,
+          "review_fraction": 0.340779
+        }
+      ],
+      "event_species_sweep": [
+        {
+          "thresholds": {
+            "empty_filter": 0.9,
+            "species_accept": 0.5
+          },
+          "events": 1746,
+          "animal_events": 1441,
+          "false_empty": 31,
+          "false_empty_rate": 0.021513,
+          "false_empty_rate_ci95": [
+            0.015196,
+            0.030374
+          ],
+          "animal_event_retention": 0.978487,
+          "filtered": 124,
+          "filtered_true_empty": 35,
+          "filtered_non_animal": 58,
+          "empty_events": 101,
+          "accepted": 1282,
+          "accepted_correct": 891,
+          "accepted_precision": 0.695008,
+          "accepted_precision_ci95": [
+            0.669253,
+            0.719597
+          ],
+          "accepted_wrong_by_true_role": {
+            "non_animal": 138,
+            "unsupported_animal": 123,
+            "other_supported_species": 86,
+            "empty": 42,
+            "mixed_species": 2
+          },
+          "unsupported_events": 203,
+          "unsupported_accepted_as_known": 123,
+          "needs_review": 340,
+          "review_fraction": 0.194731
+        },
+        {
+          "thresholds": {
+            "empty_filter": 0.9,
+            "species_accept": 0.7
+          },
+          "events": 1746,
+          "animal_events": 1441,
+          "false_empty": 31,
+          "false_empty_rate": 0.021513,
+          "false_empty_rate_ci95": [
+            0.015196,
+            0.030374
+          ],
+          "animal_event_retention": 0.978487,
+          "filtered": 124,
+          "filtered_true_empty": 35,
+          "filtered_non_animal": 58,
+          "empty_events": 101,
+          "accepted": 1229,
+          "accepted_correct": 876,
+          "accepted_precision": 0.712775,
+          "accepted_precision_ci95": [
+            0.686845,
+            0.737378
+          ],
+          "accepted_wrong_by_true_role": {
+            "non_animal": 133,
+            "unsupported_animal": 112,
+            "other_supported_species": 75,
+            "empty": 31,
+            "mixed_species": 2
+          },
+          "unsupported_events": 203,
+          "unsupported_accepted_as_known": 112,
+          "needs_review": 393,
+          "review_fraction": 0.225086
+        },
+        {
+          "thresholds": {
+            "empty_filter": 0.9,
+            "species_accept": 0.8
+          },
+          "events": 1746,
+          "animal_events": 1441,
+          "false_empty": 31,
+          "false_empty_rate": 0.021513,
+          "false_empty_rate_ci95": [
+            0.015196,
+            0.030374
+          ],
+          "animal_event_retention": 0.978487,
+          "filtered": 124,
+          "filtered_true_empty": 35,
+          "filtered_non_animal": 58,
+          "empty_events": 101,
+          "accepted": 1169,
+          "accepted_correct": 843,
+          "accepted_precision": 0.721129,
+          "accepted_precision_ci95": [
+            0.694729,
+            0.74608
+          ],
+          "accepted_wrong_by_true_role": {
+            "non_animal": 130,
+            "unsupported_animal": 101,
+            "other_supported_species": 66,
+            "empty": 27,
+            "mixed_species": 2
+          },
+          "unsupported_events": 203,
+          "unsupported_accepted_as_known": 101,
+          "needs_review": 453,
+          "review_fraction": 0.25945
+        },
+        {
+          "thresholds": {
+            "empty_filter": 0.9,
+            "species_accept": 0.9
+          },
+          "events": 1746,
+          "animal_events": 1441,
+          "false_empty": 31,
+          "false_empty_rate": 0.021513,
+          "false_empty_rate_ci95": [
+            0.015196,
+            0.030374
+          ],
+          "animal_event_retention": 0.978487,
+          "filtered": 124,
+          "filtered_true_empty": 35,
+          "filtered_non_animal": 58,
+          "empty_events": 101,
+          "accepted": 1052,
+          "accepted_correct": 763,
+          "accepted_precision": 0.725285,
+          "accepted_precision_ci95": [
+            0.697528,
+            0.751403
+          ],
+          "accepted_wrong_by_true_role": {
+            "non_animal": 125,
+            "unsupported_animal": 90,
+            "other_supported_species": 51,
+            "empty": 21,
+            "mixed_species": 2
+          },
+          "unsupported_events": 203,
+          "unsupported_accepted_as_known": 90,
+          "needs_review": 570,
+          "review_fraction": 0.32646
+        },
+        {
+          "thresholds": {
+            "empty_filter": 0.9,
+            "species_accept": 0.95
+          },
+          "events": 1746,
+          "animal_events": 1441,
+          "false_empty": 31,
+          "false_empty_rate": 0.021513,
+          "false_empty_rate_ci95": [
+            0.015196,
+            0.030374
+          ],
+          "animal_event_retention": 0.978487,
+          "filtered": 124,
+          "filtered_true_empty": 35,
+          "filtered_non_animal": 58,
+          "empty_events": 101,
+          "accepted": 962,
+          "accepted_correct": 699,
+          "accepted_precision": 0.726611,
+          "accepted_precision_ci95": [
+            0.697586,
+            0.753833
+          ],
+          "accepted_wrong_by_true_role": {
+            "non_animal": 121,
+            "unsupported_animal": 84,
+            "other_supported_species": 37,
+            "empty": 20,
+            "mixed_species": 1
+          },
+          "unsupported_events": 203,
+          "unsupported_accepted_as_known": 84,
+          "needs_review": 660,
+          "review_fraction": 0.378007
+        },
+        {
+          "thresholds": {
+            "empty_filter": 0.9,
+            "species_accept": 0.99
+          },
+          "events": 1746,
+          "animal_events": 1441,
+          "false_empty": 31,
+          "false_empty_rate": 0.021513,
+          "false_empty_rate_ci95": [
+            0.015196,
+            0.030374
+          ],
+          "animal_event_retention": 0.978487,
+          "filtered": 124,
+          "filtered_true_empty": 35,
+          "filtered_non_animal": 58,
+          "empty_events": 101,
+          "accepted": 812,
+          "accepted_correct": 593,
+          "accepted_precision": 0.730296,
+          "accepted_precision_ci95": [
+            0.698738,
+            0.759685
+          ],
+          "accepted_wrong_by_true_role": {
+            "non_animal": 108,
+            "unsupported_animal": 71,
+            "other_supported_species": 26,
+            "empty": 14
+          },
+          "unsupported_events": 203,
+          "unsupported_accepted_as_known": 71,
+          "needs_review": 810,
+          "review_fraction": 0.463918
+        }
+      ]
+    },
+    "slices_unseen": {
+      "camera": {
+        "108": {
+          "images": 756,
+          "macro_f1": 0.163096,
+          "animal_image_recall": 0.509709,
+          "animal_events": 328,
+          "false_empty": 98,
+          "false_empty_rate": 0.29878
+        },
+        "125": {
+          "images": 1594,
+          "macro_f1": 0.199789,
+          "animal_image_recall": 0.943901,
+          "animal_events": 556,
+          "false_empty": 7,
+          "false_empty_rate": 0.01259
+        },
+        "51": {
+          "images": 1276,
+          "macro_f1": 0.344522,
+          "animal_image_recall": 0.86901,
+          "animal_events": 396,
+          "false_empty": 45,
+          "false_empty_rate": 0.113636
+        },
+        "90": {
+          "images": 710,
+          "macro_f1": 0.203196,
+          "animal_image_recall": 0.829966,
+          "animal_events": 297,
+          "false_empty": 14,
+          "false_empty_rate": 0.047138
+        }
+      },
+      "day_night": {
+        "day": {
+          "images": 1308,
+          "macro_f1": 0.233382,
+          "animal_image_recall": 0.931793,
+          "animal_events": 549,
+          "false_empty": 43,
+          "false_empty_rate": 0.078324
+        },
+        "night": {
+          "images": 3028,
+          "macro_f1": 0.230527,
+          "animal_image_recall": 0.801441,
+          "animal_events": 1028,
+          "false_empty": 121,
+          "false_empty_rate": 0.117704
+        }
+      }
+    }
+  },
+  "hardware": {
+    "platform": "macOS-26.6.2-arm64-arm-64bit",
+    "machine": "arm64",
+    "python": "3.12.6",
+    "torch": "2.14.0",
+    "torch_threads": 4,
+    "cpu": "Apple M1",
+    "memory_gb": 8.0
+  },
+  "extraction": {
+    "train_fit": {
+      "images": 20287,
+      "seconds": 718.6,
+      "images_per_second": 28.23,
+      "peak_rss_mb": 312.4
+    },
+    "calibration": {
+      "images": 2641,
+      "seconds": 109.17,
+      "images_per_second": 24.19,
+      "peak_rss_mb": 387.7
+    },
+    "policy_validation": {
+      "images": 2732,
+      "seconds": 100.89,
+      "images_per_second": 27.08,
+      "peak_rss_mb": 387.7
+    },
+    "seen_camera_diagnostic": {
+      "images": 4313,
+      "seconds": 183.9,
+      "images_per_second": 23.45,
+      "peak_rss_mb": 387.7
+    }
+  },
+  "latency": [
+    {
+      "device": "mps",
+      "images": 32,
+      "p50_ms": 28.911334,
+      "p95_ms": 32.246541,
+      "peak_rss_mb": 454.703125
+    },
+    {
+      "device": "cpu",
+      "images": 32,
+      "p50_ms": 190.729562,
+      "p95_ms": 237.129917,
+      "peak_rss_mb": 454.703125
+    }
+  ]
+}

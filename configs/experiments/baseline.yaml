@@ -1,0 +1,44 @@
+# Baseline: frozen pretrained embeddings + linear classifier.
+# Fixed for the first experiment: no tuning of any value below.
+# Train:    uv run wildinbox baseline train
+# Evaluate: uv run wildinbox evaluate --model models/baseline
+name: baseline-frozen-effnetb0-logreg-v1
+run_config: configs/example.yaml        # classes, preprocessing, seed, dataset version
+splits: configs/splits/cct20.yaml       # split spec; its lock pins the split version
+
+backbone:
+  architecture: efficientnet_b0         # torchvision, ImageNet weights, frozen
+  weights: IMAGENET1K_V1
+  embedding: global_avgpool             # 1280-d, before the ImageNet classifier head
+
+classifier:
+  kind: logistic_regression             # multinomial, on standardized embeddings
+  c: 1.0
+  class_weight: balanced                # imbalance handled in the loss, not by resampling
+  max_iter: 3000
+
+extraction:
+  # Reference hardware: Apple M1. MPS embeds ~8x faster than its CPU (104 vs 13
+  # img/s forward pass). Other devices reproduce within the tolerances below.
+  device: mps
+  batch_size: 64
+  num_workers: 2                        # 8 GB machine: more workers exhaust memory
+
+evaluation:
+  # Development partitions only. The locked final test is refused in code.
+  partitions: [calibration, policy_validation, seen_camera_diagnostic]
+  unseen_camera_partitions: [calibration, policy_validation]
+  # Reference operating points for the event-level trade-off. These are NOT
+  # chosen thresholds; thresholds are chosen later on policy_validation.
+  empty_thresholds: [0.5, 0.7, 0.8, 0.9, 0.95, 0.99]
+  species_thresholds: [0.5, 0.7, 0.8, 0.9, 0.95, 0.99]
+  reference_empty_threshold: 0.9        # used for per-camera / day-night slices
+  reference_species_threshold: 0.9
+  small_animal_area: 0.01               # largest box < 1% of the frame
+  gallery_size: 12
+
+# A fresh run must match the committed report within these absolute tolerances.
+reproducibility:
+  macro_f1: 0.005
+  per_class_recall: 0.01
+  false_empty_rate: 0.005

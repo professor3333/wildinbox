@@ -26,7 +26,7 @@ cp .env.example .env      # local settings; contains no secrets
 ## Run the application
 
 ```bash
-docker compose up -d --build --wait    # Postgres, Redis, MinIO, migrations, API, worker
+docker compose up -d --build --wait    # Postgres, Redis, SeaweedFS (S3), migrations, API, worker
 open http://localhost:8000             # upload form -> batch status page
 uv run python scripts/smoke.py         # upload -> process -> results, end to end
 docker compose down                    # add -v to delete stored data
@@ -169,6 +169,24 @@ build fails unless every leakage check passes. Rules and rationale:
 [`manifests/cct20-splits-v1.lock.json`](manifests/cct20-splits-v1.lock.json).
 
 Supported classes: `empty`, bobcat, cat, coyote, dog, opossum, rabbit, raccoon.
+
+## Baseline and evaluation
+
+```bash
+uv run wildinbox baseline train      # frozen EfficientNet-B0 embeddings + logistic regression
+uv run wildinbox evaluate            # development partitions -> reports/baseline/
+```
+
+The baseline is the reference every later model must beat. Evaluation reports
+image-level macro-F1 and per-species precision/recall, confusion matrices,
+event-level decisions under the conservative policy (animal events wrongly
+filtered as empty, accepted-label precision, review load), per-camera and
+day/night slices, inference time and memory, and an error gallery. It only
+reads training and development partitions; the locked final test is refused in
+code. Results: [`reports/baseline/README.md`](reports/baseline/README.md).
+Experiment runs are tracked in MLflow (`mlruns/`, local, not committed):
+`uvx mlflow ui --backend-store-uri sqlite:///mlruns/mlflow.db` (the project
+installs only the lightweight tracking client).
 
 ## Data and weights
 

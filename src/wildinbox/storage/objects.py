@@ -57,7 +57,7 @@ class LocalStore:
 
 
 class S3Store:
-    """Any S3-compatible service (MinIO locally)."""
+    """Any S3-compatible service (SeaweedFS in the local docker compose stack)."""
 
     def __init__(self, settings: Settings) -> None:
         import boto3
