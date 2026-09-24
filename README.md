@@ -188,6 +188,24 @@ Experiment runs are tracked in MLflow (`mlruns/`, local, not committed):
 `uvx mlflow ui --backend-store-uri sqlite:///mlruns/mlflow.db` (the project
 installs only the lightweight tracking client).
 
+## Fine-tuning experiments
+
+```bash
+uv run wildinbox finetune inspect-augmentation --config configs/experiments/finetune-e1-top-lossweight.yaml
+uv run wildinbox finetune train --config configs/experiments/finetune-e1-top-lossweight.yaml
+uv run wildinbox evaluate --model models/finetune-e1-top-lossweight \
+  --report-dir reports/experiments/finetune-e1-top-lossweight
+uv run wildinbox compare reports/experiments/finetune-* --out reports/experiments/comparison.md
+```
+
+Each experiment is one YAML file in `configs/experiments/`. Models train only
+on the training partition, with box-safe crops (a crop may not cut more than
+10% of any annotated animal). The selection rule in
+[`configs/experiments/selection.yaml`](configs/experiments/selection.yaml) was
+committed before any results existed. Results, failure analysis, and the
+decision: [`reports/experiments/README.md`](reports/experiments/README.md);
+model card: [`docs/model_card.md`](docs/model_card.md).
+
 ## Data and weights
 
 Downloaded datasets, uploads, thumbnails, and trained weights are never

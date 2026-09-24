@@ -195,6 +195,11 @@ def main(argv: Sequence[str] | None = None) -> int:
     )
     p_eval.add_argument("--no-benchmark", action="store_true", help="Skip the latency benchmark.")
 
+    p_cmp = sub.add_parser("compare", help="Compare evaluated models; apply the selection rule.")
+    p_cmp.add_argument("reports", type=Path, nargs="+", help="Report directories.")
+    p_cmp.add_argument("--rule", type=Path, default=Path("configs/experiments/selection.yaml"))
+    p_cmp.add_argument("--out", type=Path, default=None, help="Write the comparison here.")
+
     p_api = sub.add_parser("api", help="Serve the HTTP API.")
     p_api.add_argument("--host", default="127.0.0.1")
     p_api.add_argument("--port", type=int, default=8000)
@@ -226,6 +231,15 @@ def main(argv: Sequence[str] | None = None) -> int:
         from wildinbox.evaluation.run import evaluate_cli
 
         return evaluate_cli(args)
+    if args.command == "compare":
+        from wildinbox.evaluation.compare import compare
+
+        text, _ = compare(args.reports, args.rule)
+        if args.out:
+            args.out.parent.mkdir(parents=True, exist_ok=True)
+            args.out.write_text(text)
+        print(text)
+        return 0
     if args.command == "api":
         import uvicorn
 

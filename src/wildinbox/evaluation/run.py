@@ -75,11 +75,20 @@ class Scored:
         return None
 
 
-def _score(predictor: Predictor, rows: list[ImageRow]) -> list[Scored]:
+def _score(
+    predictor: Predictor, rows: list[ImageRow], timings: dict[str, Any] | None = None
+) -> list[Scored]:
     out: list[Scored] = []
     for part in sorted({r.partition for r in rows}, key=lambda p: p.value):
         prows = [r for r in rows if r.partition is part]
         ext = predictor.score(part.value, prows)
+        if timings is not None:
+            timings[part.value] = {
+                "images": len(prows),
+                "seconds": round(ext.seconds, 2),
+                "images_per_second": round(ext.images_per_second, 2),
+                "peak_rss_mb": round(ext.peak_rss_mb, 1),
+            }
         for i, r in enumerate(prows):
             p = {c: float(v) for c, v in zip(predictor.classes, ext.embeddings[i], strict=True)}
             pred = max(p, key=p.__getitem__)
@@ -200,7 +209,8 @@ def evaluate(
         raise ValueError(f"model classes {predictor.classes} differ from config {ctx.classes}")
     ecfg = ctx.cfg.evaluation
     rows, events = load_rows(ctx.split_dir, ecfg.partitions, box_areas(ctx.inventory_db))
-    scored = _score(predictor, rows)
+    timings: dict[str, Any] = dict(meta.get("extraction") or {})
+    scored = _score(predictor, rows, timings)
     ref = Thresholds(ecfg.reference_empty_threshold, ecfg.reference_species_threshold)
 
     groups: dict[str, list[Partition]] = {UNSEEN: list(ecfg.unseen_camera_partitions)}
@@ -221,7 +231,18 @@ def evaluate(
         "reference_thresholds": {"empty_filter": ref.empty, "species_accept": ref.species},
         "groups": results,
         "hardware": meta["hardware"],
-        "extraction": meta["extraction"],
+        "extraction": timings,
+        "lineage": {
+            k: meta.get(k)
+            for k in (
+                "kind",
+                "description",
+                "mlflow_run_id",
+                "train_seconds",
+                "code",
+                "split_version",
+            )
+        },
         "latency": [
             _benchmark(ctx, predictor_for(ctx, model_dir, d), rows)
             for d in dict.fromkeys([device, "cpu"])
