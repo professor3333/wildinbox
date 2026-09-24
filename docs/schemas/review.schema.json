@@ -1,0 +1,86 @@
+{
+  "$defs": {
+    "ReviewOutcome": {
+      "enum": [
+        "confirmed",
+        "corrected",
+        "unresolved"
+      ],
+      "title": "ReviewOutcome",
+      "type": "string"
+    }
+  },
+  "additionalProperties": false,
+  "description": "A human's verdict on one event. The original suggestion is kept alongside.",
+  "properties": {
+    "confirmed_label": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "title": "Confirmed Label"
+    },
+    "event_id": {
+      "format": "uuid",
+      "title": "Event Id",
+      "type": "string"
+    },
+    "note": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Note"
+    },
+    "outcome": {
+      "$ref": "#/$defs/ReviewOutcome"
+    },
+    "review_id": {
+      "format": "uuid",
+      "title": "Review Id",
+      "type": "string"
+    },
+    "reviewed_at": {
+      "format": "date-time",
+      "title": "Reviewed At",
+      "type": "string"
+    },
+    "reviewer": {
+      "minLength": 1,
+      "title": "Reviewer",
+      "type": "string"
+    },
+    "suggested_label": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "description": "The model's label at review time.",
+      "title": "Suggested Label"
+    }
+  },
+  "required": [
+    "review_id",
+    "event_id",
+    "outcome",
+    "suggested_label",
+    "confirmed_label",
+    "reviewer",
+    "reviewed_at"
+  ],
+  "title": "Review",
+  "type": "object"
+}

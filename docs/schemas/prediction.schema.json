@@ -1,0 +1,50 @@
+{
+  "additionalProperties": false,
+  "description": "The model's per-image output, stored before any event aggregation.",
+  "properties": {
+    "class_probabilities": {
+      "additionalProperties": {
+        "type": "number"
+      },
+      "minProperties": 2,
+      "title": "Class Probabilities",
+      "type": "object"
+    },
+    "image_id": {
+      "format": "uuid",
+      "title": "Image Id",
+      "type": "string"
+    },
+    "model_version": {
+      "minLength": 1,
+      "title": "Model Version",
+      "type": "string"
+    },
+    "preprocessing_version": {
+      "minLength": 1,
+      "title": "Preprocessing Version",
+      "type": "string"
+    },
+    "unfamiliar_score": {
+      "anyOf": [
+        {
+          "minimum": 0,
+          "type": "number"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Unfamiliar Score"
+    }
+  },
+  "required": [
+    "image_id",
+    "model_version",
+    "preprocessing_version",
+    "class_probabilities"
+  ],
+  "title": "Prediction",
+  "type": "object"
+}

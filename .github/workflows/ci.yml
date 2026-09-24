@@ -1,0 +1,44 @@
+name: ci
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  ci:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7 # v10.2.0
+        with:
+          enable-cache: true
+
+      - name: Install (locked)
+        run: uv sync --locked
+
+      - name: Lint
+        run: uv run ruff check
+
+      - name: Format
+        run: uv run ruff format --check
+
+      - name: Type check
+        run: uv run mypy src/
+
+      - name: Validate configs
+        run: uv run wildinbox validate-config configs/*.yaml
+
+      - name: JSON Schemas up to date
+        run: |
+          uv run wildinbox export-schemas docs/schemas
+          git diff --exit-code docs/schemas || {
+            echo "::error::docs/schemas is stale; run 'uv run wildinbox export-schemas' and commit"
+            exit 1
+          }
+
+      - name: Unit tests
+        run: uv run pytest -m "not slow"
