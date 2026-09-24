@@ -247,7 +247,9 @@ def write_split_report(spec: SplitSpec, taxonomy: Taxonomy, result: BuildResult,
         "cameras. Instead a deterministic sample of whole training-camera sequences is a "
         "seen-camera diagnostic (in-distribution performance only). Using all of `cis_test` "
         "would have removed about half of the training events.",
-        "4. **`trans_val` (camera 125) is policy validation**, extended with camera 90.",
+        "4. **Policy validation uses cameras "
+        f"{', '.join(sorted(spec.cameras.policy_validation, key=_camera_key))}**: the "
+        "published `trans_val` camera(s) plus development cameras listed above.",
         "5. **`trans_test` is the locked final test, unchanged.**",
         "",
     ]

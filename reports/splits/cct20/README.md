@@ -125,7 +125,7 @@ Deviations from the published split:
 1. **224 sequences have frames in more than one published file** (`train` and `cis_val`): sequence leakage in the published split. Partitions here are assigned per whole sequence, so those files are pooled on training cameras.
 2. **Development cameras 51, 90, 108 come from the published cis cameras**, because the published `trans_val` has a single camera. All of their published train/val/test images move to development.
 3. **Published `cis_test` is not used as a test**: its cameras are training cameras. Instead a deterministic sample of whole training-camera sequences is a seen-camera diagnostic (in-distribution performance only). Using all of `cis_test` would have removed about half of the training events.
-4. **`trans_val` (camera 125) is policy validation**, extended with camera 90.
+4. **Policy validation uses cameras 90, 125**: the published `trans_val` camera(s) plus development cameras listed above.
 5. **`trans_test` is the locked final test, unchanged.**
 
 ## Excluded events
