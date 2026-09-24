@@ -1,0 +1,45 @@
+# Example run configuration. Validate with: uv run wildinbox validate-config configs/example.yaml
+#
+# PLACEHOLDERS until the dataset stage:
+#   - classes: real supported species are chosen from CCT20 training-set counts.
+#   - dataset.manifest_version: set to the pinned manifest once it exists.
+#   - thresholds: chosen on validation data; automation stays disabled until
+#     evaluation supports an operating point.
+
+config_version: 1
+seed: 20260924
+
+dataset:
+  name: cct20
+  manifest_version: unpinned
+
+model:
+  architecture: efficientnet_b0
+  pretrained_weights: IMAGENET1K_V1
+
+# Matches torchvision EfficientNet_B0_Weights.IMAGENET1K_V1 eval transforms.
+preprocessing:
+  resize_size: 256
+  crop_size: 224
+  interpolation: bicubic
+  mean: [0.485, 0.456, 0.406]
+  std: [0.229, 0.224, 0.225]
+
+# Model output order. Changing order changes the class-map fingerprint.
+classes:
+  - empty
+  - opossum
+  - raccoon
+  - coyote
+  - bobcat
+  - rabbit
+  - squirrel
+
+policy_version: policy-v0
+
+thresholds:
+  empty_filter: 0.99
+  species_accept: 0.95
+  unfamiliar_max_distance: null
+  auto_filter_enabled: false
+  auto_accept_enabled: false

@@ -1,0 +1,100 @@
+{
+  "additionalProperties": false,
+  "description": "One uploaded photograph, after validation.",
+  "properties": {
+    "camera_id": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Camera Id"
+    },
+    "captured_at": {
+      "anyOf": [
+        {
+          "format": "date-time",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Captured At"
+    },
+    "content_type": {
+      "enum": [
+        "image/jpeg",
+        "image/png"
+      ],
+      "title": "Content Type",
+      "type": "string"
+    },
+    "frame_index": {
+      "anyOf": [
+        {
+          "minimum": 0,
+          "type": "integer"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Frame Index"
+    },
+    "height": {
+      "exclusiveMinimum": 0,
+      "title": "Height",
+      "type": "integer"
+    },
+    "image_id": {
+      "format": "uuid",
+      "title": "Image Id",
+      "type": "string"
+    },
+    "original_filename": {
+      "minLength": 1,
+      "title": "Original Filename",
+      "type": "string"
+    },
+    "sequence_id": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Sequence Id"
+    },
+    "sha256": {
+      "description": "Content hash of the original file.",
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Sha256",
+      "type": "string"
+    },
+    "width": {
+      "exclusiveMinimum": 0,
+      "title": "Width",
+      "type": "integer"
+    }
+  },
+  "required": [
+    "image_id",
+    "sha256",
+    "original_filename",
+    "content_type",
+    "width",
+    "height"
+  ],
+  "title": "ImageMetadata",
+  "type": "object"
+}

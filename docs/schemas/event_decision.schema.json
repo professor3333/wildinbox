@@ -1,0 +1,103 @@
+{
+  "$defs": {
+    "Disposition": {
+      "enum": [
+        "likely_empty",
+        "species_identified",
+        "needs_review"
+      ],
+      "title": "Disposition",
+      "type": "string"
+    },
+    "ReviewReason": {
+      "enum": [
+        "low_confidence",
+        "animal_evidence",
+        "conflicting_species",
+        "possible_unsupported_input",
+        "automation_disabled"
+      ],
+      "title": "ReviewReason",
+      "type": "string"
+    }
+  },
+  "additionalProperties": false,
+  "description": "The decision policy's output for one capture event.",
+  "properties": {
+    "confidence": {
+      "anyOf": [
+        {
+          "maximum": 1,
+          "minimum": 0,
+          "type": "number"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "title": "Confidence"
+    },
+    "disposition": {
+      "$ref": "#/$defs/Disposition"
+    },
+    "event_id": {
+      "format": "uuid",
+      "title": "Event Id",
+      "type": "string"
+    },
+    "image_ids": {
+      "items": {
+        "format": "uuid",
+        "type": "string"
+      },
+      "minItems": 1,
+      "title": "Image Ids",
+      "type": "array"
+    },
+    "model_version": {
+      "minLength": 1,
+      "title": "Model Version",
+      "type": "string"
+    },
+    "policy_version": {
+      "minLength": 1,
+      "title": "Policy Version",
+      "type": "string"
+    },
+    "preprocessing_version": {
+      "minLength": 1,
+      "title": "Preprocessing Version",
+      "type": "string"
+    },
+    "reasons": {
+      "items": {
+        "$ref": "#/$defs/ReviewReason"
+      },
+      "title": "Reasons",
+      "type": "array"
+    },
+    "suggested_label": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "title": "Suggested Label"
+    }
+  },
+  "required": [
+    "event_id",
+    "image_ids",
+    "disposition",
+    "suggested_label",
+    "confidence",
+    "model_version",
+    "preprocessing_version",
+    "policy_version"
+  ],
+  "title": "EventDecision",
+  "type": "object"
+}

@@ -1,0 +1,33 @@
+# Environments and secrets
+.venv/
+.env
+
+# Datasets, uploads, thumbnails: never in Git (see data/README.md)
+data/*
+!data/README.md
+
+# Trained weights and experiment tracking
+models/
+*.pt
+*.pth
+*.ckpt
+*.safetensors
+mlruns/
+mlartifacts/
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+build/
+dist/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# OS / editors
+.DS_Store
+.idea/
+.vscode/

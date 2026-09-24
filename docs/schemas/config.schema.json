@@ -1,0 +1,225 @@
+{
+  "$defs": {
+    "DatasetConfig": {
+      "additionalProperties": false,
+      "properties": {
+        "manifest_version": {
+          "description": "Pinned, versioned manifest the run was built from.",
+          "minLength": 1,
+          "title": "Manifest Version",
+          "type": "string"
+        },
+        "name": {
+          "description": "Dataset identifier, e.g. 'cct20'.",
+          "minLength": 1,
+          "title": "Name",
+          "type": "string"
+        }
+      },
+      "required": [
+        "name",
+        "manifest_version"
+      ],
+      "title": "DatasetConfig",
+      "type": "object"
+    },
+    "ModelConfig": {
+      "additionalProperties": false,
+      "properties": {
+        "architecture": {
+          "const": "efficientnet_b0",
+          "title": "Architecture",
+          "type": "string"
+        },
+        "pretrained_weights": {
+          "anyOf": [
+            {
+              "const": "IMAGENET1K_V1",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "torchvision weights enum member, or null to train from scratch.",
+          "title": "Pretrained Weights"
+        }
+      },
+      "required": [
+        "architecture",
+        "pretrained_weights"
+      ],
+      "title": "ModelConfig",
+      "type": "object"
+    },
+    "PreprocessingConfig": {
+      "additionalProperties": false,
+      "properties": {
+        "crop_size": {
+          "description": "Square center crop fed to the model.",
+          "exclusiveMinimum": 0,
+          "title": "Crop Size",
+          "type": "integer"
+        },
+        "interpolation": {
+          "enum": [
+            "bilinear",
+            "bicubic"
+          ],
+          "title": "Interpolation",
+          "type": "string"
+        },
+        "mean": {
+          "maxItems": 3,
+          "minItems": 3,
+          "prefixItems": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "number"
+            },
+            {
+              "type": "number"
+            }
+          ],
+          "title": "Mean",
+          "type": "array"
+        },
+        "resize_size": {
+          "description": "Shorter side is resized to this many pixels.",
+          "exclusiveMinimum": 0,
+          "title": "Resize Size",
+          "type": "integer"
+        },
+        "std": {
+          "maxItems": 3,
+          "minItems": 3,
+          "prefixItems": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "number"
+            },
+            {
+              "type": "number"
+            }
+          ],
+          "title": "Std",
+          "type": "array"
+        }
+      },
+      "required": [
+        "resize_size",
+        "crop_size",
+        "interpolation",
+        "mean",
+        "std"
+      ],
+      "title": "PreprocessingConfig",
+      "type": "object"
+    },
+    "ThresholdsConfig": {
+      "additionalProperties": false,
+      "description": "Separate limits for filtering empties and accepting species, since the\nconsequences of each mistake differ. Automation is off unless evaluation\nsupports the operating point.",
+      "properties": {
+        "auto_accept_enabled": {
+          "default": false,
+          "title": "Auto Accept Enabled",
+          "type": "boolean"
+        },
+        "auto_filter_enabled": {
+          "default": false,
+          "title": "Auto Filter Enabled",
+          "type": "boolean"
+        },
+        "empty_filter": {
+          "description": "Min calibrated P(empty) every usable frame needs to filter.",
+          "exclusiveMinimum": 0,
+          "maximum": 1,
+          "title": "Empty Filter",
+          "type": "number"
+        },
+        "species_accept": {
+          "description": "Min calibrated P(species) to accept a label automatically.",
+          "exclusiveMinimum": 0,
+          "maximum": 1,
+          "title": "Species Accept",
+          "type": "number"
+        },
+        "unfamiliar_max_distance": {
+          "anyOf": [
+            {
+              "exclusiveMinimum": 0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Max embedding distance before flagging unfamiliar input.",
+          "title": "Unfamiliar Max Distance"
+        }
+      },
+      "required": [
+        "empty_filter",
+        "species_accept"
+      ],
+      "title": "ThresholdsConfig",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "classes": {
+      "description": "Model output order. Must include 'empty' and >= 1 species.",
+      "items": {
+        "type": "string"
+      },
+      "minItems": 2,
+      "title": "Classes",
+      "type": "array"
+    },
+    "config_version": {
+      "const": 1,
+      "title": "Config Version",
+      "type": "integer"
+    },
+    "dataset": {
+      "$ref": "#/$defs/DatasetConfig"
+    },
+    "model": {
+      "$ref": "#/$defs/ModelConfig"
+    },
+    "policy_version": {
+      "minLength": 1,
+      "title": "Policy Version",
+      "type": "string"
+    },
+    "preprocessing": {
+      "$ref": "#/$defs/PreprocessingConfig"
+    },
+    "seed": {
+      "minimum": 0,
+      "title": "Seed",
+      "type": "integer"
+    },
+    "thresholds": {
+      "$ref": "#/$defs/ThresholdsConfig"
+    }
+  },
+  "required": [
+    "config_version",
+    "seed",
+    "dataset",
+    "model",
+    "preprocessing",
+    "classes",
+    "policy_version",
+    "thresholds"
+  ],
+  "title": "WildInboxConfig",
+  "type": "object"
+}
