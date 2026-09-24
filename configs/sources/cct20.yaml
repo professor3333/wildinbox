@@ -1,0 +1,28 @@
+# Caltech Camera Traps, CCT20 (ECCV 2018) benchmark subset, resized images.
+# Source: https://lila.science/datasets/caltech-camera-traps
+# License: Community Data License Agreement (permissive variant).
+# Sizes and MD5s taken from the GCS object metadata (x-goog-hash) on 2026-09-24.
+name: cct20
+
+images_archive:
+  url: https://storage.googleapis.com/public-datasets-lila/caltechcameratraps/eccv_18_all_images_sm.tar.gz
+  filename: eccv_18_all_images_sm.tar.gz
+  size: 6492615601
+  md5: 8143c17aa2a12872b66f284ff211531f
+
+annotations_archive:
+  url: https://storage.googleapis.com/public-datasets-lila/caltechcameratraps/eccv_18_annotations.tar.gz
+  filename: eccv_18_annotations.tar.gz
+  size: 2997071
+  md5: 66a1f481b44aa1edadf75c9cfbd27aba
+
+# The published benchmark split each record came from is preserved as-is;
+# WildInbox builds its own leakage-resistant splits in the dataset stage.
+annotation_files:
+  - eccv_18_annotation_files/train_annotations.json
+  - eccv_18_annotation_files/cis_val_annotations.json
+  - eccv_18_annotation_files/trans_val_annotations.json
+  - eccv_18_annotation_files/cis_test_annotations.json
+  - eccv_18_annotation_files/trans_test_annotations.json
+
+exclusions: []

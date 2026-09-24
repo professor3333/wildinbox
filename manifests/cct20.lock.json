@@ -1,0 +1,29 @@
+{
+  "archives": {
+    "eccv_18_all_images_sm.tar.gz": {
+      "md5": "8143c17aa2a12872b66f284ff211531f",
+      "size": 6492615601
+    },
+    "eccv_18_annotations.tar.gz": {
+      "md5": "66a1f481b44aa1edadf75c9cfbd27aba",
+      "size": 2997071
+    }
+  },
+  "counts": {
+    "by_reason": {
+      "conflicting_annotations": 2,
+      "exact_duplicate": 7
+    },
+    "by_status": {
+      "accepted": 57855,
+      "excluded": 7,
+      "quarantined": 2
+    },
+    "near_duplicate_pairs": 0,
+    "orphan_annotations": 0,
+    "orphan_files": 0,
+    "source_records": 57864
+  },
+  "manifest_version": "cct20-396eb43cc6ce",
+  "source": "cct20"
+}

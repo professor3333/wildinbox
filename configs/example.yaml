@@ -2,7 +2,6 @@
 #
 # PLACEHOLDERS until the dataset stage:
 #   - classes: real supported species are chosen from CCT20 training-set counts.
-#   - dataset.manifest_version: set to the pinned manifest once it exists.
 #   - thresholds: chosen on validation data; automation stays disabled until
 #     evaluation supports an operating point.
 
@@ -11,7 +10,7 @@ seed: 20260924
 
 dataset:
   name: cct20
-  manifest_version: unpinned
+  manifest_version: cct20-396eb43cc6ce  # pinned in manifests/cct20.lock.json
 
 model:
   architecture: efficientnet_b0
