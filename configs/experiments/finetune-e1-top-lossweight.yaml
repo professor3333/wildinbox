@@ -1,0 +1,24 @@
+# E1: fine-tune blocks 6-8 + head; class-weighted loss; flip + box-safe crop
+# Train:    uv run wildinbox finetune train --config configs/experiments/finetune-e1-top-lossweight.yaml
+# Evaluate: uv run wildinbox evaluate --model models/finetune-e1-top-lossweight --report-dir reports/experiments/finetune-e1-top-lossweight
+name: finetune-e1-top-lossweight
+description: "E1: fine-tune blocks 6-8 + head; class-weighted loss; flip + box-safe crop"
+run_config: configs/example.yaml
+splits: configs/splits/cct20.yaml
+weights: IMAGENET1K_V1              # torchvision ImageNet-1k; not wildlife-specific
+trainable_from_block: 6        # blocks below are frozen (BN statistics kept)
+imbalance: loss_weighting
+augmentation:
+  crop_scale: [0.35, 1.0]           # area fraction; crops that cut >10% of any box are rejected
+  unboxed_crop_scale: [0.8, 1.0]    # animals without boxes: mild crops only
+  min_box_kept: 0.9
+  photometric: false
+optim:
+  lr: 0.0003
+  weight_decay: 0.0001
+  epochs: 3
+  batch_size: 32
+  warmup_steps: 200
+device: mps
+num_workers: 2
+cache_short_side: 320               # training-input cache for loading speed; eval uses originals

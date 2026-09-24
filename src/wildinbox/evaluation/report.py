@@ -208,11 +208,15 @@ def write_report(
     ref = u["event_reference"]
     classes = metrics["classes"]
     unseen_parts = set(ecfg.unseen_camera_partitions)
+    finetuned = meta.get("kind") == "finetuned"
     md: list[str] = [
-        f"# Baseline report: `{meta['name']}`",
+        f"# {'Model' if finetuned else 'Baseline'} report: `{meta['name']}`",
         "",
-        "Frozen EfficientNet-B0 (ImageNet) embeddings + class-weighted logistic regression. "
-        "Development partitions only; **the locked final test was not opened.**",
+        (
+            meta.get("description")
+            or "Frozen EfficientNet-B0 (ImageNet) embeddings + class-weighted logistic regression."
+        )
+        + " Development partitions only; **the locked final test was not opened.**",
         "",
         "## Headline (unseen cameras: calibration + policy validation)",
         "",
@@ -493,7 +497,44 @@ def write_report(
 
     md += _gallery(report_dir, scored, ctx, ecfg, unseen_parts)
 
-    tr = meta["train_images_per_class"]
+    if finetuned:
+        tr, n_train = meta["trained_on"]["images_per_class"], meta["trained_on"]["images"]
+        c = meta["config"]
+        model_rows = [
+            [
+                "Pretrained weights",
+                f"{meta['pretrained_weights']['enum']} "
+                f"({meta['pretrained_weights']['pretraining']}; not wildlife-specific, so no "
+                "overlap with CCT20) {meta['pretrained_weights']['url']}",
+            ],
+            [
+                "Fine-tuning",
+                f"blocks >= {c['trainable_from_block']} + head, {c['imbalance']}, "
+                f"{c['optim']['epochs']} epochs, lr {c['optim']['lr']}, batch "
+                f"{c['optim']['batch_size']}, photometric augmentation "
+                f"{c['augmentation']['photometric']}",
+            ],
+            [
+                "Trained on",
+                f"partitions {meta['trained_on']['partitions']} only; image-id "
+                f"digest `{meta['trained_on']['source_ids_sha256'][:16]}`",
+            ],
+            ["Training time", f"{meta['train_seconds']:.0f} s on {meta['device']}"],
+        ]
+    else:
+        tr, n_train = meta["train_images_per_class"], meta["train_images"]
+        model_rows = [
+            [
+                "Backbone",
+                "torchvision EfficientNet-B0, IMAGENET1K_V1, frozen (ImageNet-1k "
+                "pretraining; no wildlife-specific checkpoint, so no overlap with CCT20)",
+            ],
+            [
+                "Classifier",
+                f"logistic regression, C={meta['config']['classifier']['c']}, "
+                f"class_weight={meta['config']['classifier']['class_weight']}",
+            ],
+        ]
     md += [
         "## Setup and reproduction",
         "",
@@ -502,18 +543,9 @@ def write_report(
             [
                 [
                     "Training images (use_for_fit)",
-                    f"{meta['train_images']}: " + ", ".join(f"{k} {v}" for k, v in tr.items()),
+                    f"{n_train}: " + ", ".join(f"{k} {v}" for k, v in tr.items()),
                 ],
-                [
-                    "Backbone",
-                    "torchvision EfficientNet-B0, IMAGENET1K_V1, frozen (ImageNet-1k "
-                    "pretraining; no wildlife-specific checkpoint, so no overlap with CCT20)",
-                ],
-                [
-                    "Classifier",
-                    f"logistic regression, C={meta['config']['classifier']['c']}, "
-                    f"class_weight={meta['config']['classifier']['class_weight']}",
-                ],
+                *model_rows,
                 [
                     "Split / inventory",
                     f"`{meta['split_version']}` / `{meta['inventory_manifest_version']}`",
@@ -530,18 +562,34 @@ def write_report(
         ),
         "",
         "```bash",
-        "uv run wildinbox baseline train          # embed + fit",
-        "uv run wildinbox evaluate                # this report + metrics.json",
-        "uv run wildinbox baseline train --no-cache --models-dir /tmp/fresh",
-        "uv run wildinbox evaluate --model /tmp/fresh/"
-        + meta["name"]
-        + " --report-dir /tmp/fresh-report --compare-to reports/baseline/metrics.json",
+        *(
+            [
+                f"uv run wildinbox finetune train --config configs/experiments/{meta['name']}.yaml",
+                f"uv run wildinbox evaluate --model models/{meta['name']} "
+                f"--report-dir reports/experiments/{meta['name']}",
+            ]
+            if finetuned
+            else [
+                "uv run wildinbox baseline train          # embed + fit",
+                "uv run wildinbox evaluate                # this report + metrics.json",
+                "uv run wildinbox baseline train --no-cache --models-dir /tmp/fresh",
+                "uv run wildinbox evaluate --model /tmp/fresh/"
+                + meta["name"]
+                + " --report-dir /tmp/fresh-report --compare-to reports/baseline/metrics.json",
+            ]
+        ),
         "```",
         "",
-        "Tolerances (absolute): "
-        + ", ".join(f"{k} {v}" for k, v in meta["config"]["reproducibility"].items())
-        + ".",
-        "",
+        *(
+            []
+            if finetuned
+            else [
+                "Tolerances (absolute): "
+                + ", ".join(f"{k} {v}" for k, v in meta["config"]["reproducibility"].items())
+                + ".",
+                "",
+            ]
+        ),
         "## Limitations",
         "",
         "- Scores are uncalibrated; thresholds above are reference points only.",

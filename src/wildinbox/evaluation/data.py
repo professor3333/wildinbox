@@ -119,3 +119,25 @@ def box_areas(inventory_db: Path) -> dict[str, float | None]:
         out[sid] = max(areas) if areas else None
     conn.close()
     return out
+
+
+def box_lists(inventory_db: Path) -> dict[str, list[tuple[float, float, float, float]]]:
+    """Annotated boxes per image as (x, y, w, h) fractions of the original frame."""
+    out: dict[str, list[tuple[float, float, float, float]]] = {}
+    conn = sqlite3.connect(inventory_db)
+    for sid, raw_image, raw_anns in conn.execute(
+        "SELECT source_id, raw_image, raw_annotations FROM records"
+    ):
+        img, anns = json.loads(raw_image), json.loads(raw_anns)
+        w, h = img.get("width"), img.get("height")
+        if not (w and h):
+            continue
+        boxes = [
+            (a["bbox"][0] / w, a["bbox"][1] / h, a["bbox"][2] / w, a["bbox"][3] / h)
+            for a in anns
+            if a.get("bbox")
+        ]
+        if boxes:
+            out[sid] = boxes
+    conn.close()
+    return out

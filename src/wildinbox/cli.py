@@ -170,6 +170,17 @@ def main(argv: Sequence[str] | None = None) -> int:
     p_train.add_argument("--device", choices=["cpu", "mps", "cuda"], default=None)
     p_train.add_argument("--no-cache", action="store_true", help="Recompute all embeddings.")
 
+    p_ft = sub.add_parser("finetune", help="Fine-tune EfficientNet-B0.")
+    ft_sub = p_ft.add_subparsers(dest="finetune_command", required=True)
+    p_ft_train = ft_sub.add_parser("train", help="Train a fine-tuning experiment.")
+    p_ft_train.add_argument("--config", type=Path, required=True)
+    p_ft_train.add_argument("--models-dir", type=Path, default=Path("models"))
+    p_ft_aug = ft_sub.add_parser(
+        "inspect-augmentation", help="Render augmented training samples with their boxes."
+    )
+    p_ft_aug.add_argument("--config", type=Path, required=True)
+    p_ft_aug.add_argument("--out", type=Path, default=Path("reports/experiments/augmentation"))
+
     p_eval = sub.add_parser("evaluate", help="Evaluate a model on development partitions.")
     p_eval.add_argument(
         "--model", type=Path, default=Path("models/baseline-frozen-effnetb0-logreg-v1")
@@ -201,6 +212,15 @@ def main(argv: Sequence[str] | None = None) -> int:
             use_cache=not args.no_cache,
         )
         print(f"baseline artifact -> {out}")
+        return 0
+    if args.command == "finetune":
+        from wildinbox.training import finetune
+
+        if args.finetune_command == "train":
+            out = finetune.train(args.config, Settings().data_dir, args.models_dir)
+            print(f"fine-tuned model -> {out}")
+        else:
+            print(finetune.inspect_augmentation(args.config, Settings().data_dir, args.out))
         return 0
     if args.command == "evaluate":
         from wildinbox.evaluation.run import evaluate_cli
