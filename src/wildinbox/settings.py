@@ -21,7 +21,7 @@ class Settings(BaseSettings):
     database_url: str = "postgresql+psycopg://wildinbox:wildinbox@localhost:5432/wildinbox"
     redis_url: str = "redis://localhost:6379/0"
 
-    # Object storage: "s3" (MinIO or any S3-compatible service) or "local" (a directory).
+    # Object storage: "s3" (any S3-compatible service) or "local" (a directory).
     object_store_backend: Literal["s3", "local"] = "s3"
     object_store_url: str = "http://localhost:9000"
     object_store_bucket: str = "wildinbox"

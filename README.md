@@ -26,7 +26,7 @@ cp .env.example .env      # local settings; contains no secrets
 ## Run the application
 
 ```bash
-docker compose up -d --build --wait    # Postgres, Redis, MinIO, migrations, API, worker
+docker compose up -d --build --wait    # Postgres, Redis, SeaweedFS (S3), migrations, API, worker
 open http://localhost:8000             # upload form -> batch status page
 uv run python scripts/smoke.py         # upload -> process -> results, end to end
 docker compose down                    # add -v to delete stored data

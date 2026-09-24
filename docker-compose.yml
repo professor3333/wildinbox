@@ -5,10 +5,10 @@ x-app-env: &app-env
   WILDINBOX_DATABASE_URL: postgresql+psycopg://wildinbox:${POSTGRES_PASSWORD:-wildinbox}@postgres:5432/wildinbox
   WILDINBOX_REDIS_URL: redis://redis:6379/0
   WILDINBOX_OBJECT_STORE_BACKEND: s3
-  WILDINBOX_OBJECT_STORE_URL: http://minio:9000
+  WILDINBOX_OBJECT_STORE_URL: http://objects:9000
   WILDINBOX_OBJECT_STORE_BUCKET: wildinbox
-  WILDINBOX_OBJECT_STORE_ACCESS_KEY: ${MINIO_ROOT_USER:-wildinbox}
-  WILDINBOX_OBJECT_STORE_SECRET_KEY: ${MINIO_ROOT_PASSWORD:-wildinbox-local-only}
+  WILDINBOX_OBJECT_STORE_ACCESS_KEY: ${OBJECT_STORE_ACCESS_KEY:-wildinbox}
+  WILDINBOX_OBJECT_STORE_SECRET_KEY: ${OBJECT_STORE_SECRET_KEY:-wildinbox-local-only}
   WILDINBOX_DISPATCH: rq
 
 services:
@@ -31,19 +31,19 @@ services:
       interval: 2s
       retries: 30
 
-  minio:
-    # Docker Hub no longer carries MinIO images; the official quay.io build is used.
-    image: quay.io/minio/minio:RELEASE.2025-09-07T16-13-09Z
-    command: server /data --console-address :9001
-    environment:
-      MINIO_ROOT_USER: ${MINIO_ROOT_USER:-wildinbox}
-      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-wildinbox-local-only}
-    volumes: [minio:/data]
-    ports: ["127.0.0.1:9001:9001"]
+  # S3-compatible object storage. SeaweedFS replaces MinIO, which stopped
+  # publishing public container images (Docker Hub in 2025, quay.io in 2026).
+  objects:
+    image: chrislusf/seaweedfs:4.47
+    command: ["server", "-dir=/data", "-s3", "-s3.port=9000", "-s3.config=/etc/seaweedfs/s3.json"]
+    configs:
+      - source: s3_identities
+        target: /etc/seaweedfs/s3.json
+    volumes: [objects:/data]
     healthcheck:
-      test: ["CMD", "mc", "ready", "local"]
+      test: ["CMD-SHELL", "wget -q -O /dev/null http://127.0.0.1:9000/status || exit 1"]
       interval: 2s
-      retries: 30
+      retries: 60
 
   migrate:
     build: .
@@ -59,7 +59,7 @@ services:
     depends_on:
       migrate: {condition: service_completed_successfully}
       redis: {condition: service_healthy}
-      minio: {condition: service_healthy}
+      objects: {condition: service_healthy}
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"]
       interval: 3s
@@ -72,8 +72,16 @@ services:
     depends_on:
       migrate: {condition: service_completed_successfully}
       redis: {condition: service_healthy}
-      minio: {condition: service_healthy}
+      objects: {condition: service_healthy}
 
 volumes:
   postgres:
-  minio:
+  objects:
+
+configs:
+  s3_identities:
+    content: |
+      {"identities": [{"name": "wildinbox",
+        "credentials": [{"accessKey": "${OBJECT_STORE_ACCESS_KEY:-wildinbox}",
+                         "secretKey": "${OBJECT_STORE_SECRET_KEY:-wildinbox-local-only}"}],
+        "actions": ["Admin", "Read", "Write", "List", "Tagging"]}]}
