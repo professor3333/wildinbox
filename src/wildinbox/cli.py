@@ -84,6 +84,43 @@ def _data(args: argparse.Namespace) -> int:
     return 0
 
 
+def _dataset(args: argparse.Namespace) -> int:
+    from wildinbox.datasets.build import BuildError, build, lock_payload
+    from wildinbox.datasets.report import write_split_report
+    from wildinbox.datasets.spec import load_split_spec, load_taxonomy
+    from wildinbox.ingestion.inventory import Paths
+    from wildinbox.ingestion.pipeline import LockMismatchError, check_or_write_lock
+
+    spec = load_split_spec(args.spec)
+    taxonomy = load_taxonomy(spec.taxonomy)
+    data_dir = Settings().data_dir
+    dataset = spec.inventory_manifest_version.split("-")[0]
+    try:
+        result = build(spec, taxonomy, Paths(data_dir, dataset).database, data_dir / "splits")
+    except BuildError as e:
+        print(f"error: {e}", file=sys.stderr)
+        return 1
+    report = write_split_report(spec, taxonomy, result, Path(args.report_dir) / dataset)
+    for c in result.checks:
+        print(f"{'PASS' if c.passed else 'FAIL'}  {c.name}: {c.detail}")
+    print(f"supported classes: {result.supported_classes}")
+    print(f"splits {result.version} -> {result.events_path.parent}  report -> {report}")
+    if not result.passed:
+        print("error: leakage checks failed; lock not updated", file=sys.stderr)
+        return 1
+    try:
+        state = check_or_write_lock(
+            Path("manifests") / f"{spec.name}.lock.json",
+            lock_payload(spec, result),
+            update=args.update_lock,
+        )
+    except LockMismatchError as e:
+        print(f"error: {e}", file=sys.stderr)
+        return 1
+    print(f"lock {state}")
+    return 0
+
+
 def main(argv: Sequence[str] | None = None) -> int:
     logging.basicConfig(level=logging.INFO, format="%(levelname)s %(message)s")
     parser = argparse.ArgumentParser(prog="wildinbox")
@@ -114,7 +151,20 @@ def main(argv: Sequence[str] | None = None) -> int:
         )
         p.add_argument("--report-dir", default="reports/data_quality")
 
+    p_ds = sub.add_parser("dataset", help="Build events, labels, and evaluation splits.")
+    ds_sub = p_ds.add_subparsers(dest="dataset_command", required=True)
+    p_build = ds_sub.add_parser("build", help="Build split manifests and the leakage report.")
+    p_build.add_argument("--spec", type=Path, default=Path("configs/splits/cct20.yaml"))
+    p_build.add_argument(
+        "--update-lock",
+        action="store_true",
+        help="Accept splits that differ from manifests/<name>.lock.json.",
+    )
+    p_build.add_argument("--report-dir", default="reports/splits")
+
     args = parser.parse_args(argv)
+    if args.command == "dataset":
+        return _dataset(args)
     if args.command == "validate-config":
         return _validate_config(args.paths)
     if args.command == "export-schemas":

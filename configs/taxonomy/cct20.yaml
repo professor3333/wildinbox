@@ -1,0 +1,29 @@
+# Taxonomy mapping for Caltech Camera Traps (CCT20) categories.
+#
+# Every source category must appear here; building splits fails otherwise.
+# `kind` says what the category means for event ground truth:
+#   animal      - an animal is present. Whether it is a *supported* species is
+#                 decided by the species-selection rule in configs/splits/,
+#                 never here. Unsupported animals stay identifiable and are
+#                 never used as negative (empty) examples.
+#   empty       - annotated as containing no animal.
+#   non_animal  - something other than an animal triggered the camera. Neither
+#                 an animal positive nor an empty negative.
+name: cct20
+categories:
+  opossum:  {kind: animal}
+  raccoon:  {kind: animal}
+  rabbit:   {kind: animal}
+  coyote:   {kind: animal}
+  bobcat:   {kind: animal}
+  cat:      {kind: animal}   # domestic/feral cat
+  squirrel: {kind: animal}
+  dog:      {kind: animal}   # domestic dog
+  bird:     {kind: animal}
+  skunk:    {kind: animal}
+  rodent:   {kind: animal}
+  deer:     {kind: animal}
+  badger:   {kind: animal}
+  fox:      {kind: animal}
+  empty:    {kind: empty}
+  car:      {kind: non_animal}  # vehicles on roads/tracks in view

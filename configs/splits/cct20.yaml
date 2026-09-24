@@ -1,0 +1,37 @@
+# Event construction and evaluation splits for CCT20.
+# Build with: uv run wildinbox dataset build
+# Rules and rationale: docs/dataset.md. Results: reports/splits/cct20/README.md.
+name: cct20-splits-v1
+inventory_manifest_version: cct20-396eb43cc6ce  # manifests/cct20.lock.json
+taxonomy: configs/taxonomy/cct20.yaml
+
+# Public images carry sequence ids, so events are sequences.
+grouping_rule: sequence_id/v1
+
+# Partitions are assigned by camera location. Every camera in the inventory
+# must be listed exactly once; the build fails otherwise.
+cameras:
+  # Published trans_test cameras (unseen locations), kept as published so
+  # the test cameras were not chosen by us. Locked: used once, at the end.
+  final_test: ["46", "0", "100", "78", "105", "7", "130", "28", "40"]
+  # Threshold, aggregation, and operating-point selection. Camera 125 is the
+  # published trans_val camera; 90 adds cat and squirrel coverage.
+  policy_validation: ["125", "90"]
+  # Score calibration. Camera-disjoint from training and policy validation.
+  calibration: ["51", "108"]
+  # Model fitting: the remaining published cis cameras.
+  train: ["38", "120", "43", "33", "88", "61", "115"]
+
+# A deterministic sample of whole sequences on training cameras is held out
+# as a seen-camera diagnostic, used only to compare seen-camera vs
+# unseen-camera performance. Never used for any decision. (Using the whole
+# published cis_test instead would remove ~half of the training events.)
+seen_camera_diagnostic:
+  fraction: 0.15
+  salt: cct20-diagnostic-v1
+
+# Supported species are chosen from the TRAINING partition only.
+species_selection:
+  min_train_events: 500      # enough independent sequences to learn from
+  min_train_cameras: 3       # seen in several backgrounds, not one scene
+  min_events_per_camera: 20  # a camera "counts" toward min_train_cameras at this level
