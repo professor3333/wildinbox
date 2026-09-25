@@ -31,7 +31,7 @@ as written for the Stage 12 staging deployment; the measurements are in
 | | |
 |---|---|
 | AWS account | permission to create a CloudFormation stack with an IAM role (`CAPABILITY_IAM`), EC2, and S3 |
-| AWS CLI v2 | configured for the account (`aws sts get-caller-identity` works) |
+| AWS CLI v2 and `jq` | the CLI configured for the account (`aws sts get-caller-identity` works) |
 | An SSH key pair | e.g. `~/.ssh/id_ed25519`; imported into EC2 below |
 | The release bundle | `wildinbox-release-finetune-e3-deep-balanced-7a25aea97c76.tar.gz` (see [Release bundle](#release-bundle)) |
 | This repository | checked out at the tag you deploy, on your machine (for the template and scripts) |
@@ -46,7 +46,7 @@ repository at `GitRef` into `/opt/wildinbox`, and writes the stack's
 non-secret facts to `/etc/wildinbox/stack.env`.
 
 ```bash
-export AWS_REGION=us-east-1 TAG=v1.4.0
+export AWS_REGION=us-east-1 TAG=v1.4.1
 aws ec2 import-key-pair --key-name wildinbox-staging \
   --public-key-material fileb://$HOME/.ssh/id_ed25519.pub
 aws cloudformation deploy --stack-name wildinbox-staging \
@@ -92,13 +92,15 @@ Create tokens on your own machine (in the repository checkout), one per
 person or service:
 
 ```bash
-uv run wildinbox token new owner
+uv run wildinbox token new owner alice prometheus
 ```
 
-`token new` prints the token (give it to that person; it is stored nowhere)
-and a `{"owner": "<sha256>"}` entry. Put every entry into one JSON object on
-the `WILDINBOX_API_TOKENS=` line of `/etc/wildinbox/secrets.env`. Only hashes
-are on the VM, so a copy of the file does not grant access.
+`token new` prints each token (give it to that person; it is stored nowhere)
+and then one line, `WILDINBOX_API_TOKENS='{"owner": "<sha256>", ...}'`.
+Replace the `WILDINBOX_API_TOKENS=` line in `/etc/wildinbox/secrets.env` with
+it, for example with `nano`. Keep the single quotes: the file is read by both
+bash and Compose. Only hashes are on the VM, so a copy of the file does not
+grant access.
 
 | Variable | Meaning |
 |---|---|
@@ -112,9 +114,9 @@ are on the VM, so a copy of the file does not grant access.
 template and holds nothing secret. Compose refuses to start if any required
 value is missing.
 
-**Rotating a token:** create a new one, replace the principal's hash, and run
-`deploy/staging/wi up -d` (the API restarts with the new set). Removing an
-entry revokes that token.
+**Rotating a token:** create a new one, replace that principal's hash in the
+line, and run `deploy/staging/wi up -d` (the API restarts with the new set).
+Removing an entry revokes that token.
 
 ## 3. Deploy the release
 
@@ -264,12 +266,15 @@ the class order and preprocessing match), so a mismatched bundle is refused.
 
 ```bash
 aws cloudformation delete-stack --stack-name wildinbox-staging
-aws s3 rb s3://<bucket> --force        # the bucket is retained on purpose; this deletes all data
+aws cloudformation wait stack-delete-complete --stack-name wildinbox-staging
+deploy/aws/empty_bucket.sh <BucketName>   # deletes every object version, then the bucket
 aws ec2 delete-key-pair --key-name wildinbox-staging
 ```
 
-The versioned bucket keeps old object versions; delete them too (or let the
-30-day lifecycle rule expire them) before `rb` succeeds.
+The bucket is retained when the stack is deleted, so data is never lost by
+accident. It is also versioned, so `aws s3 rb --force` alone would leave old
+versions behind and fail; `empty_bucket.sh` removes every version and delete
+marker first. Deleting the bucket deletes all uploads, weights, and backups.
 
 ## Cost
 

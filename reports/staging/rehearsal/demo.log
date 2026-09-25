@@ -1,0 +1,25 @@
+WildInbox at http://localhost:28000, release finetune-e3-deep-balanced@7a25aea97c76
+
+1. Upload the sample batch
+  37 photos -> batch bf47c82a-4833-4d79-9d56-63c7eeb2768b
+
+2. Process
+  scored 0/37  scored 16/37  scored 16/37  scored 37/37
+  completed: 13 capture events from 37 photos; 0 unusable file(s)
+
+3. Uncertain events (lowest confidence first)
+  dispositions: {'needs_review': 13}
+  2012-04-12T02:27:59  cct-108   3 frames  suggested cat (23%): frames disagree; species not validated for automation; automation is off
+  2012-03-09T20:48:42  cct-108   3 frames  suggested opossum (28%): species not validated for automation; automation is off
+  2012-04-27T22:57:56  cct-125   3 frames  suggested empty (28%): model is unsure
+  2011-04-24T19:57:21  cct-108   3 frames  suggested rabbit (29%): species not validated for automation; automation is off
+  2012-04-17T04:19:41  cct-125   3 frames  suggested bobcat (35%): frames disagree; species not validated for automation; automation is off
+
+4. Record a correction
+  event 4648cae7: suggested cat, corrected to coyote by demo-reviewer
+
+5. Export observations
+  13 rows -> /private/tmp/claude-501/-Users-dcxhagoromo-code-wildinbox/1398660e-be30-4ca9-baef-3bde665890bc/scratchpad/rehearsal-observations.csv  ({'pending_review': 12, 'review': 1})
+  corrected row: observation=coyote source=review reviewer=demo-reviewer release=finetune-e3-deep-balanced@7a25aea97c76 policy=conservative/v2+378312635a29
+
+Open http://localhost:8501 to review the rest in the browser.

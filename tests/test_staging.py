@@ -150,3 +150,18 @@ def test_upload_reports_its_server_phases(settings: Settings) -> None:  # noqa: 
     assert all(float(v) >= 0 for v in phases.values())
     job = res.json()["job"]
     assert job["created_at"] >= res.json()["created_at"]  # queued after originals stored
+
+
+def test_token_new_prints_tokens_and_a_ready_env_line(capsys: pytest.CaptureFixture[str]) -> None:
+    from wildinbox.cli import main
+
+    assert main(["token", "new", "alice", "ui"]) == 0
+    lines = capsys.readouterr().out.splitlines()
+    tokens = [line.strip() for line in lines if line.strip().startswith("wi_")]
+    env = lines[-1]
+    assert env.startswith("WILDINBOX_API_TOKENS='") and env.endswith("'")
+    hashes = json.loads(env.split("=", 1)[1].strip("'"))
+    assert list(hashes) == ["alice", "ui"]
+    assert [token_hash(t) for t in tokens] == list(hashes.values())
+    assert Settings(api_tokens=hashes).api_tokens == hashes  # the line parses as settings
+    assert main(["token", "new", "a", "a"]) == 2
