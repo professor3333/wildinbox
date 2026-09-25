@@ -325,6 +325,22 @@ def main(argv: Sequence[str] | None = None) -> int:
     mon_sub.add_parser("backfill-quality", help="Record image quality for older images.")
     mon_sub.add_parser("summary", help="Print the monitoring summary as JSON.")
 
+    p_study = sub.add_parser("study", help="Timed review study (organizer).")
+    study_sub = p_study.add_subparsers(dest="study_command", required=True)
+    p_sp = study_sub.add_parser("plan", help="Create a study plan from uploaded batches.")
+    p_sp.add_argument("--name", required=True)
+    p_sp.add_argument("--batch-id", action="append", required=True)
+    p_sp.add_argument("--truth", type=Path, required=True, help="truth.csv of the study batch")
+    p_sp.add_argument(
+        "--api-url", default=os.environ.get("WILDINBOX_API_URL", "http://localhost:8000")
+    )
+    p_sa = study_sub.add_parser("analyze", help="Apply the pre-registered analysis.")
+    p_sa.add_argument("--plan-id", required=True)
+    p_sa.add_argument("--out", type=Path, required=True)
+    p_sa.add_argument(
+        "--api-url", default=os.environ.get("WILDINBOX_API_URL", "http://localhost:8000")
+    )
+
     p_api = sub.add_parser("api", help="Serve the HTTP API.")
     p_api.add_argument("--host", default="127.0.0.1")
     p_api.add_argument("--port", type=int, default=8000)
@@ -451,6 +467,17 @@ def main(argv: Sequence[str] | None = None) -> int:
             else:
                 data = summary(s, settings.lease_seconds, load_config(settings.monitoring_config))
                 print(json.dumps(data, indent=2, default=str))
+        return 0
+    if args.command == "study":
+        from wildinbox.study.cli import create_plan, write_analysis
+
+        if args.study_command == "plan":
+            plan_id = create_plan(args.api_url, args.name, args.batch_id, args.truth)
+            print(f"study plan {plan_id}: participants join it on the review UI's Study page")
+        else:
+            result = write_analysis(args.api_url, args.plan_id, args.out)
+            print(result["summary"]["verdict"])
+            print(f"report -> {args.out / 'README.md'}")
         return 0
     if args.command == "release":
         return _release(args)

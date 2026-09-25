@@ -58,7 +58,7 @@ def sidebar(api: ApiClient) -> tuple[str, str | None, str, list[str]]:
     st.sidebar.caption("Find the wildlife. Skip the empty frames.")
     page = st.sidebar.radio(
         "Page",
-        ["Review queue", "Last night's visitors", "Upload", "Export", "Monitoring"],
+        ["Review queue", "Last night's visitors", "Upload", "Export", "Monitoring", "Study"],
         key="page",
     )
     reviewer = st.sidebar.text_input("Your name (recorded with reviews)", key="reviewer")
@@ -444,6 +444,10 @@ def main() -> None:
         upload_page(api)
     elif page == "Monitoring":
         monitoring_page(api)
+    elif page == "Study":
+        from wildinbox.ui.study_page import study_page
+
+        study_page(api, thumbnail)
     else:
         export_page(api, batch_id)
 

@@ -769,6 +769,10 @@ def create_app(
 
     # ------------------------------------------------------------------ images
 
+    from wildinbox.api.study import add_study_routes
+
+    add_study_routes(app, sessions, list(cfg.classes), ApiError)
+
     @app.get("/images/{image_id}/thumbnail")
     def get_thumbnail(image_id: uuid.UUID, size: int = 320) -> Response:
         """A JPEG no larger than `size` px on its long side, generated once per

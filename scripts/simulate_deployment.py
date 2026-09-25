@@ -77,6 +77,9 @@ def main() -> None:
     parser.add_argument("--url", default="http://localhost:8000")
     parser.add_argument("--batch-dir", type=Path, required=True)
     parser.add_argument("--reviewer", default="simulated-ground-truth")
+    parser.add_argument(
+        "--upload-only", action="store_true", help="upload and process; post no reviews"
+    )
     args = parser.parse_args()
     api = httpx.Client(base_url=args.url, timeout=120)
     truth = {r["filename"]: r for r in csv.DictReader((args.batch_dir / "truth.csv").open())}
@@ -106,8 +109,10 @@ def main() -> None:
             sys.exit("processing did not finish")
         c = s["counts"]
         print(f"  {s['status']}: {c['events']} events, {c['duplicate']} duplicates")
-        review_batch(api, batch["id"], truth, args.reviewer, outcomes)
-    print(f"simulated reviews: {dict(outcomes)}")
+        if not args.upload_only:
+            review_batch(api, batch["id"], truth, args.reviewer, outcomes)
+    if not args.upload_only:
+        print(f"simulated reviews: {dict(outcomes)}")
 
 
 if __name__ == "__main__":

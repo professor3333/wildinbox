@@ -257,3 +257,62 @@ class Review(Base):
     created_at: Mapped[datetime] = _now()
 
     event: Mapped[Event] = relationship(back_populates="reviews")
+
+
+class StudyPlan(Base):
+    """A timed review study (configs/study/review_study.yaml): the two event
+    sets, practice events, and ground truth for scoring. Separate from
+    production reviews: study choices never become reviews."""
+
+    __tablename__ = "study_plans"
+    id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
+    name: Mapped[str] = mapped_column(String(200))
+    protocol_sha256: Mapped[str] = mapped_column(String(64))
+    sets: Mapped[dict[str, Any]]  # {"A": [event ids], "B": [...], "practice": [...]}
+    truth: Mapped[dict[str, Any]]  # event id -> ground-truth label (None: mixed / unknown)
+    created_at: Mapped[datetime] = _now()
+
+
+class StudyParticipant(Base):
+    __tablename__ = "study_participants"
+    __table_args__ = (UniqueConstraint("plan_id", "code"),)
+    id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=True)
+    plan_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("study_plans.id", ondelete="CASCADE"))
+    code: Mapped[str] = mapped_column(String(50))  # chosen by the participant; no personal data
+    arm: Mapped[int] = mapped_column(Integer)
+    joined_at: Mapped[datetime] = _now()
+
+
+class StudyTrial(Base):
+    """One timed decision. Append-only; one row per participant and event."""
+
+    __tablename__ = "study_trials"
+    __table_args__ = (
+        UniqueConstraint("plan_id", "participant", "event_id"),
+        CheckConstraint(_in("condition", ("grouped", "suggested")), name="condition"),
+    )
+    id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=True)
+    plan_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("study_plans.id", ondelete="CASCADE"))
+    participant: Mapped[str] = mapped_column(String(50))
+    block: Mapped[int] = mapped_column(Integer)  # 0 practice, 1 and 2 timed blocks
+    condition: Mapped[str] = mapped_column(String(20))
+    event_id: Mapped[uuid.UUID] = mapped_column()
+    label: Mapped[str | None] = mapped_column(String(100))  # None: "can't tell"
+    seconds: Mapped[float] = mapped_column(Float)
+    interactions: Mapped[int] = mapped_column(Integer)
+    shown_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    decided_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+
+
+class StudyRating(Base):
+    __tablename__ = "study_ratings"
+    __table_args__ = (
+        UniqueConstraint("plan_id", "participant", "block"),
+        CheckConstraint("difficulty BETWEEN 1 AND 5", name="difficulty"),
+    )
+    id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=True)
+    plan_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("study_plans.id", ondelete="CASCADE"))
+    participant: Mapped[str] = mapped_column(String(50))
+    block: Mapped[int] = mapped_column(Integer)
+    condition: Mapped[str] = mapped_column(String(20))
+    difficulty: Mapped[int] = mapped_column(Integer)
