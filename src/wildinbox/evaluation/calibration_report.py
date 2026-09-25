@@ -24,6 +24,10 @@ def _ci(ci: Sequence[float] | None) -> str:
     return "n/a" if ci is None else f"[{100 * ci[0]:.1f}, {100 * ci[1]:.1f}]"
 
 
+def _rate(x: float | None, ci: Sequence[float] | None) -> str:
+    return "n/a" if x is None else f"{_pct(x)} {_ci(ci)}"
+
+
 def _thr(x: float | None) -> str:
     return "disabled" if x is None else f"{x:g}"
 
@@ -106,8 +110,13 @@ def write_report(report_dir: Path, r: dict[str, Any]) -> Path:
                 ["Events filtered", f"{m['filtered']} / {m['events']}"],
                 [
                     "Labels accepted automatically",
-                    f"{m['accepted']} / {m['events']}, precision "
-                    f"{_pct(m['accepted_precision'])} {_ci(m['accepted_precision_ci95'])}",
+                    f"{m['accepted']} / {m['events']}"
+                    + (
+                        f", precision {_pct(m['accepted_precision'])} "
+                        f"{_ci(m['accepted_precision_ci95'])}"
+                        if m["accepted"]
+                        else ""
+                    ),
                 ],
                 [
                     "Unsupported animals accepted as a known species",
@@ -190,10 +199,10 @@ def write_report(report_dir: Path, r: dict[str, Any]) -> Path:
                     f"{a['band'][0]:g}-{a['band'][1]:g}",
                     a["images"],
                     "n/a" if a["mean_p_empty"] is None else f"{a['mean_p_empty']:.3f}",
-                    f"{_pct(a['observed_empty'])} {_ci(a['observed_empty_ci95'])}",
+                    _rate(a["observed_empty"], a["observed_empty_ci95"]),
                     b["images"],
                     "n/a" if b["mean_p_empty"] is None else f"{b['mean_p_empty']:.3f}",
-                    f"{_pct(b['observed_empty'])} {_ci(b['observed_empty_ci95'])}",
+                    _rate(b["observed_empty"], b["observed_empty_ci95"]),
                 ]
                 for a, b in zip(
                     cal["summary"][choose]["empty_reliability"]["raw"],
@@ -249,7 +258,7 @@ def write_report(report_dir: Path, r: dict[str, Any]) -> Path:
                 [
                     f"{s['thresholds']['species_accept']:g}",
                     f"{s['accepted']} / {s['events']}",
-                    f"{_pct(s['accepted_precision'])} {_ci(s['accepted_precision_ci95'])}",
+                    _rate(s["accepted_precision"], s["accepted_precision_ci95"]),
                     s["unsupported_accepted_as_known"],
                     _pct(s["review_fraction"]),
                     "**pass**" if s["passes"] else "fail",
