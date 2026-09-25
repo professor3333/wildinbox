@@ -2,7 +2,7 @@
 
     uv run python scripts/loadtest.py --label workers-1 \\
         --api http://localhost:8000 --token-env WILDINBOX_TOKEN \\
-        --vm wildinbox-staging --stack "cd /opt/wildinbox && deploy/staging/wi" \\
+        --ssh "ssh wildinbox-staging" --stack "cd /opt/wildinbox && deploy/staging/wi" \\
         --scenarios small,thousand,invalid,concurrent,restart \\
         --out reports/staging/workers-1.json
 
@@ -83,13 +83,13 @@ def invalid_files(images: list[Path], tag: str, max_file_bytes: int) -> list[tup
 
 
 class Vm:
-    """Runs commands where the stack runs: over SSH, or locally without --vm."""
+    """Runs commands where the stack runs: over SSH, or locally without --ssh."""
 
-    def __init__(self, host: str | None, stack: str) -> None:
-        self.host, self.stack = host, stack
+    def __init__(self, ssh: str | None, stack: str) -> None:
+        self.ssh, self.stack = ssh, stack
 
     def _argv(self, cmd: str) -> list[str]:
-        return ["ssh", self.host, cmd] if self.host else ["bash", "-c", cmd]
+        return [*shlex.split(self.ssh), cmd] if self.ssh else ["bash", "-c", cmd]
 
     def run(self, cmd: str, timeout: float = 120) -> str:
         out = subprocess.run(
@@ -426,7 +426,7 @@ def main() -> None:
     ap.add_argument("--label", required=True, help="e.g. workers-1")
     ap.add_argument("--api", default="http://localhost:8000")
     ap.add_argument("--token-env", default="WILDINBOX_TOKEN", help="env var holding a token")
-    ap.add_argument("--vm", default=None, help="SSH host of the stack (omit: local)")
+    ap.add_argument("--ssh", default=None, help="SSH command reaching the VM (omit: local)")
     ap.add_argument("--stack", default="docker compose", help="compose command on the VM")
     ap.add_argument("--batch-dir", type=Path, default=Path("data/samples/dev-1000"))
     ap.add_argument("--scenarios", default=",".join(SCENARIOS))
@@ -438,7 +438,7 @@ def main() -> None:
     token = os.environ.get(args.token_env)
     headers = {"Authorization": f"Bearer {token}"} if token else {}
     client = httpx.Client(base_url=args.api, headers=headers, timeout=60)
-    vm = Vm(args.vm, args.stack)
+    vm = Vm(args.ssh, args.stack)
 
     ready = client.get("/ready")
     if ready.status_code != 200:
