@@ -766,3 +766,37 @@ def test_a_duplicate_scored_only_by_another_release_sends_its_event_to_review(
     assert event["decision"]["disposition"] == "needs_review"
     assert "processing_failure" in event["decision"]["reasons"]
     serving._LOADED.clear()
+
+
+def test_matching_sequence_ids_on_different_cameras_stay_separate_events(
+    worker_settings: Settings,
+) -> None:
+    """External review, issue 3: north and south both number a burst 001."""
+    meta = {
+        "files": {
+            "north.jpg": {"camera_id": "north", "sequence_id": "001"},
+            "south.jpg": {"camera_id": "south", "sequence_id": "001"},
+        }
+    }
+    with TestClient(create_app(worker_settings, dispatcher=NoopDispatcher())) as c:
+        res = c.post(
+            "/batches",
+            files=_files(("north.jpg", jpeg(40)), ("south.jpg", jpeg(41))),
+            data={"metadata": json.dumps(meta)},
+        )
+        batch = res.json()
+        process_batch(
+            session_factory(worker_settings.database_url),
+            LocalStore(worker_settings.local_store_dir),
+            uuid.UUID(batch["job"]["id"]),
+            worker_settings,
+        )
+        events = c.get("/events", params={"batch_id": batch["id"]}).json()["events"]
+        by_camera = {e["camera_id"]: e for e in events}
+        assert set(by_camera) == {"north", "south"}
+        assert {e["grouping_rule"] for e in events} == {"sequence_id/v2"}
+        for cam, e in by_camera.items():
+            detail = c.get(f"/events/{e['id']}").json()
+            assert [i["filename"] for i in detail["images"]] == [f"{cam}.jpg"]
+        rows = c.get(f"/batches/{batch['id']}/export", params={"format": "json"}).json()
+        assert sorted(r["camera_id"] for r in rows["observations"]) == ["north", "south"]

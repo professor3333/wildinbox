@@ -1,7 +1,14 @@
 """Versioned rules that group images into capture events.
 
 - `sequence_id/v1`: images sharing a supplied sequence id form one event
-  (public datasets).
+  (public datasets, where sequence ids are globally unique; used by the
+  dataset build).
+- `sequence_id/v2`: uploads. A sequence id only means something within one
+  camera, since camera counters restart and overlap. Images form one event when
+  they share the camera AND the sequence id, and consecutive capture times are
+  at most `split_seconds` apart (a counter reused hours later starts a new
+  event). Images without a capture time stay with their sequence's first run.
+  The worker groups each batch separately, so ids never join across uploads.
 - `time_gap/v1`: for uploads without sequence ids. Images from the same camera,
   ordered by timestamp, stay in one event while consecutive gaps are at most
   `gap_seconds`. Images without a timestamp or camera each form their own
@@ -21,7 +28,10 @@ from dataclasses import dataclass
 from datetime import datetime
 from itertools import pairwise
 
-SEQUENCE_RULE = "sequence_id/v1"
+SEQUENCE_RULE = "sequence_id/v2"
+# Far above any gap inside a trigger burst (<= 3 s in CCT20), far below the
+# time between two uses of a restarted counter.
+SEQUENCE_SPLIT_SECONDS = 300.0
 DEFAULT_GAP_SECONDS = 5.0
 
 
@@ -37,16 +47,35 @@ class GroupableImage:
     sequence_id: str | None = None
 
 
-def group_by_sequence(images: Sequence[GroupableImage]) -> list[list[str]]:
-    """Group by sequence id; images without one become single-image events."""
-    groups: dict[str, list[str]] = defaultdict(list)
+def group_by_sequence(
+    images: Sequence[GroupableImage], split_seconds: float = SEQUENCE_SPLIT_SECONDS
+) -> list[list[str]]:
+    """`sequence_id/v2`: group by (camera, sequence id), split where consecutive
+    capture times are more than `split_seconds` apart. Images without a
+    sequence id become single-image events."""
+    groups: dict[tuple[str, str], list[GroupableImage]] = defaultdict(list)
     singles: list[list[str]] = []
-    for img in sorted(images, key=lambda i: i.image_id):
+    for img in images:
         if img.sequence_id:
-            groups[img.sequence_id].append(img.image_id)
+            groups[(img.camera_id or "", img.sequence_id)].append(img)
         else:
             singles.append([img.image_id])
-    return sorted([*groups.values(), *singles])
+    events: list[list[str]] = []
+    for members in groups.values():
+        timed = sorted(
+            (m for m in members if m.captured_at is not None),
+            key=lambda m: (m.captured_at, m.image_id),
+        )
+        runs: list[list[GroupableImage]] = [[]]
+        for prev, img in zip([None, *timed], timed, strict=False):
+            if prev is not None:
+                assert prev.captured_at is not None and img.captured_at is not None
+                if (img.captured_at - prev.captured_at).total_seconds() > split_seconds:
+                    runs.append([])
+            runs[-1].append(img)
+        runs[0].extend(m for m in members if m.captured_at is None)
+        events.extend(sorted(m.image_id for m in run) for run in runs if run)
+    return sorted([*events, *singles])
 
 
 def group_by_time_gap(
