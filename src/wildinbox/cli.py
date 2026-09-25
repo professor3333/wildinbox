@@ -300,6 +300,22 @@ def main(argv: Sequence[str] | None = None) -> int:
     p_ft.add_argument("--config", type=Path, default=Path("configs/experiments/baseline.yaml"))
     p_ft.add_argument("--report-dir", type=Path, default=Path("reports/final_test"))
 
+    p_fe = sub.add_parser(
+        "final-evaluation",
+        help="Stage 13: frozen release on the locked final test (pre-registered plan).",
+    )
+    p_fe.add_argument(
+        "--plan", type=Path, default=Path("configs/experiments/final_evaluation.yaml")
+    )
+    p_fe.add_argument("--config", type=Path, default=Path("configs/experiments/baseline.yaml"))
+    p_fe.add_argument("--report-dir", type=Path, default=Path("reports/final_evaluation"))
+    p_fe.add_argument("--device", choices=["cpu", "mps", "cuda"], default="mps")
+    p_fe.add_argument(
+        "--skip-reproduction",
+        action="store_true",
+        help="Do not re-run the Stage 10 final test first (it takes several minutes).",
+    )
+
     p_snap = sub.add_parser("snapshot", help="Training snapshots from reviewed events.")
     snap_sub = p_snap.add_subparsers(dest="snapshot_command", required=True)
     p_sb = snap_sub.add_parser(
@@ -462,6 +478,26 @@ def main(argv: Sequence[str] | None = None) -> int:
         print(
             f"final test: E3 macro-F1 {e3['macro_f1']:.3f}; report -> {args.report_dir}/README.md"
         )
+        return 0
+    if args.command == "final-evaluation":
+        from wildinbox.evaluation.final_eval import FinalEvaluationError
+        from wildinbox.evaluation.final_eval import run as run_final_eval
+        from wildinbox.evaluation.final_eval_report import write_report
+
+        try:
+            evaluation = run_final_eval(
+                args.plan, args.config, args.report_dir, args.device, args.skip_reproduction
+            )
+        except FinalEvaluationError as e:
+            print(f"error: {e}", file=sys.stderr)
+            return 1
+        write_report(args.report_dir, evaluation)
+        for policy in ("released", "rule"):
+            for name, t in evaluation["results"][policy]["targets"].items():
+                v = t["value"]
+                shown = "undefined" if v is None else f"{v:.4f}"
+                print(f"{policy:8s} {name}: {shown} (target {t['target']}, met {t['met']})")
+        print(f"report -> {args.report_dir / 'README.md'}")
         return 0
     if args.command == "snapshot":
         from wildinbox.training.snapshot import build
