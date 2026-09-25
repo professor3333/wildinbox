@@ -8,6 +8,7 @@ import yaml
 from pydantic import ValidationError
 
 from wildinbox.evaluation.calibration import (
+    Deviation,
     Grid,
     OperatingPointRule,
     OperatingPointSpec,
@@ -16,6 +17,7 @@ from wildinbox.evaluation.calibration import (
     fit_temperature,
     load_rule,
     nll,
+    released,
 )
 from wildinbox.evaluation.metrics import ScoredEvent
 
@@ -113,3 +115,24 @@ def test_rule_cannot_use_the_final_test(section: str, key: str) -> None:
     raw[section][key] = "final_test"
     with pytest.raises(ValidationError):
         OperatingPointRule.model_validate(raw)
+
+
+def test_deviation_can_only_switch_automation_off() -> None:
+    dev = Deviation(
+        disable_auto_filter=True, reason="did not replicate on camera 51", decided="2026-09-25"
+    )  # type: ignore[arg-type]
+    assert released(0.65, None, dev) == {"auto_filter_enabled": False, "auto_accept_enabled": False}
+    assert released(0.65, 0.9, None) == {"auto_filter_enabled": True, "auto_accept_enabled": True}
+    # Nothing can enable a step the rule left disabled.
+    assert released(None, None, dev)["auto_filter_enabled"] is False
+    with pytest.raises(ValidationError):
+        Deviation.model_validate(
+            {"enable_auto_accept": True, "reason": "x" * 30, "decided": "2026-09-25"}
+        )
+
+
+def test_deviation_needs_a_reason() -> None:
+    with pytest.raises(ValidationError):
+        Deviation.model_validate(
+            {"disable_auto_filter": True, "reason": "", "decided": "2026-09-25"}
+        )

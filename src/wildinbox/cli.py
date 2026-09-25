@@ -208,6 +208,12 @@ def main(argv: Sequence[str] | None = None) -> int:
     )
     p_cal.add_argument("--config", type=Path, default=Path("configs/experiments/baseline.yaml"))
     p_cal.add_argument("--report-dir", type=Path, default=Path("reports/calibration"))
+    p_cal.add_argument(
+        "--deviation",
+        type=Path,
+        default=Path("configs/experiments/operating_point_deviation.yaml"),
+        help="Recorded decision to release less automation than the rule allows (if present).",
+    )
 
     p_api = sub.add_parser("api", help="Serve the HTTP API.")
     p_api.add_argument("--host", default="127.0.0.1")
@@ -252,12 +258,14 @@ def main(argv: Sequence[str] | None = None) -> int:
     if args.command == "calibrate":
         from wildinbox.evaluation.calibration import run
 
-        r = run(args.rule, args.config, args.report_dir)
+        r = run(args.rule, args.config, args.report_dir, args.deviation)
         op = r["operating_point"]
         print(
-            f"temperature {r['calibration']['temperature']:.3f}; empty filter "
-            f"{op['empty_filter'] or 'disabled'}; species acceptance "
-            f"{op['species_accept'] or 'disabled'}"
+            f"temperature {r['calibration']['temperature']:.3f}; rule: empty filter "
+            f"{op['empty_filter'] or 'disabled'}, species acceptance "
+            f"{op['species_accept'] or 'disabled'}; released: filtering "
+            f"{'on' if op['auto_filter_enabled'] else 'off'}, acceptance "
+            f"{'on' if op['auto_accept_enabled'] else 'off'}"
         )
         print(f"report -> {args.report_dir / 'README.md'}")
         return 0

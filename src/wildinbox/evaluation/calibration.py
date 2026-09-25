@@ -18,6 +18,7 @@ import json
 import math
 from collections.abc import Sequence
 from dataclasses import dataclass
+from datetime import date
 from itertools import pairwise
 from pathlib import Path
 from typing import Any, Literal
@@ -76,6 +77,33 @@ class OperatingPointRule(_Strict):
 
 def load_rule(path: Path) -> OperatingPointRule:
     return OperatingPointRule.model_validate(yaml.safe_load(path.read_text()))
+
+
+class Deviation(_Strict):
+    """A recorded decision to release less automation than the rule allows.
+    It can only switch automation off, never enable what the rule rejected."""
+
+    disable_auto_filter: bool = False
+    disable_auto_accept: bool = False
+    reason: str = Field(min_length=20)
+    decided: date
+
+
+def load_deviation(path: Path | None) -> Deviation | None:
+    if path is None or not path.exists():
+        return None
+    return Deviation.model_validate(yaml.safe_load(path.read_text()))
+
+
+def released(
+    empty_threshold: float | None, species_threshold: float | None, dev: Deviation | None
+) -> dict[str, bool]:
+    filter_ok = empty_threshold is not None
+    accept_ok = species_threshold is not None
+    return {
+        "auto_filter_enabled": filter_ok and not (dev is not None and dev.disable_auto_filter),
+        "auto_accept_enabled": accept_ok and not (dev is not None and dev.disable_auto_accept),
+    }
 
 
 # ------------------------------------------------------------ temperature
@@ -236,7 +264,9 @@ def _jsonable(m: dict[str, Any]) -> dict[str, Any]:
 # ------------------------------------------------------------------ run
 
 
-def run(rule_path: Path, config_path: Path, report_dir: Path) -> dict[str, Any]:
+def run(
+    rule_path: Path, config_path: Path, report_dir: Path, deviation_path: Path | None = None
+) -> dict[str, Any]:
     from wildinbox.datasets.spec import Partition
     from wildinbox.evaluation.data import load_rows
     from wildinbox.evaluation.predictors import predictor_for
@@ -245,6 +275,7 @@ def run(rule_path: Path, config_path: Path, report_dir: Path) -> dict[str, Any]:
     from wildinbox.training.run import git_state, load_context
 
     rule = load_rule(rule_path)
+    deviation = load_deviation(deviation_path)
     code = git_state()
     ctx = load_context(config_path, Settings().data_dir)
     meta = json.loads((rule.model / "meta.json").read_text())
@@ -290,11 +321,18 @@ def run(rule_path: Path, config_path: Path, report_dir: Path) -> dict[str, Any]:
         return _events(items, {k: v for k, v in events.items() if v.partition is part})
 
     op = choose_operating_point(scored_events(choose_part, True), rule.operating_point)
-    # For context only: the same thresholds on the calibration cameras.
-    fit_side = event_metrics(
-        scored_events(fit_part, True),
-        Thresholds(_t(op.empty_threshold), _t(op.species_threshold)),
-    )[0]
+    rule_t = Thresholds(_t(op.empty_threshold), _t(op.species_threshold))
+    # Replication check: the chosen thresholds on the calibration cameras (not
+    # used to choose them) and on every development camera separately.
+    fit_side = event_metrics(scored_events(fit_part, True), rule_t)[0]
+    per_camera = {}
+    for part in (fit_part, choose_part):
+        evs = scored_events(part, True)
+        cams = {e.event_id: events[e.event_id].camera_id for e in evs}
+        for cam in sorted(set(cams.values()), key=lambda c: (len(c), c)):
+            m = event_metrics([e for e in evs if cams[e.event_id] == cam], rule_t)[0]
+            per_camera[cam] = {"partition": part.value, **_jsonable(m)}
+    enabled = released(op.empty_threshold, op.species_threshold, deviation)
 
     result: dict[str, Any] = {
         "model": meta["name"],
@@ -312,8 +350,10 @@ def run(rule_path: Path, config_path: Path, report_dir: Path) -> dict[str, Any]:
             "chosen_on": choose_part.value,
             "empty_filter": op.empty_threshold,
             "species_accept": op.species_threshold,
-            "auto_filter_enabled": op.empty_threshold is not None,
-            "auto_accept_enabled": op.species_threshold is not None,
+            "rule_auto_filter_enabled": op.empty_threshold is not None,
+            "rule_auto_accept_enabled": op.species_threshold is not None,
+            **enabled,
+            "deviation": deviation.model_dump(mode="json") if deviation else None,
             "targets": {
                 "max_false_empty_rate": rule.operating_point.max_false_empty_rate,
                 "min_accepted_precision": rule.operating_point.min_accepted_precision,
@@ -321,6 +361,7 @@ def run(rule_path: Path, config_path: Path, report_dir: Path) -> dict[str, Any]:
             },
             "metrics": _jsonable(op.metrics),
             "metrics_on_fit_partition": _jsonable(fit_side),
+            "per_camera": per_camera,
         },
         "sweeps": {
             "empty_filter": [_jsonable(m) for m in op.empty_sweep],

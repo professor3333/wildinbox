@@ -28,6 +28,28 @@ def _thr(x: float | None) -> str:
     return "disabled" if x is None else f"{x:g}"
 
 
+def _on(x: bool) -> str:
+    return "enabled" if x else "disabled"
+
+
+def _deviation(d: dict[str, Any] | None) -> list[str]:
+    if not d:
+        return []
+    off = [
+        name
+        for name, flag in (
+            ("automatic filtering", d["disable_auto_filter"]),
+            ("automatic acceptance", d["disable_auto_accept"]),
+        )
+        if flag
+    ]
+    return [
+        f"**Deviation from the rule ({d['decided']}):** {' and '.join(off)} released as "
+        f"disabled. {d['reason']}",
+        "",
+    ]
+
+
 def _shown(sweep: list[dict[str, Any]], key: str, chosen: float | None) -> list[dict[str, Any]]:
     return [m for m in sweep if m["thresholds"][key] in SHOWN or m["thresholds"][key] == chosen]
 
@@ -47,28 +69,31 @@ def write_report(report_dir: Path, r: dict[str, Any]) -> Path:
         "## Decision",
         "",
         _t(
-            ["", "Threshold", "Automation"],
+            ["", "Rule's threshold", "Rule result", "Released"],
             [
                 [
                     "Empty filter (every usable frame P(empty) >=)",
                     _thr(op["empty_filter"]),
-                    "enabled" if op["auto_filter_enabled"] else "**disabled**",
+                    _on(op["rule_auto_filter_enabled"]),
+                    f"**{_on(op['auto_filter_enabled'])}**",
                 ],
                 [
                     "Species acceptance (mean P(species) >=)",
                     _thr(op["species_accept"]),
-                    "enabled" if op["auto_accept_enabled"] else "**disabled**",
+                    _on(op["rule_auto_accept_enabled"]),
+                    f"**{_on(op['auto_accept_enabled'])}**",
                 ],
             ],
         ),
         "",
+        *_deviation(op.get("deviation")),
         f"A threshold is enabled only if the worst case of its 95% Wilson interval on "
         f"{choose.replace('_', ' ')} meets the target: false-empty rate <= "
         f"{_pct(tg['max_false_empty_rate'], 0)} of animal-containing events, accepted-label "
         f"precision >= {_pct(tg['min_accepted_precision'], 0)}. The lowest passing threshold "
         "on the grid is chosen; a disabled step sends those events to review.",
         "",
-        f"At this operating point on {choose.replace('_', ' ')}:",
+        f"At the rule's operating point on {choose.replace('_', ' ')}:",
         "",
         _t(
             ["Measure", "Value"],
@@ -89,6 +114,33 @@ def write_report(report_dir: Path, r: dict[str, Any]) -> Path:
                     m["unsupported_accepted_as_known"],
                 ],
                 ["Events left for review", f"{m['needs_review']} ({_pct(m['review_fraction'])})"],
+            ],
+        ),
+        "",
+        "## Replication on every development camera",
+        "",
+        "The rule's thresholds applied to each unseen development camera. The calibration "
+        "cameras were used to fit the temperature, not to choose thresholds, so they are an "
+        "independent check of the operating point.",
+        "",
+        _t(
+            [
+                "Camera",
+                "Partition",
+                "Animal events filtered as empty (95% CI)",
+                "Filtered",
+                "Accepted",
+            ],
+            [
+                [
+                    cam,
+                    c["partition"],
+                    f"{c['false_empty']} / {c['animal_events']} ({_pct(c['false_empty_rate'], 1)} "
+                    f"{_ci(c['false_empty_rate_ci95'])})",
+                    f"{c['filtered']} / {c['events']}",
+                    c["accepted"],
+                ]
+                for cam, c in op["per_camera"].items()
             ],
         ),
         "",
