@@ -1,0 +1,189 @@
+{
+ "files": {
+  "cam108_58df6993-23d2-11e8-a6a3-ec086b02610b.jpg": {
+   "camera_id": "cct-108",
+   "sequence_id": "cct20:6f1511e6-5567-11e8-aff5-dca9047ef277",
+   "captured_at": "2012-03-09T20:48:42"
+  },
+  "cam108_5937354e-23d2-11e8-a6a3-ec086b02610b.jpg": {
+   "camera_id": "cct-108",
+   "sequence_id": "cct20:6f1511e6-5567-11e8-aff5-dca9047ef277",
+   "captured_at": "2012-03-09T20:48:43"
+  },
+  "cam108_58f422fe-23d2-11e8-a6a3-ec086b02610b.jpg": {
+   "camera_id": "cct-108",
+   "sequence_id": "cct20:6f1511e6-5567-11e8-aff5-dca9047ef277",
+   "captured_at": "2012-03-09T20:48:44"
+  },
+  "cam108_5871850c-23d2-11e8-a6a3-ec086b02610b.jpg": {
+   "camera_id": "cct-108",
+   "sequence_id": "cct20:6f14b714-5567-11e8-a738-dca9047ef277",
+   "captured_at": "2011-04-24T19:57:21"
+  },
+  "cam108_58bb8bfa-23d2-11e8-a6a3-ec086b02610b.jpg": {
+   "camera_id": "cct-108",
+   "sequence_id": "cct20:6f14b714-5567-11e8-a738-dca9047ef277",
+   "captured_at": "2011-04-24T19:57:22"
+  },
+  "cam108_592de6a3-23d2-11e8-a6a3-ec086b02610b.jpg": {
+   "camera_id": "cct-108",
+   "sequence_id": "cct20:6f14b714-5567-11e8-a738-dca9047ef277",
+   "captured_at": "2011-04-24T19:57:23"
+  },
+  "cam125_59452c9d-23d2-11e8-a6a3-ec086b02610b.jpg": {
+   "camera_id": "cct-125",
+   "sequence_id": "cct20:6f15c5fa-5567-11e8-badc-dca9047ef277",
+   "captured_at": "2011-06-17T02:51:00"
+  },
+  "cam125_5899591e-23d2-11e8-a6a3-ec086b02610b.jpg": {
+   "camera_id": "cct-125",
+   "sequence_id": "cct20:6f15c5fa-5567-11e8-badc-dca9047ef277",
+   "captured_at": "2011-06-17T02:51:01"
+  },
+  "cam125_59055f22-23d2-11e8-a6a3-ec086b02610b.jpg": {
+   "camera_id": "cct-125",
+   "sequence_id": "cct20:6f15c5fa-5567-11e8-badc-dca9047ef277",
+   "captured_at": "2011-06-17T02:51:02"
+  },
+  "cam90_58c662bd-23d2-11e8-a6a3-ec086b02610b.jpg": {
+   "camera_id": "cct-90",
+   "sequence_id": "cct20:6f0f9747-5567-11e8-8041-dca9047ef277",
+   "captured_at": "2011-12-26T02:58:53"
+  },
+  "cam90_5903cd44-23d2-11e8-a6a3-ec086b02610b.jpg": {
+   "camera_id": "cct-90",
+   "sequence_id": "cct20:6f0f9747-5567-11e8-8041-dca9047ef277",
+   "captured_at": "2011-12-26T02:58:54"
+  },
+  "cam90_58fbec20-23d2-11e8-a6a3-ec086b02610b.jpg": {
+   "camera_id": "cct-90",
+   "sequence_id": "cct20:6f0f9747-5567-11e8-8041-dca9047ef277",
+   "captured_at": "2011-12-26T02:58:55"
+  },
+  "cam108_593bde2e-23d2-11e8-a6a3-ec086b02610b.jpg": {
+   "camera_id": "cct-108",
+   "sequence_id": "cct20:6f1519a1-5567-11e8-b498-dca9047ef277",
+   "captured_at": "2012-04-12T02:27:59"
+  },
+  "cam108_5946ba7a-23d2-11e8-a6a3-ec086b02610b.jpg": {
+   "camera_id": "cct-108",
+   "sequence_id": "cct20:6f1519a1-5567-11e8-b498-dca9047ef277",
+   "captured_at": "2012-04-12T02:28:00"
+  },
+  "cam108_59087eb0-23d2-11e8-a6a3-ec086b02610b.jpg": {
+   "camera_id": "cct-108",
+   "sequence_id": "cct20:6f1519a1-5567-11e8-b498-dca9047ef277",
+   "captured_at": "2012-04-12T02:28:01"
+  },
+  "cam125_585a64b5-23d2-11e8-a6a3-ec086b02610b.jpg": {
+   "camera_id": "cct-125",
+   "sequence_id": "cct20:6f15e0a6-5567-11e8-8d1a-dca9047ef277",
+   "captured_at": "2011-08-10T09:08:37"
+  },
+  "cam125_59452b77-23d2-11e8-a6a3-ec086b02610b.jpg": {
+   "camera_id": "cct-125",
+   "sequence_id": "cct20:6f15e0a6-5567-11e8-8d1a-dca9047ef277",
+   "captured_at": "2011-08-10T09:08:38"
+  },
+  "cam125_593bdb40-23d2-11e8-a6a3-ec086b02610b.jpg": {
+   "camera_id": "cct-125",
+   "sequence_id": "cct20:6f15e0a6-5567-11e8-8d1a-dca9047ef277",
+   "captured_at": "2011-08-10T09:08:39"
+  },
+  "cam125_59292ebc-23d2-11e8-a6a3-ec086b02610b.jpg": {
+   "camera_id": "cct-125",
+   "sequence_id": "cct20:6f15c563-5567-11e8-83fd-dca9047ef277",
+   "captured_at": "2011-06-16T12:09:07"
+  },
+  "cam125_5914f04a-23d2-11e8-a6a3-ec086b02610b.jpg": {
+   "camera_id": "cct-125",
+   "sequence_id": "cct20:6f15ce0f-5567-11e8-861f-dca9047ef277",
+   "captured_at": "2011-07-11T04:45:45"
+  },
+  "cam125_58b4ac30-23d2-11e8-a6a3-ec086b02610b.jpg": {
+   "camera_id": "cct-125",
+   "sequence_id": "cct20:6f15ce0f-5567-11e8-861f-dca9047ef277",
+   "captured_at": "2011-07-11T04:45:46"
+  },
+  "cam125_58b4a8da-23d2-11e8-a6a3-ec086b02610b.jpg": {
+   "camera_id": "cct-125",
+   "sequence_id": "cct20:6f15ce0f-5567-11e8-861f-dca9047ef277",
+   "captured_at": "2011-07-11T04:45:47"
+  },
+  "cam125_58a8a193-23d2-11e8-a6a3-ec086b02610b.jpg": {
+   "camera_id": "cct-125",
+   "sequence_id": "cct20:6f165d75-5567-11e8-8467-dca9047ef277",
+   "captured_at": "2012-04-27T22:57:56"
+  },
+  "cam125_5946b88f-23d2-11e8-a6a3-ec086b02610b.jpg": {
+   "camera_id": "cct-125",
+   "sequence_id": "cct20:6f165d75-5567-11e8-8467-dca9047ef277",
+   "captured_at": "2012-04-27T22:57:57"
+  },
+  "cam125_5910489d-23d2-11e8-a6a3-ec086b02610b.jpg": {
+   "camera_id": "cct-125",
+   "sequence_id": "cct20:6f165d75-5567-11e8-8467-dca9047ef277",
+   "captured_at": "2012-04-27T22:57:58"
+  },
+  "cam51_59ccd25e-23d2-11e8-a6a3-ec086b02610b.jpg": {
+   "camera_id": "cct-51",
+   "sequence_id": "cct20:6f1c7117-5567-11e8-b2fb-dca9047ef277",
+   "captured_at": "2011-06-27T05:30:18"
+  },
+  "cam51_59c318ad-23d2-11e8-a6a3-ec086b02610b.jpg": {
+   "camera_id": "cct-51",
+   "sequence_id": "cct20:6f1c7117-5567-11e8-b2fb-dca9047ef277",
+   "captured_at": "2011-06-27T05:30:19"
+  },
+  "cam51_5a17dfd8-23d2-11e8-a6a3-ec086b02610b.jpg": {
+   "camera_id": "cct-51",
+   "sequence_id": "cct20:6f1c7117-5567-11e8-b2fb-dca9047ef277",
+   "captured_at": "2011-06-27T05:30:20"
+  },
+  "cam125_58e93a97-23d2-11e8-a6a3-ec086b02610b.jpg": {
+   "camera_id": "cct-125",
+   "sequence_id": "cct20:6f163f75-5567-11e8-b518-dca9047ef277",
+   "captured_at": "2012-04-17T04:19:41"
+  },
+  "cam125_590b9e3b-23d2-11e8-a6a3-ec086b02610b.jpg": {
+   "camera_id": "cct-125",
+   "sequence_id": "cct20:6f163f75-5567-11e8-b518-dca9047ef277",
+   "captured_at": "2012-04-17T04:19:42"
+  },
+  "cam125_591cb393-23d2-11e8-a6a3-ec086b02610b.jpg": {
+   "camera_id": "cct-125",
+   "sequence_id": "cct20:6f163f75-5567-11e8-b518-dca9047ef277",
+   "captured_at": "2012-04-17T04:19:43"
+  },
+  "cam51_59fae5d5-23d2-11e8-a6a3-ec086b02610b.jpg": {
+   "camera_id": "cct-51",
+   "sequence_id": "cct20:6f1ca1fd-5567-11e8-adf6-dca9047ef277",
+   "captured_at": "2011-08-06T03:04:38"
+  },
+  "cam51_5a096a1e-23d2-11e8-a6a3-ec086b02610b.jpg": {
+   "camera_id": "cct-51",
+   "sequence_id": "cct20:6f1ca1fd-5567-11e8-adf6-dca9047ef277",
+   "captured_at": "2011-08-06T03:04:39"
+  },
+  "cam51_599fbe2e-23d2-11e8-a6a3-ec086b02610b.jpg": {
+   "camera_id": "cct-51",
+   "sequence_id": "cct20:6f1ca1fd-5567-11e8-adf6-dca9047ef277",
+   "captured_at": "2011-08-06T03:04:40"
+  },
+  "cam125_58adc34e-23d2-11e8-a6a3-ec086b02610b.jpg": {
+   "camera_id": "cct-125",
+   "sequence_id": "cct20:6f163468-5567-11e8-9931-dca9047ef277",
+   "captured_at": "2012-04-06T23:34:54"
+  },
+  "cam125_589110b2-23d2-11e8-a6a3-ec086b02610b.jpg": {
+   "camera_id": "cct-125",
+   "sequence_id": "cct20:6f163468-5567-11e8-9931-dca9047ef277",
+   "captured_at": "2012-04-06T23:34:55"
+  },
+  "cam125_58af75fa-23d2-11e8-a6a3-ec086b02610b.jpg": {
+   "camera_id": "cct-125",
+   "sequence_id": "cct20:6f163468-5567-11e8-9931-dca9047ef277",
+   "captured_at": "2012-04-06T23:34:56"
+  }
+ }
+}
