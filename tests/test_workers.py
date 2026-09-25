@@ -463,3 +463,23 @@ def test_worker_names_are_unique_per_process_start() -> None:
     host, pid, suffix = process.worker_id().rsplit(":", 2)
     assert (host, pid) == (socket.gethostname(), str(os.getpid()))
     assert len(suffix) == 8 and process.worker_id() == process.worker_id()
+
+
+def test_activation_history_shows_release_and_rollback(
+    worker_settings: Settings, real_release: ModelRelease, tmp_path: Path
+) -> None:
+    factory = session_factory(worker_settings.database_url)
+    other_dir, other_policy = _fake_model_dir(tmp_path, seed=2)
+    with factory() as s:
+        newer, _ = register_release(
+            s, LocalStore(worker_settings.local_store_dir), other_dir, other_policy, None
+        )
+        activate(s, newer.id, "release candidate")
+        activate(s, real_release.id, "roll back")
+        s.commit()
+    with TestClient(create_app(worker_settings, dispatcher=NoopDispatcher())) as c:
+        body = c.get("/releases").json()
+        assert body["active_release_id"] == real_release.id
+        history = [(a["release_id"], a["note"]) for a in body["activations"]]
+        assert history[:2] == [(real_release.id, "roll back"), (newer.id, "release candidate")]
+        assert c.get("/version").json()["active_release"]["id"] == real_release.id

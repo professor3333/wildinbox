@@ -1,0 +1,201 @@
+{
+  "protocol": "configs/experiments/update_cycle.yaml",
+  "protocol_sha256": "508deb5534f052ba008e2e192fdfc3919d6ee95e6e3fedefe4d3b355343e1024",
+  "deployed_release": "finetune-e3-deep-balanced@518a8da39ee0",
+  "candidate": "finetune-e3-update1",
+  "candidate_release": "finetune-e3-update1@449138a9c367",
+  "snapshot": {
+    "version": "0837a1422904",
+    "path": "data/snapshots/update1-0837a1422904",
+    "images": 1066,
+    "events": 371,
+    "reviewer": "simulated-ground-truth"
+  },
+  "code": {
+    "commit": "37305d7f275a0d46eb221e08fedf6c341c4a2df4",
+    "dirty": false
+  },
+  "results": {
+    "deployed": {
+      "temperature": 2.008255,
+      "holdout": {
+        "events_scored": 423,
+        "macro_f1": 0.48602,
+        "per_class": {
+          "empty": {
+            "precision": 0.38806,
+            "recall": 0.764706,
+            "f1": 0.514851,
+            "support": 34,
+            "predicted": 67
+          },
+          "bobcat": {
+            "precision": 0.657895,
+            "recall": 0.595238,
+            "f1": 0.625,
+            "support": 84,
+            "predicted": 76
+          },
+          "cat": {
+            "precision": 0.533333,
+            "recall": 0.195122,
+            "f1": 0.285714,
+            "support": 82,
+            "predicted": 30
+          },
+          "coyote": {
+            "precision": 0.194444,
+            "recall": 0.4375,
+            "f1": 0.269231,
+            "support": 16,
+            "predicted": 36
+          },
+          "dog": {
+            "precision": 0.65625,
+            "recall": 0.65625,
+            "f1": 0.65625,
+            "support": 32,
+            "predicted": 32
+          },
+          "opossum": {
+            "precision": 0.851485,
+            "recall": 0.651515,
+            "f1": 0.738197,
+            "support": 132,
+            "predicted": 101
+          },
+          "rabbit": {
+            "precision": 0.071429,
+            "recall": 0.5,
+            "f1": 0.125,
+            "support": 4,
+            "predicted": 28
+          },
+          "raccoon": {
+            "precision": 0.584906,
+            "recall": 0.794872,
+            "f1": 0.673913,
+            "support": 39,
+            "predicted": 53
+          }
+        },
+        "animal_events": 435,
+        "animal_events_suggested_empty": 50,
+        "suggested_empty_ci95": [
+          0.088282,
+          0.148345
+        ],
+        "per_camera": {
+          "cct-125": 0.479154,
+          "cct-90": 0.437487
+        }
+      },
+      "regression_macro_f1": {
+        "calibration_cameras": 0.452363,
+        "seen_camera_diagnostic": 0.747164
+      }
+    },
+    "candidate": {
+      "temperature": 2.061353,
+      "holdout": {
+        "events_scored": 423,
+        "macro_f1": 0.548191,
+        "per_class": {
+          "empty": {
+            "precision": 0.461538,
+            "recall": 0.705882,
+            "f1": 0.55814,
+            "support": 34,
+            "predicted": 52
+          },
+          "bobcat": {
+            "precision": 0.592593,
+            "recall": 0.761905,
+            "f1": 0.666667,
+            "support": 84,
+            "predicted": 108
+          },
+          "cat": {
+            "precision": 0.775862,
+            "recall": 0.54878,
+            "f1": 0.642857,
+            "support": 82,
+            "predicted": 58
+          },
+          "coyote": {
+            "precision": 0.333333,
+            "recall": 0.5625,
+            "f1": 0.418605,
+            "support": 16,
+            "predicted": 27
+          },
+          "dog": {
+            "precision": 0.727273,
+            "recall": 0.5,
+            "f1": 0.592593,
+            "support": 32,
+            "predicted": 22
+          },
+          "opossum": {
+            "precision": 0.88172,
+            "recall": 0.621212,
+            "f1": 0.728889,
+            "support": 132,
+            "predicted": 93
+          },
+          "rabbit": {
+            "precision": 0.0,
+            "recall": 0.0,
+            "f1": 0.0,
+            "support": 4,
+            "predicted": 30
+          },
+          "raccoon": {
+            "precision": 0.848485,
+            "recall": 0.717949,
+            "f1": 0.777778,
+            "support": 39,
+            "predicted": 33
+          }
+        },
+        "animal_events": 435,
+        "animal_events_suggested_empty": 41,
+        "suggested_empty_ci95": [
+          0.070238,
+          0.125372
+        ],
+        "per_camera": {
+          "cct-125": 0.499583,
+          "cct-90": 0.490918
+        }
+      },
+      "regression_macro_f1": {
+        "calibration_cameras": 0.490746,
+        "seen_camera_diagnostic": 0.751694
+      }
+    }
+  },
+  "checks": {
+    "holdout_gain": {
+      "value": 0.062171,
+      "required": 0.02,
+      "pass": true
+    },
+    "no_regression_calibration_cameras": {
+      "value": 0.038383,
+      "allowed": -0.02,
+      "pass": true
+    },
+    "no_regression_seen_camera_diagnostic": {
+      "value": 0.004529,
+      "allowed": -0.02,
+      "pass": true
+    },
+    "false_empty_suggestions": {
+      "value": 41,
+      "limit": 55.0,
+      "pass": true
+    }
+  },
+  "promote": true
+}

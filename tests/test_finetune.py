@@ -163,3 +163,11 @@ def test_eval_cache_is_keyed_by_model_weights(tmp_path: Path) -> None:
         torch.save(build_model(2, None).state_dict(), tmp_path / "model.pt")
         digests.append(FinetunedPredictor(None, tmp_path, "cpu").weights_digest)  # type: ignore[arg-type]
     assert digests[0] != digests[1]
+
+
+def test_update_candidate_uses_the_deployed_recipe_unchanged() -> None:
+    e3 = load_finetune_config(REPO_ROOT / "configs/experiments/finetune-e3-deep-balanced.yaml")
+    cand = load_finetune_config(REPO_ROOT / "configs/experiments/finetune-e3-update1.yaml")
+    differs = {k for k in e3.model_dump() if e3.model_dump()[k] != cand.model_dump()[k]}
+    assert differs == {"name", "description", "snapshot"}
+    assert cand.snapshot is not None and e3.snapshot is None

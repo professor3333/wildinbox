@@ -35,7 +35,16 @@ from wildinbox.schemas import Review as ReviewContract
 from wildinbox.schemas import ReviewOutcome
 from wildinbox.settings import Settings
 from wildinbox.storage.db import session_factory
-from wildinbox.storage.models import Batch, Decision, Event, Image, Job, ModelRelease, Review
+from wildinbox.storage.models import (
+    Batch,
+    Decision,
+    Event,
+    Image,
+    Job,
+    ModelRelease,
+    ReleaseActivation,
+    Review,
+)
 from wildinbox.storage.objects import (
     ObjectNotFoundError,
     ObjectStore,
@@ -320,6 +329,17 @@ def create_app(
                         "created_at": r.created_at.isoformat(),
                     }
                     for r in s.scalars(select(ModelRelease).order_by(ModelRelease.created_at))
+                ],
+                # Append-only: activating and rolling back are both new rows.
+                "activations": [
+                    {
+                        "release_id": a.release_id,
+                        "note": a.note,
+                        "activated_at": a.activated_at.isoformat(),
+                    }
+                    for a in s.scalars(
+                        select(ReleaseActivation).order_by(ReleaseActivation.id.desc())
+                    )
                 ],
             }
 
