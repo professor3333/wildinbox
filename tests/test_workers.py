@@ -569,3 +569,109 @@ def test_filtering_release_fills_the_filtered_view_and_samples_audits(
         assert row["audit_selected"] is True and row["audit_rule"].startswith("sha256-uniform")
         assert c.get("/events", params={"audit": True, "reviewed": False}).json()["total"] == 0
     serving._LOADED.clear()
+
+
+# ------------------------------------------------- incomplete events (review fix)
+
+CORRUPT = b"\xff\xd8\xff\xe0" + b"not image data" * 40  # passes upload, fails to decode
+
+
+@pytest.fixture
+def filtering(worker_settings: Settings, tmp_path: Path) -> Iterator[Settings]:
+    """A test release that filters every event whose usable frames all look
+    empty, so any gap in the incomplete-event safeguard shows as likely_empty."""
+    serving._LOADED.clear()
+    model_dir, policy = _fake_model_dir(tmp_path, seed=7, empty_threshold=0.0001, auto_filter=True)
+    with TestClient(create_app(worker_settings, dispatcher=NoopDispatcher())):
+        pass
+    with session_factory(worker_settings.database_url)() as s:
+        release, _ = register_release(
+            s, LocalStore(worker_settings.local_store_dir), model_dir, policy, None
+        )
+        activate(s, release.id)
+        s.commit()
+    yield worker_settings
+    serving._LOADED.clear()
+
+
+def _process(cfg: Settings, files: list[tuple[str, bytes]], seqs: dict[str, str]) -> dict[str, Any]:
+    meta = {"files": {n: {"sequence_id": q, "camera_id": "trail"} for n, q in seqs.items()}}
+    with TestClient(create_app(cfg, dispatcher=NoopDispatcher())) as c:
+        res = c.post("/batches", files=_files(*files), data={"metadata": json.dumps(meta)})
+        assert res.status_code == 202, res.text
+        batch = res.json()
+        process_batch(
+            session_factory(cfg.database_url),
+            LocalStore(cfg.local_store_dir),
+            uuid.UUID(batch["job"]["id"]),
+            cfg,
+        )
+        events = c.get("/events", params={"batch_id": batch["id"]}).json()["events"]
+        details = [c.get(f"/events/{e['id']}").json() for e in events]
+        summary = c.get(f"/batches/{batch['id']}").json()
+    return {"summary": summary, "events": details}
+
+
+def _by_file(events: list[dict[str, Any]]) -> dict[str, dict[str, Any]]:
+    return {i["filename"]: e for e in events for i in e["images"]}
+
+
+def test_a_frame_that_fails_to_decode_keeps_its_event_in_review(filtering: Settings) -> None:
+    out = _process(
+        filtering,
+        [("good.jpg", jpeg(1)), ("corrupt.jpg", CORRUPT), ("control.jpg", jpeg(2))],
+        {"good.jpg": "s1", "corrupt.jpg": "s1", "control.jpg": "s2"},
+    )
+    ev = _by_file(out["events"])
+    assert ev["control.jpg"]["decision"]["disposition"] == "likely_empty"  # the release filters
+    s1 = ev["good.jpg"]
+    assert ev["corrupt.jpg"]["id"] == s1["id"]  # the failed frame stays a member
+    statuses = {i["filename"]: i["frame_status"] for i in s1["images"]}
+    assert statuses == {"good.jpg": "completed", "corrupt.jpg": "invalid"}
+    assert s1["decision"]["disposition"] == "needs_review"
+    assert "processing_failure" in s1["decision"]["reasons"]
+
+
+def test_a_file_rejected_at_upload_keeps_its_event_in_review(filtering: Settings) -> None:
+    out = _process(
+        filtering,
+        [("good.jpg", jpeg(3)), ("empty.jpg", b""), ("notes.txt", b"field notes")],
+        {"good.jpg": "s1", "empty.jpg": "s1"},
+    )
+    ev = _by_file(out["events"])
+    s1 = ev["good.jpg"]
+    assert ev["empty.jpg"]["id"] == s1["id"]
+    assert s1["decision"]["disposition"] == "needs_review"
+    assert "processing_failure" in s1["decision"]["reasons"]
+    # A stray non-image file with nothing to place it creates no event of its own,
+    # and stays reported as a failed file.
+    assert "notes.txt" not in ev
+    assert "notes.txt" in {f["filename"] for f in out["summary"]["failures"]}
+
+
+def test_failed_files_without_a_usable_companion_stay_batch_failures(
+    filtering: Settings,
+) -> None:
+    out = _process(
+        filtering,
+        [("a.jpg", CORRUPT), ("b.jpg", CORRUPT + b"x"), ("ok.jpg", jpeg(6))],
+        {"a.jpg": "s1", "b.jpg": "s1", "ok.jpg": "s2"},
+    )
+    # Nothing in s1 can be reviewed, so it is not an event; both files are reported.
+    assert set(_by_file(out["events"])) == {"ok.jpg"}
+    assert {"a.jpg", "b.jpg"} <= {f["filename"] for f in out["summary"]["failures"]}
+
+
+def test_a_duplicate_frame_counts_with_its_originals_prediction(filtering: Settings) -> None:
+    x = jpeg(4)
+    _process(filtering, [("x.jpg", x)], {"x.jpg": "a"})
+    out = _process(
+        filtering, [("y.jpg", jpeg(5)), ("x-again.jpg", x)], {"y.jpg": "b", "x-again.jpg": "b"}
+    )
+    (event,) = out["events"]
+    statuses = {i["filename"]: i["frame_status"] for i in event["images"]}
+    assert statuses == {"y.jpg": "completed", "x-again.jpg": "duplicate"}
+    # Both frames are evidence (the duplicate through its original's prediction),
+    # so the event is complete and the release may filter it.
+    assert event["decision"]["disposition"] == "likely_empty"
+    assert "processing_failure" not in event["decision"]["reasons"]
