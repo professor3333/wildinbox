@@ -1,7 +1,8 @@
 """WildInbox review interface (Streamlit). Run with `wildinbox ui`.
 
-Talks only to the HTTP API (`WILDINBOX_API_URL`). Pages: the review queue,
-last night's visitors, upload, and export.
+Talks only to the HTTP API (`WILDINBOX_API_URL`). Review views live in
+`wildinbox.ui.review`; this module holds navigation, visitors, upload,
+export, monitoring, and the study page.
 """
 
 from __future__ import annotations
@@ -13,16 +14,14 @@ from typing import Any
 
 import streamlit as st
 
+from wildinbox.ui import review
 from wildinbox.ui.client import ApiClient, ApiError
 from wildinbox.ui.logic import (
-    REASON_TEXT,
     current_label,
     is_visitor,
-    label_choices,
     last_night,
     night_window,
     representative_frame,
-    review_for,
 )
 
 PAGE_SIZE = 8
@@ -50,6 +49,19 @@ def when(ts: str | None) -> str:
     return datetime.fromisoformat(ts).strftime("%a %d %b %Y, %H:%M:%S")
 
 
+def batch_label(b: dict[str, Any]) -> str:
+    return f"{b['created_at'][:16].replace('T', ' ')} · {b['images']} files · {b['events']} events"
+
+
+def _focus_batch(api: ApiClient, batch_id: str) -> None:
+    """Select a batch everywhere and open its review queue (runs before the rerun)."""
+    for b in api.batches():
+        if b["id"] == batch_id:
+            st.session_state["batch"] = batch_label(b)
+            st.session_state["page"] = "Review queue"
+            return
+
+
 # ------------------------------------------------------------------ sidebar
 
 
@@ -58,7 +70,20 @@ def sidebar(api: ApiClient) -> tuple[str, str | None, str, list[str]]:
     st.sidebar.caption("Find the wildlife. Skip the empty frames.")
     page = st.sidebar.radio(
         "Page",
-        ["Review queue", "Last night's visitors", "Upload", "Export", "Monitoring", "Study"],
+        [
+            "Getting started",
+            "Upload",
+            "Batches",
+            "Review queue",
+            "Timeline",
+            "Last night's visitors",
+            "Automatically filtered",
+            "Audit queue",
+            "Export",
+            "Monitoring",
+            "Study",
+        ],
+        index=3,
         key="page",
     )
     reviewer = st.sidebar.text_input("Your name (recorded with reviews)", key="reviewer")
@@ -74,126 +99,9 @@ def sidebar(api: ApiClient) -> tuple[str, str | None, str, list[str]]:
             release.get("notice") or "TEST predictor: suggestions are not model output."
         )
     st.sidebar.caption(f"Release `{release.get('id')}`  \nPolicy `{release.get('policy_version')}`")
-    options = {"All batches": None} | {
-        f"{b['created_at'][:16].replace('T', ' ')} · {b['images']} files · {b['events']} events": b[
-            "id"
-        ]
-        for b in batches
-    }
+    options = {"All batches": None} | {batch_label(b): b["id"] for b in batches}
     label = st.sidebar.selectbox("Batch", list(options), key="batch")
     return page, options[label], reviewer.strip(), list(release.get("class_names") or [])
-
-
-# ------------------------------------------------------------------ review
-
-
-def review_controls(
-    api: ApiClient, event: dict[str, Any], reviewer: str, classes: list[str]
-) -> None:
-    eid = event["id"]
-    suggested = (event.get("decision") or {}).get("suggested_label")
-    choices = ["choose a label", *label_choices(classes), OTHER, CANT_TELL]
-    c1, c2, c3, c4 = st.columns([1.2, 1.6, 1.4, 0.8])
-    disabled = not reviewer
-    accept = c1.button(
-        f"Accept: {suggested}" if suggested else "No suggestion",
-        key=f"accept-{eid}",
-        disabled=disabled or not suggested,
-        type="primary",
-    )
-    picked = c2.selectbox("Label", choices, key=f"pick-{eid}", label_visibility="collapsed")
-    other = c3.text_input(
-        "Species name",
-        key=f"other-{eid}",
-        placeholder="species name",
-        label_visibility="collapsed",
-        disabled=picked != OTHER,
-    )
-    save = c4.button("Save", key=f"save-{eid}", disabled=disabled or picked == choices[0])
-    chosen: str | None
-    if accept:
-        chosen = suggested
-    elif save:
-        chosen = (
-            None if picked == CANT_TELL else (other.strip().lower() if picked == OTHER else picked)
-        )
-        if picked == OTHER and not chosen:
-            st.warning('Type the species name, or choose "can\'t tell".')
-            return
-    else:
-        return
-    outcome, label = review_for(suggested, chosen)
-    try:
-        api.review(eid, reviewer, outcome, label)
-    except ApiError as e:
-        st.error(f"Review not saved: {e.detail}")
-        return
-    st.toast(f"Saved: {label or 'unresolved'} ({outcome})")
-    st.rerun()
-
-
-def event_card(api: ApiClient, event: dict[str, Any], reviewer: str, classes: list[str]) -> None:
-    decision = event.get("decision") or {}
-    with st.container(border=True):
-        left, right = st.columns([2, 3])
-        left.markdown(
-            f"**{event.get('camera_id') or 'unknown camera'}** · {when(event.get('start_at'))}  \n"
-            f"{len(event['image_ids'])} frame(s)"
-        )
-        conf = decision.get("confidence")
-        suggestion = decision.get("suggested_label") or "no suggestion"
-        right.markdown(
-            f"Suggested: **{suggestion}**" + (f" ({conf:.0%})" if conf is not None else "")
-        )
-        reasons = [REASON_TEXT.get(r, r) for r in decision.get("reasons", [])]
-        if reasons:
-            right.caption("Needs review: " + "; ".join(reasons))
-        ids = event["image_ids"][:6]
-        cols = st.columns(6)  # fixed grid: a one-frame event is not drawn huge
-        for col, image_id in zip(cols, ids, strict=False):
-            data = thumbnail(api, image_id, 320)
-            if data:
-                col.image(data, use_container_width=True)
-            else:
-                col.caption("image unavailable")
-        if len(event["image_ids"]) > len(ids):
-            st.caption(f"+{len(event['image_ids']) - len(ids)} more frames")
-        review = event.get("latest_review")
-        if review:
-            label, _ = current_label(event)
-            st.caption(
-                f"Reviewed by {review['reviewer']}: {label or 'unresolved'} ({review['outcome']})"
-            )
-        review_controls(api, event, reviewer, classes)
-
-
-def review_page(api: ApiClient, batch_id: str | None, reviewer: str, classes: list[str]) -> None:
-    st.header("Review queue")
-    status = st.radio("Show", ["To review", "Reviewed", "All"], horizontal=True, key="status")
-    reviewed = {"To review": False, "Reviewed": True, "All": None}[status]
-    offset = st.session_state.get("offset", 0)
-    try:
-        page = api.events(batch_id=batch_id, reviewed=reviewed, limit=PAGE_SIZE, offset=offset)
-    except ApiError as e:
-        st.error(e.detail)
-        return
-    total = page["total"]
-    if not reviewer:
-        st.info("Enter your name in the sidebar to record reviews.")
-    if not total:
-        st.success("Nothing here. Every event in this view has been reviewed.")
-        return
-    st.caption(f"{total} capture event(s). Capture events are not individual animals.")
-    for event in page["events"]:
-        event_card(api, event, reviewer, classes)
-    prev, info, nxt = st.columns([1, 2, 1])
-    if prev.button("Previous", disabled=offset == 0, key="prev"):
-        st.session_state["offset"] = max(0, offset - PAGE_SIZE)
-        st.rerun()
-    info.caption(f"{offset + 1}-{min(offset + PAGE_SIZE, total)} of {total}")
-    if nxt.button("Next", disabled=page["next_offset"] is None, key="next"):
-        st.session_state["offset"] = page["next_offset"]
-        st.rerun()
 
 
 # ------------------------------------------------------------------ visitors
@@ -282,6 +190,13 @@ def upload_page(api: ApiClient) -> None:
         time.sleep(1)
     s = api.batch(batch_id)
     st.success(f"{s['counts']['events']} capture events ready for review.")
+    st.button(
+        "Review this batch",
+        type="primary",
+        key="review-uploaded",
+        on_click=_focus_batch,
+        args=(api, batch_id),
+    )
     if s["failures"]:
         st.warning(f"{len(s['failures'])} file(s) could not be used:")
         st.dataframe(
@@ -434,10 +349,21 @@ def main() -> None:
     api = client()
     page, batch_id, reviewer, classes = sidebar(api)
     if st.session_state.get("_last_view") != (page, batch_id):
-        st.session_state["offset"] = 0
+        for key in [k for k in st.session_state if str(k).startswith("offset")]:
+            del st.session_state[key]  # a new view or batch starts on its first page
         st.session_state["_last_view"] = (page, batch_id)
-    if page == "Review queue":
-        review_page(api, batch_id, reviewer, classes)
+    if page == "Getting started":
+        review.getting_started_page()
+    elif page == "Review queue":
+        review.review_page(api, thumbnail, batch_id, reviewer, classes)
+    elif page == "Timeline":
+        review.timeline_page(api, thumbnail, batch_id)
+    elif page == "Batches":
+        review.batches_page(api)
+    elif page == "Automatically filtered":
+        review.filtered_page(api, thumbnail, batch_id, reviewer, classes)
+    elif page == "Audit queue":
+        review.audit_page(api, thumbnail, batch_id, reviewer, classes)
     elif page == "Last night's visitors":
         visitors_page(api, batch_id)
     elif page == "Upload":

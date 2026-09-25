@@ -7,6 +7,7 @@ participants who label the same events do not overwrite each other.
 from __future__ import annotations
 
 import uuid
+from collections import Counter
 from collections.abc import Callable
 from datetime import datetime
 from typing import Any
@@ -18,7 +19,13 @@ from sqlalchemy import func, select
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.orm import Session, sessionmaker
 
-from wildinbox.storage.models import StudyParticipant, StudyPlan, StudyRating, StudyTrial
+from wildinbox.storage.models import (
+    Decision,
+    StudyParticipant,
+    StudyPlan,
+    StudyRating,
+    StudyTrial,
+)
 from wildinbox.study.design import ARMS, CONDITIONS, assignment
 
 
@@ -57,6 +64,7 @@ def add_study_routes(
     sessions: Callable[[], sessionmaker[Session]],
     classes: list[str],
     error: Callable[[int, str, str], Exception],
+    audit_rate: float = 0.0,
 ) -> None:
     def plan_or_404(s: Session, plan_id: uuid.UUID) -> StudyPlan:
         plan = s.get(StudyPlan, plan_id)
@@ -194,6 +202,12 @@ def add_study_routes(
                 select(StudyTrial).where(StudyTrial.plan_id == plan_id).order_by(StudyTrial.id)
             ).all()
             ratings = s.scalars(select(StudyRating).where(StudyRating.plan_id == plan_id)).all()
+            ids = [uuid.UUID(e) for v in plan.sets.values() for e in v]
+            decisions = s.scalars(select(Decision).where(Decision.event_id.in_(ids))).all()
+            latest: dict[uuid.UUID, Decision] = {}
+            for d in decisions:
+                if d.event_id not in latest or d.created_at > latest[d.event_id].created_at:
+                    latest[d.event_id] = d
             return {
                 "plan": {
                     "id": str(plan.id),
@@ -221,6 +235,10 @@ def add_study_routes(
                     }
                     for t in trials
                 ],
+                "workload": {
+                    "dispositions": dict(Counter(d.disposition for d in latest.values())),
+                    "audit_rate": audit_rate,
+                },
                 "ratings": [
                     {
                         "participant": r.participant,

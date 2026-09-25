@@ -15,7 +15,7 @@ Errors are JSON: `{"error": "<code>", "detail": "<message>"}`.
 | `GET /batches/{id}` | Status, counts, **progress**, every **failed file with its error**, the job (attempts, lease, next retry), and the pinned release. |
 | `GET /batches/{id}/images` | Every uploaded file with validation and processing status. |
 | `GET /batches/{id}/export` | Current observations with provenance, one row per capture event. `?format=csv` (default) or `json`. |
-| `GET /events` | Paginated, filterable events: `batch_id`, `camera_id`, `disposition`, `label`, `reason`, `reviewed`, `limit` (≤ 500), `offset`. Returns `total` and `next_offset`. |
+| `GET /events` | Paginated, filterable events: `batch_id`, `camera_id`, `disposition`, `label`, `reason`, `reviewed`, `audit`, `start_after`, `start_before`, `limit` (≤ 500), `offset`. Returns `total` and `next_offset`. |
 | `GET /events/{id}` | Frames with status, raw and calibrated predictions, the decision, and every review. |
 | `POST /events/{id}/reviews` | Append a human review (`reviewer`, `outcome`: confirmed / corrected / unresolved, `confirmed_label`, `note`). Reviews are never overwritten; each links to the one it supersedes. |
 | `GET /jobs/{id}` | Job lifecycle only. |
@@ -68,16 +68,7 @@ written together at the end, never from a partial batch.
 
 ### Export columns
 
-`event_id, batch_id, camera_id, start_at, end_at, frames, filenames,
-observation, label_source, review_outcome, reviewer, reviewed_at, review_id,
-disposition, suggested_label, confidence, reasons, model_release_id,
-weights_sha256, preprocessing_version, calibration_version, policy_version,
-exported_at`.
-
-`observation` is the latest review's label; with no review, the automatic
-label only if automation decided the event (`label_source = automatic`),
-otherwise empty with `label_source = pending_review` (or `unresolved`). Rows
-are capture events, not individual animals or population counts.
+Every column is defined in [`docs/export_format.md`](export_format.md).
 
 ## Releases
 

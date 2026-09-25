@@ -47,7 +47,7 @@ from wildinbox.datasets.grouping import (
     time_gap_rule_id,
 )
 from wildinbox.inference.serving import calibrated, scorer_for
-from wildinbox.policy import review_all
+from wildinbox.policy import audit, review_all
 from wildinbox.policy.conservative import Frame, PolicyConfig, decide
 from wildinbox.preprocessing import load_image
 from wildinbox.quality import quality
@@ -341,7 +341,9 @@ def _frames(event: Event, preds: dict[uuid.UUID, Prediction], release: ModelRele
     return frames
 
 
-def _decide(session: Session, events: list[Event], release: ModelRelease) -> None:
+def _decide(
+    session: Session, events: list[Event], release: ModelRelease, settings: Settings
+) -> None:
     for event in events:
         rows = session.scalars(
             select(Prediction)
@@ -352,6 +354,15 @@ def _decide(session: Session, events: list[Event], release: ModelRelease) -> Non
         for p in rows:
             p.event_id = event.id
         values, policy_version = _decision(event, preds, release)
+        chosen = audit.selected(
+            event.id, str(values["disposition"]), settings.audit_rate, settings.audit_seed
+        )
+        values["audit_selected"] = chosen
+        # Recorded on every automatic decision, so the sampling frame is known too.
+        automatic = values["disposition"] in audit.AUTOMATIC
+        values["audit_rule"] = (
+            audit.rule(settings.audit_rate, settings.audit_seed) if automatic else None
+        )
         session.execute(
             insert(Decision)
             .values(
@@ -438,7 +449,7 @@ def process_batch(
             batch, release = job.batch, job.release  # the release pinned at creation
             _score_images(session, store, batch, release, job_id, token, settings)
             events = _group_events(session, batch)
-            _decide(session, events, release)
+            _decide(session, events, release, settings)
             # Check (and lock) the lease BEFORE touching the job row, so a worker
             # that lost its lease cannot mark someone else's job finished.
             renew(session, job_id, token)

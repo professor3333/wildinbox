@@ -2,7 +2,7 @@
 # Question (CLAUDE.md): do model suggestions make people finish review faster,
 # compared with an already sequence-grouped workflow, without losing accuracy?
 # Grouping is identical in both conditions, so it is not credited to the model.
-version: 1
+version: 2
 
 conditions:
   grouped: "events shown one at a time, reviewer picks the label; no suggestion"
@@ -37,6 +37,15 @@ analysis:
   # participants (10,000 resamples), the share of participants who were faster
   # with suggestions, and accuracy per condition with its paired difference.
   # A speed gain counts only if accuracy does not drop by more than 0.05.
+  # Amendment 1 (version 2), made before any participant took part: time
+  # saved must include audit effort. Projected reviewer time per 1,000 events,
+  # using each condition's median seconds per event and the decisions the
+  # active release made for the study events:
+  #   grouped workflow: every event reviewed without suggestions;
+  #   system: events needing review, reviewed with suggestions, plus the audit
+  #   share of automatically handled events, also reviewed with suggestions.
+  # Reported as minutes per 1,000 events and the share of time saved.
+  project_workload_per_events: 1000
   bootstrap_resamples: 10000
   max_accuracy_drop: 0.05
   exclude:
