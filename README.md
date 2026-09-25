@@ -38,6 +38,8 @@ docker compose run --rm \
   worker wildinbox release register --activate
 curl localhost:8000/version            # deploy check: release, weights, preprocessing, policy
 
+uv run python scripts/demo.py          # the demo: upload the sample, review, export (docs/demo.md)
+
 docker compose down                    # add -v to delete stored data
 ```
 
@@ -137,6 +139,8 @@ configs/             run configurations (YAML)
 tests/
 migrations/          Alembic database migrations
 scripts/smoke.py     end-to-end check against a running deployment
+scripts/demo.py      the demo flow on the committed sample batch
+samples/cct-dev/     37-photo sample batch (Caltech Camera Traps, CDLA-Permissive)
 docs/                requirements, dataset rules, model card, generated JSON Schemas
 reports/             committed evaluation, experiment, and calibration reports
 ```
@@ -293,7 +297,9 @@ review; the 50% review-reduction target is not met.
 
 Downloaded datasets, uploads, thumbnails, and trained weights are never
 committed (see `.gitignore` and `data/README.md`). They are reproduced from a
-pinned dataset manifest.
+pinned dataset manifest. The one exception is the 37-photo demo sample in
+[`samples/cct-dev`](samples/cct-dev), committed with its license and
+attribution so the demo runs without downloading the dataset.
 
 Dataset: [Caltech Camera Traps](https://lila.science/datasets/caltech-camera-traps),
 released under the Community Data License Agreement (permissive variant).
