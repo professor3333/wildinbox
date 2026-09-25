@@ -118,6 +118,25 @@ def write_report(report_dir: Path, out: dict[str, Any]) -> Path:
             ],
         ),
         "",
+        "## Development data only",
+        "",
+        *(
+            [
+                "Evaluated on the snapshot holdout, the calibration cameras, and the "
+                "seen-camera diagnostic; the final test was not read. The snapshot holds no "
+                "protected evaluation frame (checked before scoring). This was comparison "
+                f"#{out['development_data_only']['comparison_number_on_this_holdout']} on "
+                "this holdout"
+                + (
+                    f" (budget {out['development_data_only']['comparison_budget']})."
+                    if out["development_data_only"]["comparison_budget"]
+                    else "; every comparison is logged in `../comparisons.jsonl`."
+                ),
+                "",
+            ]
+            if "development_data_only" in out
+            else []
+        ),
         "## What this shows",
         "",
         "Holdout and snapshot share cameras and backgrounds by design: the gain is what "

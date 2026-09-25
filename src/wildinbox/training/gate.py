@@ -9,12 +9,21 @@ configs/experiments/update_cycle.yaml and decide whether it may be released.
   label against the reviewed label.
 - Regressions: image-level macro-F1 on the calibration cameras and on the
   seen-camera diagnostic partition, where neither model trained.
+
+Development data only. The gate never reads the final test, and refuses to run
+if the snapshot's training or holdout frames overlap the final test or the
+regression-check partitions (that would make the checks meaningless). Every
+run is appended to `comparisons.jsonl` next to the report, so repeated
+comparisons against the same holdout are counted; a protocol can cap them
+(`gate.max_comparisons_per_holdout`), after which a fresh holdout is needed.
 """
 
 from __future__ import annotations
 
+import gzip
 import hashlib
 import json
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
@@ -31,6 +40,43 @@ from wildinbox.policy.conservative import POLICY_NAME, Frame, PolicyConfig, deci
 
 def _version(obj: Any) -> str:
     return hashlib.sha256(json.dumps(obj, sort_keys=True).encode()).hexdigest()[:12]
+
+
+GUARDED = (Partition.FINAL_TEST, Partition.CALIBRATION, Partition.SEEN_CAMERA_DIAGNOSTIC)
+
+
+def partition_hashes(split_dir: Path, partitions: tuple[Partition, ...]) -> dict[str, str]:
+    """sha256 -> partition, for the images of these partitions."""
+    wanted = {p.value for p in partitions}
+    out: dict[str, str] = {}
+    with gzip.open(split_dir / "images.jsonl.gz", "rt") as fh:
+        for line in fh:
+            row = json.loads(line)
+            if row["partition"] in wanted:
+                out[row["sha256"]] = row["partition"]
+    return out
+
+
+def leakage(snapshot_dir: Path, guarded: dict[str, str]) -> dict[str, int]:
+    """Snapshot frames (train and holdout) that belong to guarded partitions."""
+    found: dict[str, int] = {}
+    train = [json.loads(x) for x in (snapshot_dir / "train.jsonl").read_text().splitlines()]
+    hold = [json.loads(x) for x in (snapshot_dir / "holdout.jsonl").read_text().splitlines()]
+    shas = [r["sha256"] for r in train] + [f["sha256"] for e in hold for f in e["frames"]]
+    for sha in shas:
+        if sha in guarded:
+            found[guarded[sha]] = found.get(guarded[sha], 0) + 1
+    return found
+
+
+def log_comparison(log: Path, entry: dict[str, Any]) -> int:
+    """Append a comparison; return how many were made on this holdout, this one included."""
+    previous = [json.loads(x) for x in log.read_text().splitlines()] if log.exists() else []
+    n: int = 1 + sum(p["holdout_version"] == entry["holdout_version"] for p in previous)
+    log.parent.mkdir(parents=True, exist_ok=True)
+    with log.open("a") as fh:
+        fh.write(json.dumps({**entry, "number_on_this_holdout": n}, sort_keys=True) + "\n")
+    return n
 
 
 def holdout_rows(snapshot_dir: Path) -> tuple[list[dict[str, Any]], list[ImageRow]]:
@@ -108,6 +154,12 @@ def run(
     if snap is None:
         raise RuntimeError("the candidate was not trained on a snapshot")
     snapshot_dir = Path(snap["path"])
+    leaked = leakage(snapshot_dir, partition_hashes(ctx.split_dir, GUARDED))
+    if leaked:
+        raise RuntimeError(
+            f"snapshot {snap['version']} contains protected evaluation frames {leaked}; "
+            "rebuild it with `wildinbox snapshot build` (which excludes them)"
+        )
     deployed_policy = json.loads(Path("reports/calibration/policy.json").read_text())
     deployed_dir = Path("models") / deployed_policy["model"]
     classes = list(deployed_policy["classes"])
@@ -189,6 +241,25 @@ def run(
             "pass": lost_c <= lost_limit,
         },
     }
+    budget = gate.get("max_comparisons_per_holdout")
+    number = log_comparison(
+        report_dir.parent / "comparisons.jsonl",
+        {
+            "at": datetime.now(UTC).isoformat(),
+            "candidate": cand_meta["name"],
+            "candidate_weights": models["candidate"].weights_digest,
+            "holdout_version": snap["version"],
+            "protocol_sha256": hashlib.sha256(protocol_path.read_bytes()).hexdigest(),
+            "holdout_gain": gain,
+            "checks_passed": all(v["pass"] for v in checks.values()),
+        },
+    )
+    if budget is not None:
+        checks["comparison_budget"] = {
+            "value": number,
+            "limit": budget,
+            "pass": number <= budget,
+        }
     promote = all(v["pass"] for v in checks.values())
 
     # The candidate's policy artifact: deployed policy settings, its own calibration.
@@ -221,6 +292,13 @@ def run(
         "results": results,
         "checks": checks,
         "promote": promote,
+        "development_data_only": {
+            "evaluated_on": ["snapshot holdout", "calibration", "seen_camera_diagnostic"],
+            "final_test_read": False,
+            "protected_frames_in_snapshot": 0,
+            "comparison_number_on_this_holdout": number,
+            "comparison_budget": budget,
+        },
     }
     report_dir.mkdir(parents=True, exist_ok=True)
     (report_dir / "metrics.json").write_text(json.dumps(_round(out), indent=2) + "\n")

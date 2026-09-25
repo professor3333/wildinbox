@@ -319,3 +319,20 @@ class StudyRating(Base):
     block: Mapped[int] = mapped_column(Integer)
     condition: Mapped[str] = mapped_column(String(20))
     difficulty: Mapped[int] = mapped_column(Integer)
+
+
+class WorkerProcess(Base):
+    """One row per worker process start: liveness, memory, and how it ended.
+
+    A row whose `last_seen_at` went stale without `stopped_at` is a worker that
+    died (killed, crashed, out of memory) rather than shutting down."""
+
+    __tablename__ = "worker_processes"
+    id: Mapped[str] = mapped_column(String(200), primary_key=True)  # worker_id()
+    hostname: Mapped[str] = mapped_column(String(200))
+    pid: Mapped[int] = mapped_column(Integer)
+    started_at: Mapped[datetime] = _now()
+    last_seen_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    stopped_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    rss_bytes: Mapped[int | None] = mapped_column(BigInteger)
+    peak_rss_bytes: Mapped[int | None] = mapped_column(BigInteger)

@@ -291,25 +291,37 @@ def create_app(
 
     app = FastAPI(title="WildInbox", version="0.1.0", lifespan=lifespan)
     latency: dict[str, deque[float]] = defaultdict(lambda: deque(maxlen=2000))
+    # Response status classes per route since the API started (2xx, 4xx, 5xx).
+    statuses: dict[str, Counter[str]] = defaultdict(Counter)
 
     @app.middleware("http")
     async def _timing(request: Request, call_next: Any) -> Any:
         start = time.perf_counter()
-        response = await call_next(request)
-        route = request.scope.get("route")
-        path = getattr(route, "path", None)
-        if path:  # route templates only, so ids do not create unbounded series
-            latency[f"{request.method} {path}"].append(time.perf_counter() - start)
-        return response
+        status = 500
+        try:
+            response = await call_next(request)
+            status = response.status_code
+            return response
+        finally:
+            route = request.scope.get("route")
+            path = getattr(route, "path", None)
+            if path:  # route templates only, so ids do not create unbounded series
+                key = f"{request.method} {path}"
+                latency[key].append(time.perf_counter() - start)
+                statuses[key][f"{status // 100}xx"] += 1
 
     def latency_summary() -> dict[str, dict[str, float]]:
         out = {}
         for key, values in sorted(latency.items()):
             v = sorted(values)
+            codes = statuses[key]
             out[key] = {
                 "requests": len(v),
                 "p50_ms": round(1000 * v[len(v) // 2], 1),
                 "p95_ms": round(1000 * v[min(len(v) - 1, int(0.95 * len(v)))], 1),
+                "responses": sum(codes.values()),
+                "client_errors": codes["4xx"],
+                "server_errors": codes["5xx"],
             }
         return out
 
@@ -347,7 +359,12 @@ def create_app(
         from wildinbox.monitoring.metrics import load_config, summary
 
         with sessions()() as s:
-            out = summary(s, settings.lease_seconds, load_config(settings.monitoring_config))
+            out = summary(
+                s,
+                settings.lease_seconds,
+                load_config(settings.monitoring_config),
+                api=latency_summary(),
+            )
         out["operations"]["api_latency"] = latency_summary()
         return out
 
@@ -358,7 +375,12 @@ def create_app(
         from wildinbox.monitoring.prometheus import render
 
         with sessions()() as s:
-            data = summary(s, settings.lease_seconds, load_config(settings.monitoring_config))
+            data = summary(
+                s,
+                settings.lease_seconds,
+                load_config(settings.monitoring_config),
+                api=latency_summary(),
+            )
         return render(data, latency_summary())
 
     @app.get("/releases")

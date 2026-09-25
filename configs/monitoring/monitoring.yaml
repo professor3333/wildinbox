@@ -8,6 +8,14 @@ operations:
   max_failed_jobs: 0                 # terminal failures in the window
   max_processing_error_rate: 0.02    # failed frames / images scored
   max_unreadable_rate: 0.05          # undecodable or unsupported files / files uploaded
+  restart_window_hours: 24           # window for worker starts and deaths
+  max_worker_deaths: 0               # workers that stopped reporting without shutting down
+  max_worker_starts: 6               # more starts than this suggests a crash loop
+  max_worker_rss_mb: 3072            # resident memory of one worker process
+  max_api_server_error_rate: 0.01    # 5xx responses / responses since the API started
+  max_api_p95_ms: 500                # metadata GET routes with enough requests (target)
+  min_api_requests: 20
+  max_storage_gb: 200                # stored originals
 
 # Signals that need NO labels, per camera: the camera's most recent events
 # (by capture time) against its earlier events. They can flag that something
@@ -25,3 +33,22 @@ drift:
 accuracy:
   min_reviewed: 30                   # below this, no rate is reported for a camera
   max_correction_rate: 0.50          # alert when the 95% lower bound exceeds this
+
+# Model behavior (no labels needed): what the model decided for each camera's
+# latest batch against its earlier batches, and for the recent period against
+# the one before it (globally, with the camera-mix effect separated).
+behavior:
+  min_events: 50                     # earlier events needed to compare against
+  min_batch_events: 20               # a latest batch smaller than this is not compared
+  period_days: 7
+  max_label_psi: 0.25
+  max_confidence_psi: 0.25
+  max_share_change: 0.15             # filtered / auto-labeled / to-review / unfamiliar share
+  max_mean_confidence_change: 0.10
+  max_night_share_change: 0.20
+  max_blur_change: 0.50
+
+# Errors of automatic decisions, from the random audit sample only.
+audits:
+  max_false_empty_rate: 0.02         # alert when the 95% lower bound exceeds this
+  max_species_error_rate: 0.05       # 95% precision target for accepted species labels

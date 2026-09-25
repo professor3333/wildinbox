@@ -297,7 +297,11 @@ def main(argv: Sequence[str] | None = None) -> int:
 
     p_snap = sub.add_parser("snapshot", help="Training snapshots from reviewed events.")
     snap_sub = p_snap.add_subparsers(dest="snapshot_command", required=True)
-    p_sb = snap_sub.add_parser("build", help="Build a versioned snapshot through the API.")
+    p_sb = snap_sub.add_parser(
+        "build",
+        help="Build a versioned snapshot from approved reviews through the API, "
+        "excluding protected evaluation records.",
+    )
     p_sb.add_argument(
         "--protocol", type=Path, default=Path("configs/experiments/update_cycle.yaml")
     )
@@ -455,6 +459,12 @@ def main(argv: Sequence[str] | None = None) -> int:
         print(f"snapshot {summary['version']} -> {out}")
         print(f"  train: {summary['train']}")
         print(f"  holdout: {summary['holdout']}; cutoffs {summary['cutoffs']}")
+        print(
+            f"  approved reviewers: {summary['approved_reviewers']} "
+            f"({summary['reviews_not_approved']} reviewed events by others skipped)"
+        )
+        print(f"  protected records excluded: {summary['excluded']['by_reason'] or 'none'}")
+        print(f"  provenance: {summary['provenance']['events']} events in labels.jsonl")
         return 0
     if args.command == "update":
         from wildinbox.training.gate import run as run_gate

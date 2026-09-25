@@ -33,7 +33,7 @@ from .test_uploads import jpeg
 DB_URL = os.environ.get("WILDINBOX_TEST_DATABASE_URL")
 TABLES = (
     "reviews, decisions, predictions, images, events, jobs, batches, "
-    "release_activations, model_releases"
+    "release_activations, model_releases, worker_processes"
 )
 
 
