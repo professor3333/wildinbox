@@ -38,6 +38,9 @@ def analyze(export: dict[str, Any], protocol: dict[str, Any]) -> dict[str, Any]:
     for r in export["ratings"]:
         ratings[r["participant"]][r["condition"]] = r["difficulty"]
 
+    # Everyone who joined is accounted for, including those with no timed trials.
+    for p in export.get("participants", []):
+        by_participant.setdefault(p["code"], [])
     rows, exclusions = [], []
     for code, trials in sorted(by_participant.items()):
         done = {c: [t for t in trials if t["condition"] == c] for c in CONDITIONS}

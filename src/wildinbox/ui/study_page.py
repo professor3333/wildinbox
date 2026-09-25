@@ -186,14 +186,23 @@ def _trial(
             _decide(api, s, step, steps, d["suggested_label"])
             st.rerun()
     classes = label_choices(s["assignment"]["classes"])
-    cols = st.columns(len(classes) + 2)
-    for col, label in zip(cols, classes, strict=False):
-        if col.button(label, key=f"study-{eid}-{label}"):
+    options = [*classes, "other species", CANT_TELL]
+    # Two rows of five equal-width buttons, so no label is truncated.
+    cells = [c for _ in range(0, len(options), 5) for c in st.columns(5)]
+    for cell, label in zip(cells, classes, strict=False):
+        if cell.button(label, key=f"study-{eid}-{label}", use_container_width=True):
             _decide(api, s, step, steps, label)
             st.rerun()
-    if cols[-2].button("other species", key=f"study-{eid}-other", on_click=_bump, args=(s, eid)):
+    other_cell, cant_cell = cells[len(classes)], cells[len(classes) + 1]
+    if other_cell.button(
+        "other species",
+        key=f"study-{eid}-other",
+        on_click=_bump,
+        args=(s, eid),
+        use_container_width=True,
+    ):
         s.setdefault("other", {})[eid] = True
-    if cols[-1].button(CANT_TELL, key=f"study-{eid}-cant"):
+    if cant_cell.button(CANT_TELL, key=f"study-{eid}-cant", use_container_width=True):
         _decide(api, s, step, steps, None)
         st.rerun()
     if s.get("other", {}).get(eid):
