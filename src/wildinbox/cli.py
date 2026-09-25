@@ -121,6 +121,48 @@ def _dataset(args: argparse.Namespace) -> int:
     return 0
 
 
+def _release(args: argparse.Namespace) -> int:
+    from sqlalchemy import select
+
+    from wildinbox.inference.releases import (
+        ReleaseError,
+        activate,
+        active_release_id,
+        register_release,
+    )
+    from wildinbox.storage.db import session_factory
+    from wildinbox.storage.models import ModelRelease
+    from wildinbox.storage.objects import store_from_settings
+
+    settings = Settings()
+    with session_factory(settings.database_url)() as s:
+        try:
+            if args.release_command == "register":
+                release, created = register_release(
+                    s, store_from_settings(settings), args.model_dir, args.policy, args.note
+                )
+                print(f"{'registered' if created else 'already registered'}: {release.id}")
+                print(f"  weights sha256 {release.weights_sha256}")
+                print(f"  preprocessing {release.preprocessing_version}")
+                print(f"  policy {release.policy_version}")
+                if args.activate:
+                    activate(s, release.id, args.note)
+                    print(f"active release: {release.id}")
+            elif args.release_command == "activate":
+                activate(s, args.release_id, args.note)
+                print(f"active release: {args.release_id}")
+            else:
+                active = active_release_id(s, settings)
+                for r in s.scalars(select(ModelRelease).order_by(ModelRelease.created_at)):
+                    mark = "*" if r.id == active else " "
+                    print(f"{mark} {r.id}  {r.kind}  policy {r.policy_version}")
+            s.commit()
+        except ReleaseError as e:
+            print(f"error: {e}", file=sys.stderr)
+            return 1
+    return 0
+
+
 def main(argv: Sequence[str] | None = None) -> int:
     logging.basicConfig(level=logging.INFO, format="%(levelname)s %(message)s")
     parser = argparse.ArgumentParser(prog="wildinbox")
@@ -230,6 +272,22 @@ def main(argv: Sequence[str] | None = None) -> int:
         "--decisions", type=Path, default=Path("reports/calibration/decisions.jsonl.gz")
     )
 
+    p_rel = sub.add_parser("release", help="Register, activate, and list model releases.")
+    rel_sub = p_rel.add_subparsers(dest="release_command", required=True)
+    p_reg = rel_sub.add_parser("register", help="Register an immutable release.")
+    p_reg.add_argument("--model-dir", type=Path, default=Path("models/finetune-e3-deep-balanced"))
+    p_reg.add_argument("--policy", type=Path, default=Path("reports/calibration/policy.json"))
+    p_reg.add_argument("--note", default=None)
+    p_reg.add_argument("--activate", action="store_true", help="Also make it the default.")
+    p_act = rel_sub.add_parser("activate", help="Make a release the default for new batches.")
+    p_act.add_argument("release_id")
+    p_act.add_argument("--note", default=None)
+    rel_sub.add_parser("list", help="List releases and the active one.")
+
+    p_jobs = sub.add_parser("jobs", help="Job maintenance.")
+    jobs_sub = p_jobs.add_subparsers(dest="jobs_command", required=True)
+    jobs_sub.add_parser("recover", help="Requeue stale jobs and dispatch due ones now.")
+
     p_api = sub.add_parser("api", help="Serve the HTTP API.")
     p_api.add_argument("--host", default="127.0.0.1")
     p_api.add_argument("--port", type=int, default=8000)
@@ -304,6 +362,23 @@ def main(argv: Sequence[str] | None = None) -> int:
             print(f"MISMATCH {problem}", file=sys.stderr)
         print(f"{replayed['events']} events replayed, {len(replayed['problems'])} mismatches")
         return 1 if replayed["problems"] else 0
+    if args.command == "release":
+        return _release(args)
+    if args.command == "jobs":
+        from wildinbox.storage.db import session_factory
+        from wildinbox.storage.objects import store_from_settings
+        from wildinbox.workers.dispatch import dispatcher_from_settings
+        from wildinbox.workers.process import recover_stale
+
+        settings = Settings()
+        store = store_from_settings(settings)
+        ids = recover_stale(
+            session_factory(settings.database_url),
+            dispatcher_from_settings(settings, store),
+            settings,
+        )
+        print(f"dispatched {len(ids)} due job(s)")
+        return 0
     if args.command == "api":
         import uvicorn
 
