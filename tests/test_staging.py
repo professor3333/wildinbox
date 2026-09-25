@@ -138,3 +138,15 @@ def test_json_logs_carry_structured_fields() -> None:
     out = json.loads(JsonFormatter().format(record))
     assert out["message"] == "job done" and out["level"] == "INFO"
     assert out["job_id"] == "j1" and out["seconds"] == 1.5
+
+
+def test_upload_reports_its_server_phases(settings: Settings) -> None:  # noqa: F811
+    with TestClient(create_app(settings, dispatcher=NoopDispatcher())) as c:
+        files = [("files", (f"{i}.jpg", jpeg(i), "image/jpeg")) for i in range(3)]
+        res = c.post("/batches", files=files)
+    assert res.status_code == 202
+    phases = dict(p.strip().split(";dur=") for p in res.headers["Server-Timing"].split(","))
+    assert set(phases) == {"receive", "validate", "store", "db"}
+    assert all(float(v) >= 0 for v in phases.values())
+    job = res.json()["job"]
+    assert job["created_at"] >= res.json()["created_at"]  # queued after originals stored

@@ -199,12 +199,27 @@ def upload(
     if res.status_code != 202:
         raise RuntimeError(f"upload failed: {res.status_code} {res.text[:300]}")
     out: dict[str, Any] = res.json()
+    # The server's own phases (ms): receive = body arrived and parsed, validate
+    # = decode checks, store = originals to S3, db = rows committed. The rest of
+    # the client's time is network transfer and response.
+    phases = {
+        k.strip(): float(v) / 1000
+        for k, _, v in (
+            p.partition(";dur=") for p in res.headers.get("Server-Timing", "").split(",")
+        )
+        if v
+    }
+    server = sum(phases.values())
     out["_upload"] = {
         "files": len(files),
         "bytes": body,
         "seconds": round(seconds, 2),
-        "mbit_per_s": round(8 * body / seconds / 1e6, 1),
+        "server_phases_seconds": {k: round(v, 2) for k, v in phases.items()},
+        "server_after_receive_seconds": round(server - phases.get("receive", 0), 2),
+        "transfer_seconds": round(seconds - (server - phases.get("receive", 0)), 2),
     }
+    t = out["_upload"]["transfer_seconds"]
+    out["_upload"]["transfer_mbit_per_s"] = round(8 * body / t / 1e6, 1) if t > 0 else None
     return out
 
 
@@ -217,7 +232,14 @@ def wait(
     t0 = time.monotonic()
     last = -1
     while time.monotonic() - t0 < timeout:
-        s: dict[str, Any] = client.get(f"/batches/{batch_id}").json()
+        try:
+            res = client.get(f"/batches/{batch_id}", timeout=30)
+            res.raise_for_status()
+        except httpx.HTTPError as e:  # a stalled tunnel or a restarting API: poll again
+            print(f"    poll failed ({type(e).__name__}); retrying", flush=True)
+            time.sleep(2)
+            continue
+        s: dict[str, Any] = res.json()
         p = s["progress"]
         if p["images_scored"] != last:
             last = p["images_scored"]
@@ -433,11 +455,27 @@ def main() -> None:
     ap.add_argument("--latency-requests", type=int, default=200)
     ap.add_argument("--timeout", type=float, default=1800)
     ap.add_argument("--out", type=Path, required=True)
+    ap.add_argument(
+        "--latency-only",
+        metavar="BATCH_ID",
+        help="only measure metadata latency on an existing batch (e.g. from the VM itself)",
+    )
     args = ap.parse_args()
 
     token = os.environ.get(args.token_env)
     headers = {"Authorization": f"Bearer {token}"} if token else {}
     client = httpx.Client(base_url=args.api, headers=headers, timeout=60)
+    if args.latency_only:
+        out = {
+            "label": args.label,
+            "api": args.api,
+            "at": datetime.now(UTC).isoformat(),
+            "latency_client": latency(client, args.latency_only, args.latency_requests),
+        }
+        args.out.parent.mkdir(parents=True, exist_ok=True)
+        args.out.write_text(json.dumps(out, indent=2) + "\n")
+        print(json.dumps(out["latency_client"], indent=2))
+        return
     vm = Vm(args.ssh, args.stack)
 
     ready = client.get("/ready")

@@ -83,6 +83,8 @@ class Settings(BaseSettings):
     max_files_per_batch: int = Field(default=2000, gt=0)
     max_file_bytes: int = Field(default=20 * 1024 * 1024, gt=0)
     max_batch_bytes: int = Field(default=1024 * 1024 * 1024, gt=0)
+    # Originals written to object storage in parallel per upload.
+    store_concurrency: int = Field(default=16, gt=0, le=64)
 
     @field_validator(
         "object_store_url", "object_store_access_key", "object_store_secret_key", "expected_release"
