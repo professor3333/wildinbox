@@ -186,6 +186,7 @@ uv run wildinbox finetune train --config configs/experiments/finetune-e3-deep-ba
 uv run wildinbox evaluate --model models/finetune-e3-deep-balanced \
   --report-dir reports/experiments/finetune-e3-deep-balanced \
   --compare-to reports/experiments/finetune-e3-deep-balanced/metrics.json
+uv run wildinbox unfamiliar        # unfamiliar-input score vs confidence (evaluated, not adopted)
 uv run wildinbox calibrate         # temperature, pre-registered operating point, policy artifact
 uv run wildinbox replay            # every saved decision reproduces from saved predictions
 ```
