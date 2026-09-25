@@ -1,0 +1,7 @@
+#!/usr/bin/env bash
+# docker compose for the staging stack, with the stack facts and secrets loaded.
+#   deploy/staging/wi ps | logs -f worker | exec api ... (any compose command)
+set -euo pipefail
+here="$(cd "$(dirname "$0")" && pwd)"
+exec docker compose -f "$here/compose.yml" \
+  --env-file /etc/wildinbox/stack.env --env-file /etc/wildinbox/secrets.env "$@"

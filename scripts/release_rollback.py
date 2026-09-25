@@ -17,6 +17,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import subprocess
 import sys
 import time
@@ -24,6 +25,12 @@ from pathlib import Path
 from typing import Any
 
 import httpx
+
+
+def auth_headers() -> dict[str, str]:
+    """Bearer token from WILDINBOX_TOKEN, for deployments that require one."""
+    token = os.environ.get("WILDINBOX_TOKEN")
+    return {"Authorization": f"Bearer {token}"} if token else {}
 
 
 def check(cond: bool, message: str) -> None:
@@ -64,7 +71,7 @@ def main() -> None:
     parser.add_argument("--batch-dir", type=Path, default=Path("data/samples/release-demo"))
     parser.add_argument("--log", type=Path, default=Path("reports/update/release-log.json"))
     args = parser.parse_args()
-    api = httpx.Client(base_url=args.url, timeout=60)
+    api = httpx.Client(base_url=args.url, timeout=60, headers=auth_headers())
 
     gate = json.loads((args.gate / "metrics.json").read_text())
     check(gate["promote"], f"gate passed for {gate['candidate_release']}")

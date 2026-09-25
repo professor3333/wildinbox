@@ -7,6 +7,21 @@ decision, and review. Interactive schema: `http://localhost:8000/docs`.
 
 Errors are JSON: `{"error": "<code>", "detail": "<message>"}`.
 
+## Access
+
+With `WILDINBOX_AUTH=tokens` (the default, and always on staging), every
+endpoint except `GET /health`, `GET /ready`, `/docs`, `/openapi.json`, and the
+static upload page at `/` needs `Authorization: Bearer <token>`; without one
+the answer is `401 {"error": "unauthorized"}` with `WWW-Authenticate: Bearer`.
+Tokens are created with `wildinbox token new NAME`; the deployment stores only
+their SHA-256 in `WILDINBOX_API_TOKENS` (a JSON object of name to hash), and
+the name is recorded as `principal` in the request logs. There is one
+workspace: every token holder sees every batch. `WILDINBOX_AUTH=disabled` is
+for local development only (the local Compose stack sets it).
+
+Every response carries `X-Request-ID` (the client's, or a generated one), the
+key to the request's JSON log line.
+
 ## Endpoints
 
 | Method and path | Behavior |
@@ -25,7 +40,9 @@ Errors are JSON: `{"error": "<code>", "detail": "<message>"}`.
 | `GET /metrics` | The same in Prometheus text format, for scraping and alerting. |
 | `GET /batches` | Recent batches. |
 | `GET /images/{id}/thumbnail` | A JPEG thumbnail (`size` 64-1024), generated once and kept in object storage. |
-| `GET /health` | Database reachable. |
+| `GET /health` | Liveness: database reachable. Public. |
+| `GET /ready` | Readiness: database, queue, object store, and the expected release (`WILDINBOX_EXPECTED_RELEASE`) active with its weights loaded and SHA-256-verified; `503` with the failing check otherwise. Public. |
+| `GET /whoami` | The principal behind the token. |
 
 ### Uploading
 
@@ -35,6 +52,11 @@ curl -F files=@IMG_0001.JPG -F files=@IMG_0002.JPG \
      -H 'Idempotency-Key: card-2024-05-02' \
      http://localhost:8000/batches
 ```
+
+The `202` response carries `Server-Timing: receive;dur=…, validate;dur=…,
+store;dur=…, db;dur=…` (milliseconds): body received and parsed, files
+checked, originals written to object storage, rows committed. The rest of the
+client's wait is network transfer.
 
 `metadata` may also give per-file values:
 `{"files": {"IMG_0001.JPG": {"camera_id": "...", "captured_at": "...", "sequence_id": "..."}}}`.

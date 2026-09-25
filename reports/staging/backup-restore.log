@@ -1,0 +1,27 @@
+{"key": "backups/postgres/wildinbox-20260925T142617Z.dump", "bytes": 9213197, "tables": 15, "at": "20260925T142617Z"}
+== 2026-09-25T14:26:20Z add a review so the backup holds a human correction
+{"id":"2f2c10a8-af4b-416a-bb2a-c5cfc8958b9b","event_id":null,"confirmed_label":null}
+before backup: {"batches" : 27, "images" : 18201, "events" : 6437, "predictions" : 18177, "decisions" : 6437, "reviews" : 3, "jobs" : 27, "releases" : 2}
+== backup
+{"key": "backups/postgres/wildinbox-20260925T142620Z.dump", "bytes": 9213233, "tables": 15, "at": "20260925T142620Z"}
+real	0m2.566s
+user	0m0.913s
+sys	0m0.179s
+== upload one batch AFTER the backup (the restore must remove it)
+after-backup batch: 0ea1c799-0553-4ed3-8fa7-83d4d54d660a
+after upload: {"batches" : 28, "images" : 18202, "events" : 6437, "predictions" : 18177, "decisions" : 6437, "reviews" : 3, "jobs" : 28, "releases" : 2}
+== restore backups/postgres/wildinbox-20260925T142620Z.dump
+== restoring backups/postgres/wildinbox-20260925T142620Z.dump (9213233 bytes)
+== restored backups/postgres/wildinbox-20260925T142620Z.dump
+real	0m35.777s
+user	0m1.274s
+sys	0m0.301s
+after restore: {"batches" : 27, "images" : 18201, "events" : 6437, "predictions" : 18177, "decisions" : 6437, "reviews" : 3, "jobs" : 27, "releases" : 2}
+ok   counts identical to the backup
+ok   after-backup batch is gone (404)
+ok   the review survived
+ok   restored image loads from S3 (19690 byte thumbnail)
+{"status":"ready","model":"finetune-e3-deep-balanced@7a25aea97c76"}
+== the restored system still processes new uploads
+new batch 4fa6c7d5-8874-4144-9f12-86f689f1c397: completed
+ok   processed after restore

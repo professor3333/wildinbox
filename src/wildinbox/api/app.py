@@ -22,6 +22,7 @@ from starlette.datastructures import UploadFile
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from wildinbox.api import views
+from wildinbox.api.auth import PUBLIC_PATHS, principal
 from wildinbox.api.uploads import (
     UploadedFile,
     UploadError,
@@ -278,6 +279,11 @@ def create_app(
 ) -> FastAPI:
     settings = settings or Settings()
     cfg = load_config(settings.config_path)
+    if settings.auth == "tokens" and not settings.api_tokens:
+        raise RuntimeError(
+            "WILDINBOX_AUTH=tokens but WILDINBOX_API_TOKENS is empty: create tokens with "
+            "`wildinbox token new NAME`, or set WILDINBOX_AUTH=disabled for local development"
+        )
 
     @asynccontextmanager
     async def lifespan(app: FastAPI) -> AsyncIterator[None]:
@@ -298,17 +304,44 @@ def create_app(
     async def _timing(request: Request, call_next: Any) -> Any:
         start = time.perf_counter()
         status = 500
+        request_id = request.headers.get("x-request-id", "")[:100] or uuid.uuid4().hex
+        who = None
         try:
+            if settings.auth == "tokens":
+                who = principal(request.headers.get("authorization"), settings.api_tokens)
+                if who is None and request.url.path not in PUBLIC_PATHS:
+                    status = 401
+                    response = _error(401, "unauthorized", "send Authorization: Bearer <token>")
+                    response.headers["WWW-Authenticate"] = "Bearer"
+                    response.headers["X-Request-ID"] = request_id
+                    return response
             response = await call_next(request)
             status = response.status_code
+            response.headers["X-Request-ID"] = request_id
             return response
         finally:
+            elapsed = time.perf_counter() - start
             route = request.scope.get("route")
             path = getattr(route, "path", None)
             if path:  # route templates only, so ids do not create unbounded series
                 key = f"{request.method} {path}"
-                latency[key].append(time.perf_counter() - start)
+                latency[key].append(elapsed)
                 statuses[key][f"{status // 100}xx"] += 1
+            if request.url.path not in ("/health", "/ready") or status >= 400:
+                log.info(
+                    "request",
+                    extra={
+                        "fields": {
+                            "request_id": request_id,
+                            "method": request.method,
+                            "route": path or request.url.path,
+                            "status": status,
+                            "duration_ms": round(1000 * elapsed, 1),
+                            "principal": who,
+                            "bytes_in": request.headers.get("content-length"),
+                        }
+                    },
+                )
 
     def latency_summary() -> dict[str, dict[str, float]]:
         out = {}
@@ -342,6 +375,21 @@ def create_app(
         with sessions()() as s:
             s.execute(select(1))
         return {"status": "ok"}
+
+    @app.get("/ready")
+    def ready() -> JSONResponse:
+        """Ready to serve: database, queue, and object store reachable, and the
+        expected model release active and loaded (weights verified)."""
+        from wildinbox.api.readiness import check
+
+        with sessions()() as s:
+            ok, body = check(s, settings, app.state.store)
+        return JSONResponse(body, status_code=200 if ok else 503)
+
+    @app.get("/whoami")
+    def whoami(request: Request) -> dict[str, Any]:
+        who = principal(request.headers.get("authorization"), settings.api_tokens)
+        return {"principal": who, "auth": settings.auth}
 
     @app.get("/version")
     def version() -> dict[str, Any]:
@@ -412,7 +460,7 @@ def create_app(
 
     @app.get("/", response_class=HTMLResponse)
     def home() -> str:
-        return views.upload_page(settings)
+        return views.upload_page(settings, auth_required=settings.auth == "tokens")
 
     # ----------------------------------------------------------------- batches
 
@@ -420,6 +468,9 @@ def create_app(
     async def create_batch(
         request: Request, idempotency_key: str | None = Header(default=None, max_length=200)
     ) -> JSONResponse:
+        # Phase timings, returned as Server-Timing so clients can separate the
+        # network transfer from the server's own work.
+        marks = [("start", time.perf_counter())]
         length = request.headers.get("content-length")
         if length and int(length) > settings.max_batch_bytes + MULTIPART_OVERHEAD:
             raise UploadError(
@@ -438,6 +489,7 @@ def create_app(
                     f"a batch may contain at most {settings.max_files_per_batch} files",
                 ) from None
             raise UploadError(400, "invalid_upload", str(e.detail)) from None
+        marks.append(("receive", time.perf_counter()))  # body read and parsed
         uploads = [f for f in form.getlist("files") if isinstance(f, UploadFile)]
         if not uploads:
             raise UploadError(400, "no_files", "send one or more files in the 'files' field")
@@ -467,10 +519,42 @@ def create_app(
                 )
             )
         await form.close()
-        return await run_in_threadpool(_store_batch, files, metadata, idempotency_key)
+        marks.append(("validate", time.perf_counter()))
+        response = await run_in_threadpool(_store_batch, files, metadata, idempotency_key, marks)
+        phases = {
+            name: round(1000 * (t - prev), 1)
+            for (name, t), (_, prev) in zip(marks[1:], marks, strict=False)
+        }
+        response.headers["Server-Timing"] = ", ".join(f"{k};dur={v}" for k, v in phases.items())
+        log.info("batch stored", extra={"fields": {"files": len(files), "phases_ms": phases}})
+        return response
+
+    def _put_originals(files: list[UploadedFile]) -> None:
+        """Write accepted originals to object storage, several at a time: they
+        are independent, content-addressed objects, and one at a time a
+        1,000-file batch spends most of its upload waiting on S3 round trips."""
+        from concurrent.futures import ThreadPoolExecutor
+
+        todo = {
+            f.sha256: f
+            for f in files
+            if f.accepted and f.data is not None and f.sha256 and f.content_type
+        }
+
+        def put(f: UploadedFile) -> None:
+            assert f.sha256 and f.data is not None and f.content_type
+            key = original_key(f.sha256)
+            if not app.state.store.exists(key):
+                app.state.store.put(key, f.data, f.content_type)
+
+        with ThreadPoolExecutor(settings.store_concurrency) as pool:
+            list(pool.map(put, todo.values()))  # re-raises the first failure
 
     def _store_batch(
-        files: list[UploadedFile], metadata: Any, idempotency_key: str | None
+        files: list[UploadedFile],
+        metadata: Any,
+        idempotency_key: str | None,
+        marks: list[tuple[str, float]],
     ) -> JSONResponse:
         fingerprint = request_fingerprint(files, metadata)
         request_key = f"key:{idempotency_key}" if idempotency_key else f"content:{fingerprint}"
@@ -478,11 +562,8 @@ def create_app(
             existing = _existing(s, request_key, fingerprint)
             if existing is not None:
                 return existing
-            for f in files:
-                if f.accepted and f.data is not None and f.sha256 and f.content_type:
-                    key = original_key(f.sha256)
-                    if not app.state.store.exists(key):
-                        app.state.store.put(key, f.data, f.content_type)
+            _put_originals(files)
+            marks.append(("store", time.perf_counter()))
 
             batch = Batch(
                 id=uuid.uuid4(),
@@ -523,6 +604,8 @@ def create_app(
             job = Job(
                 id=uuid.uuid4(),
                 batch_id=batch.id,
+                # Queued now, not when the transaction began (before the S3 writes).
+                created_at=_utcnow(),
                 kind="process_batch",
                 status="queued",
                 attempts=0,
@@ -542,6 +625,7 @@ def create_app(
                 app.state.dispatcher.enqueue(job.id)
             except Exception:
                 log.exception("could not dispatch job %s; it stays queued", job.id)
+            marks.append(("db", time.perf_counter()))
             s.expire_all()
             batch_row = s.get(Batch, batch.id)
             assert batch_row is not None

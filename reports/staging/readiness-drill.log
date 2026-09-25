@@ -1,0 +1,13 @@
+== expected release set to one that is not active
+up --wait exit code: 1
+ Container wildinbox-staging-api-1  Error
+dependency failed to start: container wildinbox-staging-api-1 is unhealthy
+{"status":"not_ready","model":{"ok":false,"error":"RuntimeError: active release is 'finetune-e3-deep-balanced@7a25aea97c76', deployment expects 'finetune-e3-deep-balanced@000000000000'"}}
+HTTP 503
+wildinbox-staging-api-1 Up About a minute (unhealthy)
+wildinbox-staging-worker-1 Restarting (1) 20 seconds ago
+wildinbox-staging-worker-2 Restarting (1) 21 seconds ago
+RuntimeError: release 'finetune-e3-deep-balanced@000000000000' is not registered
+== restored
+up --wait exit code: 0
+{"status":"ready","model":"finetune-e3-deep-balanced@7a25aea97c76"}

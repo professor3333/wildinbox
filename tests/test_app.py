@@ -79,6 +79,7 @@ def settings(database_url: str, tmp_path: Path) -> Settings:
         max_file_bytes=100_000,
         max_batch_bytes=500_000,
         retry_backoff_seconds=0,
+        auth="disabled",
     )
 
 

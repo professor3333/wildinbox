@@ -49,8 +49,14 @@ def _page(title: str, body: str, refresh: bool = False) -> str:
     )
 
 
-def upload_page(settings: Settings) -> str:
+def upload_page(settings: Settings, auth_required: bool = False) -> str:
     limit_mb = settings.max_file_bytes // (1024 * 1024)
+    token_field = (
+        '<label>Access token<br><input type="password" name="token" required '
+        'autocomplete="current-password"></label>'
+        if auth_required
+        else ""
+    )
     return _page(
         "WildInbox upload",
         f"""
@@ -61,6 +67,7 @@ def upload_page(settings: Settings) -> str:
   <label>Photos (JPEG or PNG, up to {settings.max_files_per_batch} files,
     {limit_mb} MiB each)<br><input type="file" name="files" multiple required></label>
   <label>Camera id (optional)<br><input type="text" name="camera" maxlength="200"></label>
+  {token_field}
   <div><button type="submit">Upload</button> <span id="msg" class="muted"></span></div>
 </form>
 <script>
@@ -71,10 +78,13 @@ document.getElementById("upload").addEventListener("submit", async (ev) => {{
   for (const f of form.files.files) body.append("files", f);
   if (form.camera.value) body.append("metadata", JSON.stringify({{camera_id: form.camera.value}}));
   msg.textContent = "Uploading...";
-  const res = await fetch("/batches", {{method: "POST", body}});
+  const headers = form.token ? {{Authorization: "Bearer " + form.token.value}} : {{}};
+  const res = await fetch("/batches", {{method: "POST", body, headers}});
   const data = await res.json();
-  if (res.ok) window.location = data.links.view;
-  else msg.textContent = data.detail || "Upload failed";
+  if (!res.ok) msg.textContent = data.detail || "Upload failed";
+  else if (form.token) msg.textContent = "Uploaded batch " + data.id +
+    ". Follow it in the review interface.";
+  else window.location = data.links.view;
 }});
 </script>""",
     )

@@ -1,0 +1,129 @@
+{
+  "label": "cpu-workers-1",
+  "run_tag": "cpu-workers-1-c2812020",
+  "started_at": "2026-09-25T14:08:01.211991+00:00",
+  "api": "http://localhost:8000",
+  "release": {
+    "id": "finetune-e3-deep-balanced@7a25aea97c76",
+    "weights_sha256": "3ab6fec236ce4b418acdda78f94078ec3bd6331983e2186bd52aa11a1fd9b360",
+    "preprocessing_version": "6d9a950a6543",
+    "policy_version": "conservative/v2+378312635a29",
+    "is_test": false
+  },
+  "machine": {
+    "instance_type": "m7i-flex.large",
+    "region": "us-east-1",
+    "vcpus": "2",
+    "memory_bytes": "8153993216",
+    "cpu": "Intel(R) Xeon(R) Platinum 8488C",
+    "kernel": "7.0.0-1013-aws",
+    "os": "Ubuntu 24.04.5 LTS",
+    "docker": "29.1.3",
+    "disk": "38G total, 27G free",
+    "containers": [
+      {
+        "Names": "wildinbox-staging-ui-1",
+        "Image": "wildinbox-staging:latest",
+        "Status": "Up 46 minutes (healthy)"
+      },
+      {
+        "Names": "wildinbox-staging-api-1",
+        "Image": "wildinbox-staging:latest",
+        "Status": "Up 46 minutes (healthy)"
+      },
+      {
+        "Names": "wildinbox-staging-worker-1",
+        "Image": "wildinbox-staging:latest",
+        "Status": "Up 20 minutes"
+      },
+      {
+        "Names": "wildinbox-staging-postgres-1",
+        "Image": "postgres:16-alpine",
+        "Status": "Up About an hour (healthy)"
+      },
+      {
+        "Names": "wildinbox-staging-redis-1",
+        "Image": "redis:7-alpine",
+        "Status": "Up About an hour (healthy)"
+      }
+    ]
+  },
+  "image_bytes": {
+    "batch_dir": "data/samples/dev-1000",
+    "files": 1000,
+    "total": 109826774,
+    "mean": 109827
+  },
+  "scenarios": {
+    "thousand": {
+      "batches": [
+        {
+          "batch_id": "101e5d64-2715-4c94-9904-912986197e9b",
+          "status": "completed",
+          "counts": {
+            "images": 1000,
+            "pending": 0,
+            "valid": 1000,
+            "invalid": 0,
+            "duplicate": 0,
+            "events": 348,
+            "processing_failed": 0
+          },
+          "upload": {
+            "files": 1000,
+            "bytes": 109880774,
+            "seconds": 5.83,
+            "server_phases_seconds": {
+              "receive": 0.49,
+              "validate": 0.1,
+              "store": 4.73,
+              "db": 0.45
+            },
+            "server_after_receive_seconds": 5.28,
+            "transfer_seconds": 0.54,
+            "transfer_mbit_per_s": 1627.9
+          },
+          "processing": {
+            "attempts": 1,
+            "worker": "193286b87eac:1:4c43b8c6",
+            "queued_seconds": 0.4,
+            "processing_seconds": 121.7,
+            "images_per_second": 8.22,
+            "run_seconds": 121.2
+          },
+          "integrity": {
+            "images": 1000,
+            "valid": 1000,
+            "predictions": 1000,
+            "duplicate_predictions": 0,
+            "valid_without_prediction": 0,
+            "events": 348,
+            "decisions": 348,
+            "events_without_one_decision": 0,
+            "ok": true
+          },
+          "failures": []
+        }
+      ],
+      "wall_seconds": 128.6,
+      "memory_peak_mib": {
+        "wildinbox-staging-api-1": 717,
+        "wildinbox-staging-postgres-1": 79,
+        "wildinbox-staging-redis-1": 4,
+        "wildinbox-staging-ui-1": 94,
+        "wildinbox-staging-worker-1": 545
+      }
+    }
+  },
+  "memory": {
+    "peak_mib": {
+      "wildinbox-staging-api-1": 717,
+      "wildinbox-staging-postgres-1": 79,
+      "wildinbox-staging-redis-1": 4,
+      "wildinbox-staging-ui-1": 94,
+      "wildinbox-staging-worker-1": 545
+    },
+    "samples": 210
+  },
+  "finished_at": "2026-09-25T14:10:09.980675+00:00"
+}

@@ -22,6 +22,7 @@ from __future__ import annotations
 import argparse
 import io
 import json
+import os
 import subprocess
 import sys
 import time
@@ -30,6 +31,13 @@ from typing import Any
 
 import httpx
 from PIL import Image
+
+
+def auth_headers() -> dict[str, str]:
+    """Bearer token from WILDINBOX_TOKEN, for deployments that require one."""
+    token = os.environ.get("WILDINBOX_TOKEN")
+    return {"Authorization": f"Bearer {token}"} if token else {}
+
 
 TOLERANCE = 1e-5
 
@@ -110,7 +118,7 @@ def main() -> None:
     parser.add_argument("--batch-dir", type=Path, default=Path("data/samples/release-demo"))
     parser.add_argument("--out", type=Path, default=Path("reports/update/rollback-restore.json"))
     args = parser.parse_args()
-    api = httpx.Client(base_url=args.url, timeout=60)
+    api = httpx.Client(base_url=args.url, timeout=60, headers=auth_headers())
     run = time.strftime("%Y%m%dT%H%M%S")
     gate = json.loads((args.gate / "metrics.json").read_text())
     candidate = gate["candidate_release"]

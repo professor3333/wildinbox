@@ -21,6 +21,7 @@ from __future__ import annotations
 import argparse
 import io
 import json
+import os
 import random
 import subprocess
 import sys
@@ -30,6 +31,12 @@ from typing import Any
 
 import httpx
 from PIL import Image, ImageEnhance, ImageFilter
+
+
+def auth_headers() -> dict[str, str]:
+    """Bearer token from WILDINBOX_TOKEN, for deployments that require one."""
+    token = os.environ.get("WILDINBOX_TOKEN")
+    return {"Authorization": f"Bearer {token}"} if token else {}
 
 
 def check(cond: bool, message: str) -> None:
@@ -215,7 +222,7 @@ def main() -> None:
     parser.add_argument("--skip-drill", action="store_true")
     parser.add_argument("--out", type=Path, default=Path("reports/monitoring/acceptance.json"))
     args = parser.parse_args()
-    api = httpx.Client(base_url=args.url, timeout=120)
+    api = httpx.Client(base_url=args.url, timeout=120, headers=auth_headers())
     run = time.strftime("%Y%m%dT%H%M%S")
     report: dict[str, Any] = {
         "run": run,

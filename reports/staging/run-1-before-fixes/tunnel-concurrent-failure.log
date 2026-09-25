@@ -1,0 +1,187 @@
+== small
+    bd9b86c6 scored 0/24
+    bd9b86c6 scored 24/24
+   completed: upload 2.08s, processing 2.7s, integrity ok
+== thousand
+    8a54564d scored 0/1000
+    8a54564d scored 16/1000
+    8a54564d scored 32/1000
+    8a54564d scored 48/1000
+    8a54564d scored 64/1000
+    8a54564d scored 80/1000
+    8a54564d scored 96/1000
+    8a54564d scored 112/1000
+    8a54564d scored 128/1000
+    8a54564d scored 144/1000
+    8a54564d scored 160/1000
+    8a54564d scored 176/1000
+    8a54564d scored 192/1000
+    8a54564d scored 208/1000
+    8a54564d scored 224/1000
+    8a54564d scored 240/1000
+    8a54564d scored 256/1000
+    8a54564d scored 272/1000
+    8a54564d scored 288/1000
+    8a54564d scored 304/1000
+    8a54564d scored 320/1000
+    8a54564d scored 336/1000
+    8a54564d scored 352/1000
+    8a54564d scored 368/1000
+    8a54564d scored 384/1000
+    8a54564d scored 400/1000
+    8a54564d scored 416/1000
+    8a54564d scored 432/1000
+    8a54564d scored 448/1000
+    8a54564d scored 464/1000
+    8a54564d scored 480/1000
+    8a54564d scored 496/1000
+    8a54564d scored 512/1000
+    8a54564d scored 528/1000
+    8a54564d scored 560/1000
+    8a54564d scored 576/1000
+    8a54564d scored 592/1000
+    8a54564d scored 608/1000
+    8a54564d scored 624/1000
+    8a54564d scored 640/1000
+    8a54564d scored 656/1000
+    8a54564d scored 672/1000
+    8a54564d scored 688/1000
+    8a54564d scored 704/1000
+    8a54564d scored 720/1000
+    8a54564d scored 736/1000
+    8a54564d scored 752/1000
+    8a54564d scored 768/1000
+    8a54564d scored 784/1000
+    8a54564d scored 800/1000
+    8a54564d scored 816/1000
+    8a54564d scored 832/1000
+    8a54564d scored 848/1000
+    8a54564d scored 864/1000
+    8a54564d scored 880/1000
+    8a54564d scored 896/1000
+    8a54564d scored 912/1000
+    8a54564d scored 928/1000
+    8a54564d scored 944/1000
+    8a54564d scored 960/1000
+    8a54564d scored 976/1000
+    8a54564d scored 1000/1000
+   completed: upload 35.92s, processing 111.7s, integrity ok
+== invalid
+    8dc8385f scored 0/22
+    8dc8385f scored 16/22
+    8dc8385f scored 20/20
+   completed_with_errors: upload 7.36s, processing 2.5s, integrity ok
+== concurrent
+    d65865be scored 0/1000
+    c2ee1936 scored 0/1000
+    d65865be scored 16/1000
+    d65865be scored 32/1000
+    d65865be scored 48/1000
+    d65865be scored 64/1000
+    d65865be scored 80/1000
+    d65865be scored 96/1000
+    d65865be scored 112/1000
+    d65865be scored 128/1000
+    d65865be scored 144/1000
+    d65865be scored 160/1000
+    d65865be scored 176/1000
+    d65865be scored 192/1000
+    d65865be scored 208/1000
+    d65865be scored 224/1000
+    d65865be scored 240/1000
+    d65865be scored 256/1000
+    d65865be scored 272/1000
+    d65865be scored 288/1000
+    d65865be scored 304/1000
+    d65865be scored 320/1000
+    d65865be scored 336/1000
+    d65865be scored 352/1000
+    d65865be scored 368/1000
+    d65865be scored 384/1000
+    d65865be scored 400/1000
+    d65865be scored 416/1000
+    d65865be scored 432/1000
+    d65865be scored 448/1000
+    d65865be scored 464/1000
+    d65865be scored 480/1000
+    d65865be scored 496/1000
+    d65865be scored 512/1000
+    d65865be scored 528/1000
+    d65865be scored 544/1000
+    d65865be scored 560/1000
+    d65865be scored 576/1000
+    d65865be scored 592/1000
+    d65865be scored 608/1000
+    d65865be scored 624/1000
+    d65865be scored 640/1000
+    d65865be scored 656/1000
+    d65865be scored 672/1000
+    d65865be scored 688/1000
+    d65865be scored 704/1000
+    d65865be scored 720/1000
+    d65865be scored 736/1000
+    d65865be scored 752/1000
+    d65865be scored 768/1000
+    d65865be scored 784/1000
+    d65865be scored 800/1000
+    d65865be scored 816/1000
+    d65865be scored 832/1000
+    poll failed (RemoteProtocolError); retrying
+    d65865be scored 864/1000
+    d65865be scored 880/1000
+    d65865be scored 896/1000
+    d65865be scored 912/1000
+    d65865be scored 928/1000
+    d65865be scored 944/1000
+    d65865be scored 960/1000
+    d65865be scored 976/1000
+    d65865be scored 992/1000
+    d65865be scored 1000/1000
+    c2ee1936 scored 16/1000
+    c2ee1936 scored 32/1000
+    c2ee1936 scored 48/1000
+    c2ee1936 scored 64/1000
+    c2ee1936 scored 80/1000
+    c2ee1936 scored 96/1000
+    c2ee1936 scored 112/1000
+    c2ee1936 scored 128/1000
+    c2ee1936 scored 144/1000
+    c2ee1936 scored 160/1000
+    c2ee1936 scored 176/1000
+    c2ee1936 scored 192/1000
+    c2ee1936 scored 208/1000
+    c2ee1936 scored 224/1000
+    c2ee1936 scored 240/1000
+    c2ee1936 scored 256/1000
+    c2ee1936 scored 272/1000
+    c2ee1936 scored 288/1000
+    c2ee1936 scored 304/1000
+    c2ee1936 scored 320/1000
+    c2ee1936 scored 336/1000
+    c2ee1936 scored 352/1000
+    c2ee1936 scored 368/1000
+    c2ee1936 scored 384/1000
+    c2ee1936 scored 400/1000
+    poll failed (ReadTimeout); retrying
+    poll failed (ReadTimeout); retrying
+    poll failed (ReadTimeout); retrying
+    poll failed (ReadError); retrying
+    poll failed (ConnectError); retrying
+    poll failed (ConnectError); retrying
+    poll failed (ConnectError); retrying
+    poll failed (ConnectError); retrying
+    poll failed (ConnectError); retrying
+    poll failed (ConnectError); retrying
+    poll failed (ConnectError); retrying
+    poll failed (ConnectError); retrying
+Timeout, server 98.90.203.34 not responding.
+    poll failed (ConnectError); retrying
+    poll failed (ConnectError); retrying
+    poll failed (ConnectError); retrying
+    poll failed (ConnectError); retrying
+    poll failed (ConnectError); retrying
+    poll failed (ConnectError); retrying
+    poll failed (ConnectError); retrying
+    poll failed (ConnectError); retrying
+    poll failed (ConnectError); retrying
+    poll failed (ConnectError); retrying

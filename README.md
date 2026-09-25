@@ -12,7 +12,7 @@ log with the provenance of every label.
 ```mermaid
 flowchart TD
     U[Memory card upload / public dataset] --> A[FastAPI: validate files, build manifest]
-    A --> S3[(Object storage, SeaweedFS S3:<br/>originals, thumbnails, release weights)]
+    A --> S3[(Object storage, S3 or SeaweedFS:<br/>originals, release weights, backups)]
     A --> PG[(PostgreSQL: batches, images, jobs,<br/>events, predictions, decisions, reviews)]
     PG --> Q[Redis / RQ queue]
     Q --> W[Workers: lease, bounded chunks,<br/>retries, stale-job recovery]
@@ -57,6 +57,11 @@ animals when a camera is somewhere new?**
   nothing and duplicates nothing.
 - **Release safely**: immutable model releases pinned per job, a pre-registered
   promotion gate, append-only activation, and one-command rollback.
+- **Deploy to staging** on one AWS VM ([guide](docs/deployment.md)): bearer
+  tokens on every data endpoint, readiness that requires the expected model
+  to load, JSON logs, upload limits, nightly database backups to S3 with a
+  tested restore, and a load-tested release
+  ([report](reports/staging/README.md)).
 - **Monitor** in two views ([rules](docs/monitoring.md)). Operational health
   covers queue, failures, latency, API errors, worker memory and deaths,
   storage, and batch cost. Model behavior covers filtered and review shares,
@@ -178,9 +183,15 @@ appended; the model's suggestion is never overwritten.
 | `GET /events`, `GET /events/{id}` | Paginated, filterable events; frames, predictions, decision, reviews |
 | `POST /events/{id}/reviews` | Append a review |
 | `GET /version`, `GET /releases` | Active release; all releases and the activation history |
+| `GET /health`, `GET /ready` | Liveness; readiness (database, queue, object store, expected release loaded) |
+| `GET /whoami` | The principal behind the token |
 | `GET /monitoring`, `GET /metrics` | Monitoring as JSON and in Prometheus text format |
 
 Full contract, job lifecycle, and recovery rules: [`docs/api.md`](docs/api.md).
+With `WILDINBOX_AUTH=tokens` (the default; staging) every endpoint except
+`/health`, `/ready`, `/docs`, and the upload page needs
+`Authorization: Bearer <token>`; create tokens with `wildinbox token new NAME`.
+The local Compose stack sets `WILDINBOX_AUTH=disabled`.
 Limits (see `.env.example`): 2,000 files and 1 GiB per batch, 20 MiB per file.
 
 ### Command line (`uv run wildinbox --help`)
@@ -191,7 +202,7 @@ Limits (see `.env.example`): 2,000 files and 1 GiB per batch, 20 MiB per file.
 | Models | `baseline train`, `finetune train`, `evaluate`, `compare`, `unfamiliar`, `calibrate`, `replay`, `final-test` |
 | Releases | `release register`, `release activate`, `release list` |
 | Update cycle | `snapshot build`, `update gate` |
-| Operations | `api`, `worker`, `ui`, `jobs recover`, `monitoring summary`, `monitoring backfill-quality` |
+| Operations | `api`, `worker`, `ui`, `jobs recover`, `token new`, `monitoring summary`, `monitoring backfill-quality` |
 | Review study | `study plan`, `study analyze` |
 
 ## Reproduce the data and models
@@ -289,8 +300,11 @@ while developing:
 
 ## Deployment and rollback
 
-One VM with Docker Compose runs the API, worker(s), UI, PostgreSQL, Redis, and
-SeaweedFS; training runs on a separate machine.
+**Staging** runs on one AWS VM with Docker Compose, originals and weights in
+S3, and access only over SSH: [docs/deployment.md](docs/deployment.md) covers
+creating the stack, secrets, deploying a pinned release, the deploy check,
+backups and restore, and teardown. The steps below apply to both staging and
+the local stack.
 
 1. Train and evaluate offline; `wildinbox calibrate` writes the policy
    artifact for the weights.

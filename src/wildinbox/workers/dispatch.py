@@ -14,6 +14,8 @@ import threading
 import uuid
 from typing import Protocol
 
+from sqlalchemy.orm import Session, sessionmaker
+
 from wildinbox.settings import Settings
 from wildinbox.storage.db import session_factory
 from wildinbox.storage.objects import ObjectStore, store_from_settings
@@ -105,6 +107,27 @@ def _recovery_loop(settings: Settings, stop: threading.Event) -> None:
         stop.wait(settings.recovery_interval_seconds)
 
 
+def preload(settings: Settings, factory: sessionmaker[Session], store: ObjectStore) -> None:
+    """Load the release this deployment serves before taking jobs, so the first
+    batch does not pay for it and a broken artifact stops the worker at start
+    (it exits and restarts, visibly) instead of failing every job."""
+    from wildinbox.inference.releases import active_release_id
+    from wildinbox.inference.serving import scorer_for
+    from wildinbox.storage.models import ModelRelease
+
+    if settings.torch_threads:
+        import torch
+
+        torch.set_num_threads(settings.torch_threads)
+    with factory() as s:
+        release_id = settings.expected_release or active_release_id(s, settings)
+        release = s.get(ModelRelease, release_id)
+        if release is None:
+            raise RuntimeError(f"release {release_id!r} is not registered")
+        scorer_for(release, store, settings.inference_device)
+    log.info("release loaded", extra={"fields": {"release": release_id}})
+
+
 def run_worker(settings: Settings) -> None:
     """A worker process: recovers stale jobs on start and periodically, and runs
     jobs without forking, so each release's model is loaded once per process."""
@@ -113,6 +136,7 @@ def run_worker(settings: Settings) -> None:
 
     stop = threading.Event()
     factory = session_factory(settings.database_url)
+    preload(settings, factory, store_from_settings(settings))
     liveness.beat(factory, worker_id())
     threading.Thread(target=_recovery_loop, args=(settings, stop), daemon=True).start()
     threading.Thread(

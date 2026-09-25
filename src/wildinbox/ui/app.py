@@ -29,13 +29,36 @@ OTHER = "other species…"
 CANT_TELL = "can't tell"
 
 
-def client() -> ApiClient:
-    if "client" not in st.session_state:
-        st.session_state["client"] = ApiClient(
-            os.environ.get("WILDINBOX_API_URL", "http://localhost:8000")
-        )
-    c: ApiClient = st.session_state["client"]
-    return c
+def client() -> ApiClient | None:
+    """The API client for this browser session, or None until the person signs in
+    (when the API requires tokens)."""
+    if "client" in st.session_state:
+        c: ApiClient = st.session_state["client"]
+        return c
+    url = os.environ.get("WILDINBOX_API_URL", "http://localhost:8000")
+    try:
+        ApiClient(url).whoami()
+        st.session_state["client"] = ApiClient(url)
+        return client()
+    except ApiError as e:
+        if e.status != 401:
+            raise
+    st.title("WildInbox")
+    with st.form("sign-in"):
+        token = st.text_input("Access token", type="password")
+        submitted = st.form_submit_button("Sign in", type="primary")
+    if submitted and token.strip():
+        api = ApiClient(url, token=token.strip())
+        try:
+            who = api.whoami()
+        except ApiError:
+            st.error("That token was not accepted.")
+            return None
+        st.session_state["client"] = api
+        st.session_state.setdefault("reviewer", who.get("principal") or "")
+        st.rerun()
+    st.caption("Ask the person who runs this deployment for an access token.")
+    return None
 
 
 @st.cache_data(show_spinner=False, max_entries=2000)
@@ -232,6 +255,8 @@ def export_page(api: ApiClient, batch_id: str | None) -> None:
 def main() -> None:
     st.set_page_config(page_title="WildInbox", layout="wide")
     api = client()
+    if api is None:
+        return
     page, batch_id, reviewer, classes = sidebar(api)
     if st.session_state.get("_last_view") != (page, batch_id):
         for key in [k for k in st.session_state if str(k).startswith("offset")]:
