@@ -1,0 +1,21 @@
+{
+  "batch_id": "1b626711-039b-41b8-af73-7d7d5f02b9e8",
+  "release": "finetune-e3-deep-balanced@518a8da39ee0",
+  "files": 1001,
+  "images_scored": 1000,
+  "events": 348,
+  "upload_seconds": 6.5,
+  "processing_seconds": 256.4,
+  "images_per_second": 3.9,
+  "killed": {
+    "at_seconds": 93.13450304197613,
+    "scored": 512,
+    "scored_after_kill": 512,
+    "restarted_at_seconds": 106.51371170795755
+  },
+  "job": {
+    "attempts": 2,
+    "status": "succeeded",
+    "error": null
+  }
+}

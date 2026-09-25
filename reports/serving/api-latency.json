@@ -1,0 +1,26 @@
+{
+  "batch_images": 1001,
+  "events": 348,
+  "endpoints": {
+    "GET /batches/{id}": {
+      "requests": 200,
+      "p50_ms": 18.2,
+      "p95_ms": 103.6
+    },
+    "GET /events (100 per page)": {
+      "requests": 200,
+      "p50_ms": 95.7,
+      "p95_ms": 138.6
+    },
+    "GET /events/{id}": {
+      "requests": 200,
+      "p50_ms": 7.2,
+      "p95_ms": 11.2
+    },
+    "GET /version": {
+      "requests": 200,
+      "p50_ms": 2.0,
+      "p95_ms": 3.5
+    }
+  }
+}

@@ -96,9 +96,9 @@ def _recovery_loop(settings: Settings, stop: threading.Event) -> None:
     dispatcher = RQDispatcher(settings)
     while not stop.is_set():
         try:
-            recovered = recover_stale(factory, dispatcher, settings)
-            if recovered:
-                log.info("dispatched %d due job(s)", len(recovered))
+            due = recover_stale(factory, dispatcher, settings)
+            if due:
+                log.info("%d queued job(s) due; dispatched unless already on the queue", len(due))
         except Exception:
             log.exception("recovery sweep failed; retrying")
         stop.wait(settings.recovery_interval_seconds)

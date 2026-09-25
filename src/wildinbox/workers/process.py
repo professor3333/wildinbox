@@ -69,8 +69,13 @@ class Dispatcher(Protocol):
     def enqueue(self, job_id: uuid.UUID, attempt: int = 1) -> None: ...
 
 
+# Unique per process start: a restarted container keeps its hostname and often
+# its PID (1), and RQ refuses a name that a killed worker still holds in Redis.
+_WORKER_ID = f"{socket.gethostname()}:{os.getpid()}:{uuid.uuid4().hex[:8]}"
+
+
 def worker_id() -> str:
-    return f"{socket.gethostname()}:{os.getpid()}"
+    return _WORKER_ID
 
 
 def _now() -> datetime:

@@ -1,0 +1,87 @@
+ok   active release finetune-e3-deep-balanced@518a8da39ee0
+batch 1b626711-039b-41b8-af73-7d7d5f02b9e8: 1001 files uploaded in 6.5s
+     6.5s scored 0/1001
+    19.1s scored 16/1001
+    26.6s scored 32/1001
+    33.7s scored 48/1001
+    39.2s scored 64/1001
+    42.9s scored 80/1001
+    56.4s scored 96/1001
+    59.9s scored 112/1001
+    62.1s scored 128/1001
+    63.3s scored 144/1001
+    65.5s scored 160/1001
+    66.7s scored 176/1001
+    68.4s scored 208/1001
+    69.5s scored 224/1001
+    70.6s scored 240/1001
+    71.7s scored 256/1001
+    73.8s scored 272/1001
+    74.9s scored 288/1001
+    76.0s scored 304/1001
+    77.1s scored 320/1001
+    78.2s scored 336/1001
+    79.2s scored 352/1001
+    80.3s scored 368/1001
+    81.3s scored 384/1001
+    83.5s scored 400/1001
+    84.5s scored 416/1001
+    85.9s scored 448/1001
+    86.9s scored 464/1001
+    88.0s scored 496/1001
+    91.5s scored 512/1001
+  SIGKILL worker at 512 scored
+ok   job still marked running (lease not yet expired)
+ok   no event finalized before completion
+  worker restarted; waiting for its lease to expire and the job to resume
+   237.5s scored 528/1001
+   238.7s scored 544/1001
+   240.2s scored 560/1001
+   241.3s scored 592/1001
+   242.4s scored 608/1001
+   243.4s scored 624/1001
+   244.5s scored 656/1001
+   245.6s scored 672/1001
+   246.6s scored 704/1001
+   247.7s scored 720/1001
+   248.7s scored 736/1001
+   249.8s scored 768/1001
+   250.8s scored 784/1001
+   251.9s scored 816/1001
+   253.1s scored 832/1001
+   254.2s scored 848/1001
+   255.2s scored 864/1001
+   256.3s scored 880/1001
+   257.3s scored 896/1001
+   258.7s scored 928/1001
+   259.7s scored 944/1001
+   260.7s scored 976/1001
+   261.8s scored 1000/1000
+ok   batch finished: completed_with_errors
+ok   no lost inputs: 1000 scored
+ok   corrupt file has an explicit error: unreadable image: OSError: Truncated File Read
+ok   no duplicate predictions: ['1000', '1000']
+ok   one decision per event: ['348', '348', '348']
+ok   resumed as attempt 2 (attempts=2)
+{
+  "batch_id": "1b626711-039b-41b8-af73-7d7d5f02b9e8",
+  "release": "finetune-e3-deep-balanced@518a8da39ee0",
+  "files": 1001,
+  "images_scored": 1000,
+  "events": 348,
+  "upload_seconds": 6.5,
+  "processing_seconds": 256.4,
+  "images_per_second": 3.9,
+  "killed": {
+    "at_seconds": 93.13450304197613,
+    "scored": 512,
+    "scored_after_kill": 512,
+    "restarted_at_seconds": 106.51371170795755
+  },
+  "job": {
+    "attempts": 2,
+    "status": "succeeded",
+    "error": null
+  }
+}
+exit=0

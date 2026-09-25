@@ -452,3 +452,14 @@ def test_event_listing_reports_totals_and_filters(worker_settings: Settings) -> 
         assert reasons["total"] == total
         assert c.get("/events", params={"reviewed": True}).json()["total"] == 0
         assert c.get("/releases").json()["active_release_id"] == "test-predictor-v0"
+
+
+def test_worker_names_are_unique_per_process_start() -> None:
+    """A restarted container keeps its hostname and often PID 1; RQ refuses a
+    worker name a killed worker still holds, so each start adds a random part."""
+    import os
+    import socket
+
+    host, pid, suffix = process.worker_id().rsplit(":", 2)
+    assert (host, pid) == (socket.gethostname(), str(os.getpid()))
+    assert len(suffix) == 8 and process.worker_id() == process.worker_id()
