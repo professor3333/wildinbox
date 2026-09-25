@@ -95,13 +95,16 @@ src/wildinbox/
   inference/         model releases; the test predictor
   policy/            decision policies
   storage/           PostgreSQL models, object storage
-  training/ evaluation/ monitoring/                  later stages
+  training/          frozen-embedding baseline, EfficientNet-B0 fine-tuning
+  evaluation/        evaluation reports, experiment comparison, calibration
+  monitoring/        later stage
 ui/                  review interface
 configs/             run configurations (YAML)
 tests/
 migrations/          Alembic database migrations
 scripts/smoke.py     end-to-end check against a running deployment
-docs/                requirements, generated JSON Schemas
+docs/                requirements, dataset rules, model card, generated JSON Schemas
+reports/             committed evaluation, experiment, and calibration reports
 ```
 
 ## Configuration
@@ -205,6 +208,24 @@ on the training partition, with box-safe crops (a crop may not cut more than
 committed before any results existed. Results, failure analysis, and the
 decision: [`reports/experiments/README.md`](reports/experiments/README.md);
 model card: [`docs/model_card.md`](docs/model_card.md).
+
+## Calibration and operating point
+
+```bash
+uv run wildinbox calibrate      # temperature scaling + threshold rule -> reports/calibration/
+```
+
+Fits temperature scaling on the calibration cameras, then applies the rule in
+[`configs/experiments/operating_point.yaml`](configs/experiments/operating_point.yaml)
+(committed before any calibrated result existed) on the policy-validation
+cameras: a threshold is enabled only if the worst case of its 95% interval
+meets the target (at most 2% of animal events filtered as empty; at least 95%
+of accepted labels correct). A recorded deviation
+([`configs/experiments/operating_point_deviation.yaml`](configs/experiments/operating_point_deviation.yaml))
+can only switch automation off. Current release: **automatic filtering and
+automatic acceptance are both off**; every event goes to review with its
+suggested label. Results and trade-off curves:
+[`reports/calibration/README.md`](reports/calibration/README.md).
 
 ## Data and weights
 

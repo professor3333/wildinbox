@@ -1,8 +1,9 @@
 # Model card: WildInbox species classifier
 
-**Status: selected candidate, not yet released.** Scores are uncalibrated,
-operating thresholds are not chosen, and the locked final test has not been
-opened. Sections marked *planned* describe the process a release will follow.
+**Status: selected candidate, calibrated, not yet released.** Automatic
+filtering and automatic acceptance are both **off**: every event goes to review
+with its suggested label. The locked final test has not been opened. Sections
+marked *planned* describe the process a release will follow.
 
 | | |
 |---|---|
@@ -87,15 +88,35 @@ after thresholds are frozen.
   or dog with confidence up to 1.00; confidence alone does not reject them.
 - **Cats:** recall 0.16, confused with dog, raccoon, and coyote.
 
-## Thresholds, promotion, and rollback (*planned*)
+## Calibration and operating point
 
-1. Calibrate scores on the calibration partition.
-2. Choose two separate thresholds on policy validation: P(empty) for
-   auto-filtering (all usable frames must pass) and species confidence for
-   auto-accepting labels. Filtering is enabled only at operating points that
-   meet the retention target on validation; otherwise events stay in review.
-3. Freeze the model, calibration, and thresholds, then open the final test
-   once and publish the result, including failures.
-4. A retrained candidate replaces the deployed model only if it passes the same
+Details: [`reports/calibration/README.md`](../reports/calibration/README.md).
+
+- **Calibration:** temperature scaling fitted on the calibration cameras
+  (51, 108): T = 2.01, so raw scores were overconfident. Held-out
+  (policy-validation) expected calibration error falls from 0.274 to 0.062.
+  Calibrated P(empty) is still overconfident on new cameras: images scored
+  0.7-0.8 are empty only 42% of the time.
+- **Rule** ([`operating_point.yaml`](../configs/experiments/operating_point.yaml),
+  committed before any calibrated result): on the policy-validation cameras
+  (90, 125), enable a threshold only if the worst case of its 95% Wilson
+  interval meets the target: at most 2% of animal-containing events filtered
+  as empty, at least 95% of accepted labels correct.
+- **Rule result:** empty filter at calibrated P(empty) >= 0.65; species
+  acceptance disabled (no threshold reaches the precision bound; the few
+  high-confidence acceptances are too few to prove 95%).
+- **Released:** both disabled. The empty filter was switched off by a
+  recorded deviation
+  ([`operating_point_deviation.yaml`](../configs/experiments/operating_point_deviation.yaml)):
+  it passed by a hair (upper bound 1.99%) but filters 9.8% of animal events on
+  camera 51, and would take only 4% of events out of review.
+
+## Promotion and rollback (*planned*)
+
+1. Re-choose the operating point with the same rule once the unfamiliar-input
+   score is part of the policy.
+2. Freeze the model, calibration, and thresholds, then open the final test once
+   and publish the result, including failures.
+3. A retrained candidate replaces the deployed model only if it passes the same
    evaluation. The API reports model, preprocessing, and decision-policy
    versions; rollback redeploys the retained previous version.

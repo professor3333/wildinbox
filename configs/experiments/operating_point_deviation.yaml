@@ -1,0 +1,12 @@
+# Recorded deviation from configs/experiments/operating_point.yaml, decided
+# AFTER seeing the rule's result. It can only switch automation off.
+disable_auto_filter: true
+disable_auto_accept: false   # the rule already left acceptance disabled
+decided: 2026-09-25
+reason: >-
+  The rule's empty filter (calibrated P(empty) >= 0.65) passed on the policy-validation
+  cameras with a 95% upper bound of 1.99% against a 2% limit, but did not replicate on the
+  other two unseen development cameras: it filters 40 of 724 animal events there (5.5%),
+  39 of 396 on camera 51 alone (9.8%). It would also remove only 38 of 939 events (4%) from
+  review. Every event stays in review with its suggested label until a threshold holds up
+  on new cameras.
