@@ -37,7 +37,7 @@ x-app-env: &app-env
   WILDINBOX_MAX_BATCH_BYTES: ${WILDINBOX_MAX_BATCH_BYTES:-1073741824}
 
 x-app: &app
-  image: wildinbox:${WILDINBOX_GIT_REF:-local}
+  image: wildinbox-staging:latest   # built from the checked-out tag (see deploy.sh)
   build: {context: ../..}
   environment: *app-env
   logging: *logging
