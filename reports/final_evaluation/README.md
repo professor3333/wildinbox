@@ -1,6 +1,6 @@
 # Final evaluation: the frozen release on unseen cameras
 
-Stage 13. Plan [`configs/experiments/final_evaluation.yaml`](../../configs/experiments/final_evaluation.yaml) (sha256 `86d97ddb2068`), committed before any number here was computed. Run at commit `94599fa` (clean tree). **Nothing was chosen or tuned from these results.**
+Stage 13. Plan [`configs/experiments/final_evaluation.yaml`](../../configs/experiments/final_evaluation.yaml) (sha256 `86d97ddb2068`), committed before any number here was computed. Run at commit `634a7e3` (clean tree). **Nothing was chosen or tuned from these results.**
 
 The locked final test: 8,982 capture events from 9 cameras never used for training, calibration, or thresholds (0, 7, 28, 40, 46, 78, 100, 105, 130), 2,251 camera-nights. 7,154 animal events (6,548 supported species, 594 unsupported species, 12 mixed); 715 empty; 1,113 vehicles (neither animal nor empty).
 
@@ -116,7 +116,7 @@ What the gallery shows: animals that are small, partly hidden in vegetation, or 
 ## Frozen, reproduced, consistent
 
 - **Frozen:** every artifact the plan pins matched its hash (`frozen_artifacts` in [metrics.json](metrics.json)): weights, v2 and v1 policy artifacts, split lock, taxonomy, grouping source, final-test protocol, and the recorded final-test results.
-- **Reproduced:** the Stage 10 final test was re-run under its unchanged protocol (15.7 s, cached scores) and gave identical results and identical per-event decisions; the committed record was not rewritten.
+- **Reproduced:** the Stage 10 final test was re-run under its unchanged protocol (15.0 s, cached scores) and gave identical results and identical per-event decisions; the committed record was not rewritten.
 - **Consistent:** all 8,982 events were rebuilt with the frozen scoring and policy code, matched the recorded decisions, and the deployed conservative/v2 policy decided every one of them exactly as the v1 policy the final test measured.
 
 ## Limitations

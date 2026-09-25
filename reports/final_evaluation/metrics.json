@@ -13,17 +13,17 @@
     "recorded final-test decisions": "e6b883d8f225d8aa12a22fe801bf4741cf59ad35b797063660babc74a4045fb3"
   },
   "code": {
-    "commit": "94599fa1dc845f73b725978ef1aa21a8f3ab6b50",
+    "commit": "634a7e39926d7e8c044ecd2fe55e152af7b2d77e",
     "dirty": false
   },
   "reproduction": {
     "results_identical": true,
     "decisions_identical": true,
     "rerun_code": {
-      "commit": "94599fa1dc845f73b725978ef1aa21a8f3ab6b50",
+      "commit": "634a7e39926d7e8c044ecd2fe55e152af7b2d77e",
       "dirty": false
     },
-    "seconds": 15.7
+    "seconds": 15.0
   },
   "consistency": {
     "events": 8982,
