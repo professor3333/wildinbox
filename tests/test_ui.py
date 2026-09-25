@@ -494,3 +494,20 @@ def test_audit_queue_timeline_batches_details_and_guide_render() -> None:
     assert any("Review history" in m.value for m in at.markdown) and at.dataframe
     at.sidebar.radio(key="page").set_value("Getting started").run()
     assert any("Accept" in m.value and "other species" in m.value for m in at.markdown)
+
+
+def test_card_metadata_merges_the_file_and_the_camera_name() -> None:
+    from wildinbox.ui.logic import card_metadata
+
+    assert card_metadata(None, None) is None
+    assert card_metadata("  north ", None) == {"camera_id": "north"}
+    per_file = b'{"files": {"a.jpg": {"sequence_id": "s1"}}}'
+    assert card_metadata("north", per_file) == {
+        "files": {"a.jpg": {"sequence_id": "s1"}},
+        "camera_id": "north",
+    }
+    assert card_metadata("north", b'{"camera_id": "cam-7"}') == {"camera_id": "cam-7"}
+    with pytest.raises(ValueError, match="not valid JSON"):
+        card_metadata(None, b"{nope")
+    with pytest.raises(ValueError, match="JSON object"):
+        card_metadata(None, b"[1, 2]")

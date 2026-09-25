@@ -6,6 +6,8 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Any
 
+from wildinbox.class_map import EMPTY_CLASS
+
 NAMES = {
     "animal_event_retention": "Animal-event retention",
     "accepted_species_precision": "Accepted species precision",
@@ -63,7 +65,7 @@ def write_report(report_dir: Path, out: dict[str, Any]) -> None:
         f"{r['camera_nights']:,} camera-nights. {animals:,} animal events "
         f"({roles['supported_species']:,} supported species, "
         f"{roles['unsupported_animal']:,} unsupported species, "
-        f"{roles['mixed_species']} mixed); {roles['empty']:,} empty; "
+        f"{roles['mixed_species']} mixed); {roles[EMPTY_CLASS]:,} empty; "
         f"{roles['non_animal']:,} vehicles (neither animal nor empty).\n"
     )
 

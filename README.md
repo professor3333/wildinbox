@@ -77,20 +77,34 @@ animals when a camera is somewhere new?**
 
 ### Results, honestly
 
-Measured once on the **locked final test** (9 cameras never used for training,
-calibration, or thresholds), under a protocol committed beforehand
-([report](reports/final_test/README.md)):
+Measured on the **locked final test** (9 cameras never used for training,
+calibration, or thresholds; 23,275 photos, 8,982 capture events), under
+protocols committed beforehand, with the release frozen
+([final test](reports/final_test/README.md),
+[final evaluation](reports/final_evaluation/README.md)). Intervals are 95%;
+event metrics use a cluster bootstrap over camera-nights, because events from
+one camera on one night are not independent.
+
+| | Released (automation off) | Rule's empty filter (not released) | Target |
+|---|---|---|---|
+| Animal-event retention | 100% | 98.95% [98.68, 99.22] | ≥ 98% |
+| · unsupported species | 100% | 97.14% [95.20, 98.66] | |
+| Accepted species precision | undefined: nothing accepted | undefined | ≥ 95% |
+| Review reduction vs grouped workflow, with audits | 0% | 5.99% [5.21, 6.76] | ≥ 50% |
+| Unsupported species accepted as known | 0 / 594 | 0 / 594 | |
 
 | | Fine-tuned (released) | Frozen-embedding baseline |
 |---|---|---|
-| Macro-F1, supported classes (95% CI) | **0.447** [0.435, 0.458] | 0.285 |
+| Macro-F1 on unseen cameras (95% CI) | **0.447** [0.435, 0.458] | 0.285 |
 | Same model on held-out sequences of *training* cameras | 0.747 | 0.724 |
 
-- **Automation is off.** No empty-filter or species-acceptance threshold held
-  up on new cameras with the required confidence, so every event goes to
-  review with its suggestion and reasons ([calibration](reports/calibration/README.md)).
-- **The 50% review-reduction target is not met.** Grouping turns 2.6 photos
-  into one event; the model itself removes no reviews as released.
+- **The 50% review-reduction target is not met, so automation stays off.**
+  The only automation development evidence supported, the empty filter,
+  would save 6% of reviews, and it falls below 98% retention for unsupported
+  species, by day, and on one camera (94.2%). Every event goes to review with
+  its suggestion, confidence, and reasons.
+- **What helps as released is grouping:** 23,275 photos become 8,982 events
+  to review (61.4% fewer items), and each comes with a suggestion.
 - The gap between 0.747 and 0.447 is the new-camera problem this project set out
   to measure. Reviewing a camera helps that camera: one update cycle raised
   label quality on later photos of the reviewed cameras from 0.486 to 0.548
@@ -100,6 +114,33 @@ Supported classes: **empty, bobcat, cat, coyote, dog, opossum, rabbit,
 raccoon**, chosen from training-set counts. Other species (squirrel, skunk,
 bird, rodent, badger, fox, deer) are kept as unsupported-input cases, never
 relabeled as empty. See the [model card](docs/model_card.md).
+
+## For reviewers
+
+| Deliverable | Where |
+|---|---|
+| Runnable demo | [Quick start](#quick-start-deploy-and-run-the-demo), [docs/demo.md](docs/demo.md), video [docs/media/demo.webm](docs/media/demo.webm) |
+| Architecture | [docs/architecture.md](docs/architecture.md) |
+| Dataset and training instructions | [Reproduce the data and models](#reproduce-the-data-and-models), [docs/dataset.md](docs/dataset.md) |
+| Model card | [docs/model_card.md](docs/model_card.md) |
+| Evaluation report | [reports/final_evaluation/](reports/final_evaluation/README.md), [reports/final_test/](reports/final_test/README.md) |
+| Error gallery | [final evaluation gallery](reports/final_evaluation/README.md#error-gallery), [development gallery](reports/baseline/README.md) |
+| Operational benchmark | [reports/staging/](reports/staging/README.md) (AWS VM), [reports/serving/](reports/serving/README.md) (laptop) |
+| Deployment, backup, rollback | [docs/deployment.md](docs/deployment.md), [docs/retraining.md](docs/retraining.md) |
+
+Every headline claim and where it comes from:
+
+| Claim | Evidence | Reproduce |
+|---|---|---|
+| Retention, review reduction, precision, coverage, unsupported acceptance on unseen cameras | `reports/final_evaluation/metrics.json` (plan `configs/experiments/final_evaluation.yaml`, committed first) | `uv run wildinbox final-evaluation` |
+| Macro-F1 0.447 vs baseline 0.285; random-image vs unseen-camera gap | `reports/final_test/metrics.json` (protocol `configs/experiments/final_test.yaml`) | `uv run wildinbox final-test` (refuses unless it reproduces exactly) |
+| Thresholds chosen on development cameras only; automation off | `reports/calibration/`, `configs/experiments/operating_point*.yaml` | `uv run wildinbox calibrate`, `uv run wildinbox replay` |
+| Model selection | `reports/experiments/comparison.md`, `configs/experiments/selection.yaml` | `uv run wildinbox compare reports/baseline reports/experiments/finetune-e*` |
+| 1,000 images in 111 s; metadata p95 < 360 ms (2-vCPU VM) | `reports/staging/workers-1.json` | `scripts/loadtest.py` ([how](reports/staging/README.md#reproduce)) |
+| Worker crash or restart loses and duplicates nothing | `reports/serving/crash-demo.json`, `reports/staging/workers-1.json` | `scripts/crash_demo.py`, `scripts/loadtest.py --scenarios restart` |
+| Update cycle, promotion gate, rollback restores predictions | `reports/update/`, `reports/monitoring/acceptance.json` | `wildinbox update gate`, `scripts/rollback_restores.py` |
+| Backup and restore | `reports/staging/backup-restore.log` | `deploy/staging/restore_drill.sh` |
+| A stranger can deploy the pinned release | `reports/staging/rehearsal/` | [docs/deployment.md](docs/deployment.md) |
 
 ## Tech stack
 
@@ -158,7 +199,7 @@ The demo walk-through, with a real run's output: [`docs/demo.md`](docs/demo.md).
 | Page | What it does |
 |---|---|
 | Getting started | A one-screen guide for first-time users (no other documentation needed). |
-| Upload | Upload photos with a camera name; follow processing; see unusable files and why. |
+| Upload | Upload photos with a camera name or the card's metadata file (capture times, sequences, cameras per file); follow processing; see unusable files and why. |
 | Batches | Progress, counts, and failed files for every upload. |
 | Review queue | Events that need a person: frames, suggestion, confidence, and why. Accept, pick another species, choose empty, type an unsupported species, or "can't tell"; every event opens to all frames, per-frame predictions, and its full review history. |
 | Timeline | Events by day and camera. |
@@ -199,7 +240,7 @@ Limits (see `.env.example`): 2,000 files and 1 GiB per batch, 20 MiB per file.
 | Area | Commands |
 |---|---|
 | Data | `data acquire`, `dataset build`, `validate-config`, `export-schemas` |
-| Models | `baseline train`, `finetune train`, `evaluate`, `compare`, `unfamiliar`, `calibrate`, `replay`, `final-test` |
+| Models | `baseline train`, `finetune train`, `evaluate`, `compare`, `unfamiliar`, `calibrate`, `replay`, `final-test`, `final-evaluation` |
 | Releases | `release register`, `release activate`, `release list` |
 | Update cycle | `snapshot build`, `update gate` |
 | Operations | `api`, `worker`, `ui`, `jobs recover`, `token new`, `monitoring summary`, `monitoring backfill-quality` |
@@ -345,8 +386,13 @@ Training the released model: 70 minutes on the M1's GPU (Metal).
 - **New cameras remain hard:** macro-F1 falls from 0.75 on training cameras to
   0.45 on new ones and varies from 0.24 to 0.57 by camera; small animals (36%
   recall), night frames, and blur are the main failure modes.
-- **No automation is released:** evaluation did not support a threshold, so
-  review reduction comes only from grouping.
+- **No automation is released:** evaluation did not support a threshold, and
+  the one candidate (the empty filter) would save 6% of reviews on unseen
+  cameras against a 50% target, so review reduction comes only from grouping
+  ([final evaluation](reports/final_evaluation/README.md)).
+- **The final test has been used:** it was measured twice without any choice
+  made from it. A genuinely fresh assessment, or any automation restricted to
+  particular cameras or hours, needs new held-out cameras.
 - **Unfamiliar species are not reliably flagged:** the distance-based score
   was not adopted; it mostly measures "new camera", not "new species".
 - **Evaluated species were in pretraining:** every unsupported species that
@@ -355,8 +401,11 @@ Training the released model: 70 minutes on the M1's GPU (Metal).
   review study is built and pre-registered
   ([`docs/review_study.md`](docs/review_study.md)) but has not been run with
   people, so whether suggestions speed up review is not yet measured.
-- **One machine, one worker** measured; the event list is not optimised for very
-  large pages.
+- **Measured on two machines:** a laptop and a 2-vCPU AWS VM with one and two
+  workers. One batch is always processed by one worker. `GET /events` (100 per
+  page) is the slowest metadata call (p95 360 ms).
+- **Staging access is single-workspace** (every token holder sees every batch)
+  and reached over SSH; a public endpoint needs a TLS proxy.
 - Capture events are not individual animals; nothing here estimates population
   counts.
 
@@ -379,12 +428,16 @@ src/wildinbox/
 configs/        run config, dataset sources, splits, taxonomy, experiments, monitoring
 manifests/      pinned dataset and split locks
 migrations/     Alembic migrations
-reports/        every committed evaluation, experiment, serving, and monitoring report
+reports/        every committed evaluation, experiment, final test and final evaluation,
+                serving, staging, and monitoring report
 samples/        the demo sample batch
 scripts/        smoke, demo, crash demo, sample batches, simulated deployment, release/rollback,
-                monitoring acceptance demo, rollback-restores check
-docs/           requirements, dataset rules, API, export format, monitoring and alert rules,
-                retraining workflow, review study, demo, model card, JSON Schemas
+                monitoring acceptance demo, rollback-restores check, staging load test,
+                demo video recording
+deploy/         AWS CloudFormation template, staging compose, deploy/backup/restore scripts
+docs/           architecture, requirements, dataset rules, API, deployment, export format,
+                monitoring and alert rules, retraining workflow, review study, demo (and video),
+                model card, JSON Schemas
 tests/
 ```
 

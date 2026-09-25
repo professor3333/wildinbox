@@ -35,6 +35,7 @@ from typing import Any
 import numpy as np
 import yaml
 
+from wildinbox.class_map import EMPTY_CLASS
 from wildinbox.policy import audit
 from wildinbox.policy.conservative import POLICY_NAME, POLICY_V2, Frame, decide
 
@@ -436,15 +437,17 @@ GALLERY_RULES: dict[str, Callable[[EventRecord], bool]] = {
     "animal_filtered_as_empty": lambda r: r.is_animal and r.dispositions["rule"] == "likely_empty",
     "confident_wrong_species": lambda r: (
         r.role == "supported_species"
-        and r.suggested not in (None, r.label, "empty")
+        and r.suggested not in (None, r.label, EMPTY_CLASS)
         and (r.confidence or 0) >= 0.9
     ),
     "unsupported_as_known": lambda r: (
         r.role == "unsupported_animal"
-        and r.suggested not in (None, "empty")
+        and r.suggested not in (None, EMPTY_CLASS)
         and (r.confidence or 0) >= 0.9
     ),
-    "animal_suggested_empty_night": lambda r: r.is_animal and r.night and r.suggested == "empty",
+    "animal_suggested_empty_night": lambda r: (
+        r.is_animal and r.night and r.suggested == EMPTY_CLASS
+    ),
 }
 
 
@@ -463,7 +466,7 @@ def select_gallery(
 
 
 def _frame_for(r: EventRecord) -> tuple[str, float]:
-    target = r.suggested or "empty"
+    target = r.suggested or EMPTY_CLASS
     sid, probs = max(r.frames, key=lambda f: f[1].get(target, 0.0))
     return sid, probs.get(target, 0.0)
 
