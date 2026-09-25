@@ -23,13 +23,12 @@ participants cannot overwrite each other's labels or the production queue.
 
 ## Before running it with people
 
-The released policy (`conservative/v1`) marks every animal event
-`low_confidence` ("model is unsure") while species acceptance is disabled,
-even when the suggestion's confidence is high, because a disabled threshold
-counts as unreachable. Participants in the suggested condition see that
-reason next to, for example, a 95% suggestion. Decide before the study whether
-to fix it (a new policy version and release) or to run the study on the system
-exactly as released; either way, record the choice with the results.
+The deployment must run policy `conservative/v2` (release
+`finetune-e3-deep-balanced@7a25aea97c76`): under v1, every animal event said
+"model is unsure", even next to a 95% suggestion, which would have skewed the
+suggested condition. Check with `curl localhost:8000/version`, and upload the
+study batch **after** activating v2 (decisions are made when a batch is
+processed).
 
 ## 1. Prepare a study batch (organizer)
 
