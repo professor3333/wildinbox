@@ -288,6 +288,13 @@ def main(argv: Sequence[str] | None = None) -> int:
     jobs_sub = p_jobs.add_subparsers(dest="jobs_command", required=True)
     jobs_sub.add_parser("recover", help="Requeue stale jobs and dispatch due ones now.")
 
+    p_ft = sub.add_parser(
+        "final-test", help="Open the locked final test once, under the pre-registered protocol."
+    )
+    p_ft.add_argument("--protocol", type=Path, default=Path("configs/experiments/final_test.yaml"))
+    p_ft.add_argument("--config", type=Path, default=Path("configs/experiments/baseline.yaml"))
+    p_ft.add_argument("--report-dir", type=Path, default=Path("reports/final_test"))
+
     p_api = sub.add_parser("api", help="Serve the HTTP API.")
     p_api.add_argument("--host", default="127.0.0.1")
     p_api.add_argument("--port", type=int, default=8000)
@@ -362,6 +369,20 @@ def main(argv: Sequence[str] | None = None) -> int:
             print(f"MISMATCH {problem}", file=sys.stderr)
         print(f"{replayed['events']} events replayed, {len(replayed['problems'])} mismatches")
         return 1 if replayed["problems"] else 0
+    if args.command == "final-test":
+        from wildinbox.evaluation.final_test import FinalTestError
+        from wildinbox.evaluation.final_test import run as run_final_test
+
+        try:
+            measured = run_final_test(args.protocol, args.config, args.report_dir)
+        except FinalTestError as e:
+            print(f"error: {e}", file=sys.stderr)
+            return 1
+        e3 = measured["results"]["image_level"]["e3"]
+        print(
+            f"final test: E3 macro-F1 {e3['macro_f1']:.3f}; report -> {args.report_dir}/README.md"
+        )
+        return 0
     if args.command == "release":
         return _release(args)
     if args.command == "jobs":
