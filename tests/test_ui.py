@@ -43,9 +43,14 @@ def test_review_outcome_follows_the_choice(
 def test_night_window_and_default_night() -> None:
     start, end = night_window(date(2024, 5, 1))
     assert (start, end) == (datetime(2024, 5, 1, 18), datetime(2024, 5, 2, 6))
+    today = date(2026, 1, 1)
     # An event at 02:00 belongs to the night that started the previous evening.
-    assert last_night(datetime(2024, 5, 2, 2, 0), date(2026, 1, 1)) == date(2024, 5, 1)
-    assert last_night(datetime(2024, 5, 1, 23, 0), date(2026, 1, 1)) == date(2024, 5, 1)
+    assert last_night([datetime(2024, 5, 2, 2, 0)], today) == date(2024, 5, 1)
+    assert last_night([datetime(2024, 5, 1, 23, 0)], today) == date(2024, 5, 1)
+    # The newest capture was in daylight: open on the newest night that has events.
+    starts = [datetime(2024, 5, 1, 23, 0), datetime(2024, 5, 3, 9, 30)]
+    assert last_night(starts, today) == date(2024, 5, 1)
+    assert last_night([], today) == date(2026, 1, 1)
 
 
 def _event(
@@ -146,7 +151,9 @@ class FakeApi:
             items = [e for e in items if not e["latest_review"]]
         if params.get("start_after"):
             items = [
-                e for e in items if params["start_after"] <= e["start_at"] < params["start_before"]
+                e
+                for e in items
+                if params["start_after"] <= e["start_at"] < params.get("start_before", "9999")
             ]
         off, lim = params.get("offset", 0), params.get("limit", 100)
         page = items[off : off + lim]

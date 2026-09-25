@@ -5,8 +5,9 @@
 Takes whole capture sequences (never splitting one) from the calibration and
 policy-validation partitions, in a fixed pseudo-random order, until the image
 count is reached. The locked final test is never read (load_rows refuses it).
-Writes the images, `metadata.json` (the API's metadata field: camera and
-sequence per file), and `truth.csv` (ground truth, not uploaded).
+Writes the images, `metadata.json` (the API's metadata field: camera, sequence,
+and capture time per file, as a camera's memory card would carry them), and
+`truth.csv` (ground truth, not uploaded).
 """
 
 from __future__ import annotations
@@ -16,6 +17,7 @@ import csv
 import hashlib
 import json
 import shutil
+import sqlite3
 from pathlib import Path
 
 from wildinbox.datasets.spec import Partition
@@ -33,6 +35,12 @@ def main() -> None:
 
     ctx = load_context(Path("configs/experiments/baseline.yaml"), Settings().data_dir)
     rows, _ = load_rows(ctx.split_dir, [Partition.CALIBRATION, Partition.POLICY_VALIDATION])
+    conn = sqlite3.connect(ctx.inventory_db)
+    captured = {
+        sid: json.loads(raw).get("date_captured")
+        for sid, raw in conn.execute("SELECT source_id, raw_image FROM records")
+    }
+    conn.close()
     by_event: dict[str, list] = {}
     for r in rows:
         by_event.setdefault(r.event_id, []).append(r)
@@ -57,6 +65,8 @@ def main() -> None:
             name = f"cam{r.camera_id}_{r.source_id}{Path(r.storage_path).suffix.lower()}"
             shutil.copyfile(ctx.images_root / r.storage_path, args.out / "images" / name)
             files[name] = {"camera_id": f"cct-{r.camera_id}", "sequence_id": r.event_id}
+            if captured.get(r.source_id):
+                files[name]["captured_at"] = str(captured[r.source_id]).replace(" ", "T")
             w.writerow(
                 [name, r.event_id, r.camera_id, r.partition.value, r.image_label, r.event_role]
             )

@@ -147,7 +147,7 @@ def event_card(api: ApiClient, event: dict[str, Any], reviewer: str, classes: li
         if reasons:
             right.caption("Needs review: " + "; ".join(reasons))
         ids = event["image_ids"][:6]
-        cols = st.columns(max(len(ids), 1))
+        cols = st.columns(6)  # fixed grid: a one-frame event is not drawn huge
         for col, image_id in zip(cols, ids, strict=False):
             data = thumbnail(api, image_id, 320)
             if data:
@@ -200,29 +200,27 @@ def review_page(api: ApiClient, batch_id: str | None, reviewer: str, classes: li
 def visitors_page(api: ApiClient, batch_id: str | None) -> None:
     st.header("Last night's visitors")
     try:
-        first = api.events(batch_id=batch_id, limit=1)
-        latest = (
-            api.events(batch_id=batch_id, limit=1, offset=first["total"] - 1)["events"]
-            if first["total"]
-            else []
-        )
+        total = api.events(batch_id=batch_id, limit=1)["total"]
+        recent = api.events(batch_id=batch_id, limit=500, offset=max(0, total - 500))["events"]
     except ApiError as e:
         st.error(e.detail)
         return
-    newest = (
-        datetime.fromisoformat(latest[0]["start_at"])
-        if latest and latest[0].get("start_at")
-        else None
-    )
-    day = st.date_input("Night starting on", value=last_night(newest, date.today()), key="night")
+    starts = [datetime.fromisoformat(e["start_at"]) for e in recent if e.get("start_at")]
+    day = st.date_input("Night starting on", value=last_night(starts, date.today()), key="night")
     start, end = night_window(day)
     events = api.events(
         batch_id=batch_id, start_after=start.isoformat(), start_before=end.isoformat(), limit=500
     )["events"]
     visitors = [e for e in events if is_visitor(e)]
+    undated = (
+        api.events(batch_id=batch_id, limit=1)["total"]
+        - api.events(batch_id=batch_id, start_after="0001-01-01T00:00:00", limit=1)["total"]
+    )
+    if undated:
+        st.caption(f"{undated} event(s) have no capture time and cannot be placed on a night.")
     reviewed = sum(1 for e in visitors if e.get("latest_review"))
     st.caption(
-        f"{start:%a %d %b %H:%M} to {end:%a %d %b %H:%M}: {len(visitors)} animal event(s) of "
+        f"{start:%a %d %b %Y %H:%M} to {end:%a %d %b %H:%M}: {len(visitors)} animal event(s) of "
         f"{len(events)}, {reviewed} reviewed. Unreviewed labels are suggestions. Capture events "
         "are not individual animals or counts."
     )

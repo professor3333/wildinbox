@@ -421,7 +421,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         cmd = [sys.executable, "-m", "streamlit", "run", str(app)]
         cmd += ["--server.address", args.host, "--server.port", str(args.port)]
         cmd += ["--server.headless", "true", "--server.maxUploadSize", "1024"]
-        cmd += ["--browser.gatherUsageStats", "false"]
+        cmd += ["--browser.gatherUsageStats", "false", "--client.toolbarMode", "minimal"]
         return subprocess.call(cmd, env=env)
     if args.command == "worker":
         from wildinbox.workers.dispatch import run_worker

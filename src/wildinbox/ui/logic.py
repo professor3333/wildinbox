@@ -32,11 +32,23 @@ def night_window(day: date, start_hour: int = 18, end_hour: int = 6) -> tuple[da
     return start, datetime.combine(day + timedelta(days=1), time(end_hour))
 
 
-def last_night(latest_event_start: datetime | None, today: date) -> date:
-    """The night to show by default: the one containing the newest event, so
-    an old memory card still opens on its own last night."""
-    ref = latest_event_start or datetime.combine(today, time(12))
-    return (ref - timedelta(hours=12)).date()
+def night_of(ts: datetime) -> date:
+    """The date the night containing `ts` started on."""
+    return (ts - timedelta(hours=12)).date()
+
+
+def last_night(
+    starts: list[datetime], today: date, start_hour: int = 18, end_hour: int = 6
+) -> date:
+    """The night to show by default: the one containing the newest night-time
+    event, so an old memory card opens on its own last night even when its
+    newest capture was in daylight."""
+    nightly = [t for t in starts if t.hour >= start_hour or t.hour < end_hour]
+    if nightly:
+        return night_of(max(nightly))
+    if starts:
+        return night_of(max(starts))
+    return night_of(datetime.combine(today, time(12)))
 
 
 def current_label(event: dict[str, Any]) -> tuple[str | None, str]:
