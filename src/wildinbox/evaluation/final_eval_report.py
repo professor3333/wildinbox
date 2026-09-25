@@ -138,6 +138,21 @@ def write_report(report_dir: Path, out: dict[str, Any]) -> None:
         "turn the final test into development evidence.\n"
     )
 
+    add("## What the 50% target could have reached\n")
+    n_empty, n_vehicle = roles[EMPTY_CLASS], roles["non_animal"]
+    add(
+        f"The target assumed that most events are empty, from the dataset's roughly 70% "
+        f"empty *images*. At the event level, which is what a reviewer sees, only "
+        f"{n_empty:,} of {r['events']:,} final-test events are truly empty "
+        f"({pct(n_empty / r['events'])}). A perfect empty filter could therefore save at most "
+        f"{pct(n_empty / r['events'])} of reviews before audits; counting vehicle-only events "
+        f"too, which a wildlife reviewer need not see, the ceiling is "
+        f"{pct((n_empty + n_vehicle) / r['events'])}. 50% was out of reach for filtering "
+        "alone: it would need reliable automatic species labels, or a different measure of "
+        "benefit such as review time per event (the pre-registered review study). This "
+        "corrects the target's rationale, not the measured results.\n"
+    )
+
     add("## Grouping versus the model\n")
     add(
         "Review reduction is measured against an already grouped workflow, so grouping is "

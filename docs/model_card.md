@@ -107,7 +107,10 @@ Events are the unit; 95% intervals are cluster bootstraps over camera-nights
 | Review reduction vs grouped workflow, with audits (≥ 50%) | 0% | 5.99% [5.21, 6.76] |
 | Unsupported-species false acceptance | 0 / 594 | 0 / 594 |
 
-The 50% review-reduction target is not met, and the only candidate automation
+The 50% review-reduction target is not met (and could not have been by
+filtering: only 8.0% of final-test events are truly empty, 20.4% with
+vehicle-only events, whereas the target assumed the dataset's ~70% empty
+images), and the only candidate automation
 also falls below 98% retention for unsupported species (97.1%), by day
 (97.1%), and on camera 0 (94.2%). **Automation therefore stays off.** It is
 not enabled for a subset of cameras or hours either: that restriction would be
