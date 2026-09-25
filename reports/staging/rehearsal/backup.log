@@ -1,0 +1,2 @@
+30 2 * * * ubuntu cd /opt/wildinbox && deploy/staging/backup.sh >> /var/log/wildinbox-backup.log 2>&1
+{"key": "backups/postgres/wildinbox-20260925T145507Z.dump", "bytes": 57982, "tables": 15, "at": "20260925T145507Z"}

@@ -14,6 +14,7 @@ AWS VM and measured there. Every number below comes from a JSON file in this dir
 | Survives invalid files | 6 of 6 bad files rejected with a reason; the 20 good ones processed | yes |
 | Two concurrent batches | both complete; 2 workers take 162 s instead of 257 s, with no duplicated work | yes |
 | Backup and restore | restore brings back exactly the backed-up state; later writes gone; stack processes again | yes |
+| Another person can deploy the pinned release | a fresh stack deployed `v1.4.0` from the guide in 3 min 33 s and ran the demo ([rehearsal](rehearsal/README.md)) | yes |
 
 Measured from a laptop in Nepal, metadata p95 is 0.7–1.0 s. The server's own time is
 unchanged; the extra ~560 ms per request is the network round trip through the SSH
@@ -254,15 +255,17 @@ found problems that local Compose had hidden:
 ## Reproduce
 
 On the staging VM, after [deploying](../../docs/deployment.md) (a sample batch is built with
-`scripts/make_sample_batch.py` and copied to the VM; the VM needs `python3-httpx`):
+`scripts/make_sample_batch.py` and copied to the VM; the VM needs `python3-httpx`). Results
+go outside the checkout, so a later `git checkout` of a new tag does not collide with them:
 
 ```bash
 export WILDINBOX_TOKEN=<a token>
 python3 scripts/loadtest.py --label workers-1 --api http://localhost:8000 \
   --stack "cd /opt/wildinbox && deploy/staging/wi" \
-  --scenarios small,thousand,invalid,concurrent,restart --out reports/staging/workers-1.json
+  --scenarios small,thousand,invalid,concurrent,restart --out ~/loadtest-results/workers-1.json
 # set WILDINBOX_WORKERS=2 in /etc/wildinbox/secrets.env, then: deploy/staging/wi up -d --wait
-python3 scripts/loadtest.py --label workers-2 ... --scenarios thousand,concurrent
+python3 scripts/loadtest.py --label workers-2 ... --scenarios thousand,concurrent \
+  --out ~/loadtest-results/workers-2.json
 deploy/staging/restore_drill.sh
 ```
 

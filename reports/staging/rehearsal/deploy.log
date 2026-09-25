@@ -1,0 +1,170 @@
+== build 781bf65 (v1.4.0)
+ wildinbox-staging:latest  Built
+ redis Pulling 
+ postgres Pulling 
+ 1522f9c6f453 Pulling fs layer 
+ 83234986c742 Pulling fs layer 
+ 7eb50503c2b0 Pulling fs layer 
+ 4eb14bae0e1d Pulling fs layer 
+ 4f4fb700ef54 Pulling fs layer 
+ 16333ee0c00f Pulling fs layer 
+ 9928009b15c8 Pulling fs layer 
+ 54779914f171 Download complete 
+ 1522f9c6f453 Downloading [================>                                  ]  4.194MB/12.42MB
+ 16333ee0c00f Downloading [==============>                                    ]  1.049MB/3.626MB
+ 83234986c742 Download complete 
+ 9928009b15c8 Download complete 
+ 3beebc06c4ca Download complete 
+ 7eb50503c2b0 Download complete 
+ 4eb14bae0e1d Downloading [==================================================>]     599B/599B
+ 4f4fb700ef54 Download complete 
+ 509688edf37b Pulling fs layer 
+ e2de96513ba9 Pulling fs layer 
+ 1b7f9cd581ee Pulling fs layer 
+ 210b280f9556 Pulling fs layer 
+ 81717818649a Pulling fs layer 
+ 3ae6141cfd99 Pulling fs layer 
+ 25b77f59fd95 Pulling fs layer 
+ 6c25da34e03f Pulling fs layer 
+ a88782f92806 Pulling fs layer 
+ d8d21be4bf02 Pulling fs layer 
+ 6117bd39f23f Pulling fs layer 
+ 4eb14bae0e1d Download complete 
+ 1522f9c6f453 Downloading [==================================================>]  12.42MB/12.42MB
+ 16333ee0c00f Downloading [==================================================>]  3.626MB/3.626MB
+ 81717818649a Downloading [==================================================>]     172B/172B
+ 6117bd39f23f Downloading [==================================================>]  6.111kB/6.111kB
+ 509688edf37b Downloading [==================================================>]     185B/185B
+ 16333ee0c00f Download complete 
+ 3ae6141cfd99 Download complete 
+ 25b77f59fd95 Downloading [===>                                               ]   7.34MB/111.3MB
+ 1522f9c6f453 Download complete 
+ 6c25da34e03f Download complete 
+ a88782f92806 Downloading [==================================================>]     128B/128B
+ 6117bd39f23f Download complete 
+ 021b01ea4cc2 Downloading [==================================================>]    598kB/598kB
+ 509688edf37b Download complete 
+ e2de96513ba9 Downloading [==================================================>]   3.85MB/3.85MB
+ 1b7f9cd581ee Download complete 
+ 210b280f9556 Download complete 
+ e6b147246a89 Downloading [==================================================>]  44.31kB/44.31kB
+ 81717818649a Download complete 
+ 16333ee0c00f Extracting 1 s
+ d8d21be4bf02 Download complete 
+ e6b147246a89 Download complete 
+ 25b77f59fd95 Downloading [=======>                                           ]  16.78MB/111.3MB
+ a88782f92806 Download complete 
+ 16333ee0c00f Extracting 1 s
+ 021b01ea4cc2 Download complete 
+ e2de96513ba9 Download complete 
+ e2de96513ba9 Extracting 1 s
+ 25b77f59fd95 Downloading [============>                                      ]  27.26MB/111.3MB
+ 16333ee0c00f Pull complete 
+ e2de96513ba9 Extracting 1 s
+ 83234986c742 Pull complete 
+ 25b77f59fd95 Downloading [================>                                  ]  37.75MB/111.3MB
+ 7eb50503c2b0 Extracting 1 s
+ 1b7f9cd581ee Pull complete 
+ 210b280f9556 Extracting 1 s
+ e2de96513ba9 Pull complete 
+ 7eb50503c2b0 Pull complete 
+ 1522f9c6f453 Extracting 1 s
+ 25b77f59fd95 Downloading [=====================>                             ]  47.19MB/111.3MB
+ 3ae6141cfd99 Pull complete 
+ 210b280f9556 Pull complete 
+ 81717818649a Pull complete 
+ 1522f9c6f453 Extracting 1 s
+ 25b77f59fd95 Downloading [=========================>                         ]  57.67MB/111.3MB
+ 1522f9c6f453 Extracting 1 s
+ 25b77f59fd95 Downloading [==============================>                    ]  67.11MB/111.3MB
+ 9928009b15c8 Pull complete 
+ 4f4fb700ef54 Pull complete 
+ 4eb14bae0e1d Pull complete 
+ 1522f9c6f453 Pull complete 
+ 25b77f59fd95 Downloading [==================================>                ]  77.59MB/111.3MB
+ redis Pulled 
+ 25b77f59fd95 Downloading [=======================================>           ]  88.08MB/111.3MB
+ 25b77f59fd95 Downloading [===========================================>       ]  97.52MB/111.3MB
+ 25b77f59fd95 Downloading [================================================>  ]    108MB/111.3MB
+ 25b77f59fd95 Downloading [==================================================>]  111.3MB/111.3MB
+ 25b77f59fd95 Downloading [==================================================>]  111.3MB/111.3MB
+ 25b77f59fd95 Downloading [==================================================>]  111.3MB/111.3MB
+ 25b77f59fd95 Downloading [==================================================>]  111.3MB/111.3MB
+ 25b77f59fd95 Downloading [==================================================>]  111.3MB/111.3MB
+ 25b77f59fd95 Downloading [==================================================>]  111.3MB/111.3MB
+ 25b77f59fd95 Downloading [==================================================>]  111.3MB/111.3MB
+ 25b77f59fd95 Download complete 
+ 25b77f59fd95 Extracting 1 s
+ 25b77f59fd95 Extracting 1 s
+ 25b77f59fd95 Extracting 1 s
+ 25b77f59fd95 Extracting 1 s
+ 25b77f59fd95 Extracting 1 s
+ 25b77f59fd95 Extracting 1 s
+ 25b77f59fd95 Extracting 1 s
+ 25b77f59fd95 Extracting 1 s
+ 25b77f59fd95 Extracting 1 s
+ 25b77f59fd95 Extracting 1 s
+ 25b77f59fd95 Extracting 1 s
+ 25b77f59fd95 Extracting 2 s
+ 25b77f59fd95 Extracting 2 s
+ 25b77f59fd95 Extracting 2 s
+ 25b77f59fd95 Extracting 2 s
+ 25b77f59fd95 Extracting 2 s
+ 25b77f59fd95 Extracting 2 s
+ 6c25da34e03f Pull complete 
+ 6117bd39f23f Pull complete 
+ d8d21be4bf02 Pull complete 
+ a88782f92806 Pull complete 
+ 25b77f59fd95 Pull complete 
+ 509688edf37b Pull complete 
+ postgres Pulled 
+ Network wildinbox-staging_default  Creating
+ Network wildinbox-staging_default  Created
+ Volume wildinbox-staging_postgres  Creating
+ Volume wildinbox-staging_postgres  Created
+== register release from /tmp/wildinbox-release-finetune-e3-deep-balanced-7a25aea97c76.tar.gz
+tar: Ignoring unknown extended header keyword 'LIBARCHIVE.xattr.com.apple.provenance'
+tar: Ignoring unknown extended header keyword 'LIBARCHIVE.xattr.com.apple.provenance'
+tar: Ignoring unknown extended header keyword 'LIBARCHIVE.xattr.com.apple.provenance'
+tar: Ignoring unknown extended header keyword 'LIBARCHIVE.xattr.com.apple.provenance'
+tar: Ignoring unknown extended header keyword 'LIBARCHIVE.xattr.com.apple.provenance'
+tar: Ignoring unknown extended header keyword 'LIBARCHIVE.xattr.com.apple.provenance'
+model/meta.json: OK
+model/model.pt: OK
+policy.json: OK
+{"ts": "2026-09-25T14:53:57.398+00:00", "level": "INFO", "logger": "botocore.credentials", "message": "Found credentials from IAM Role: wildinbox-rehearsal-Role-5nNL3Bsp7ZcD"}
+registered: finetune-e3-deep-balanced@7a25aea97c76
+  weights sha256 3ab6fec236ce4b418acdda78f94078ec3bd6331983e2186bd52aa11a1fd9b360
+  preprocessing 6d9a950a6543
+  policy conservative/v2+378312635a29
+active release: finetune-e3-deep-balanced@7a25aea97c76
+== start (waits for readiness: expected release active and loaded)
+{
+  "status": "ready",
+  "expected_release": "finetune-e3-deep-balanced@7a25aea97c76",
+  "checks": {
+    "database": {
+      "ok": true,
+      "ms": 0.9
+    },
+    "queue": {
+      "ok": true,
+      "ms": 2.3
+    },
+    "object_store": {
+      "ok": true,
+      "ms": 38.1
+    },
+    "model": {
+      "ok": true,
+      "ms": 2.7,
+      "detail": "finetune-e3-deep-balanced@7a25aea97c76"
+    }
+  }
+}
+* finetune-e3-deep-balanced@7a25aea97c76  finetuned_efficientnet_b0  policy conservative/v2+378312635a29
+  test-predictor-v0  test_predictor  policy review-all/v0
+== deployed
+real	3m33.093s
+user	0m1.103s
+sys	0m0.427s

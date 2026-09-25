@@ -364,8 +364,10 @@ def main(argv: Sequence[str] | None = None) -> int:
 
     p_tok = sub.add_parser("token", help="API access tokens.")
     tok_sub = p_tok.add_subparsers(dest="token_command", required=True)
-    p_new = tok_sub.add_parser("new", help="Create a token; prints it and its hash.")
-    p_new.add_argument("name", help="Principal name recorded in logs, e.g. 'alice'.")
+    p_new = tok_sub.add_parser(
+        "new", help="Create tokens; prints each token and the WILDINBOX_API_TOKENS line."
+    )
+    p_new.add_argument("names", nargs="+", help="Principal names recorded in logs, e.g. alice.")
 
     p_api = sub.add_parser("api", help="Serve the HTTP API.")
     p_api.add_argument("--host", default="127.0.0.1")
@@ -538,11 +540,17 @@ def main(argv: Sequence[str] | None = None) -> int:
     if args.command == "token":
         from wildinbox.api.auth import new_token, token_hash
 
-        token = new_token()
-        print(f"token for {args.name} (give it to them; it is not stored anywhere):")
-        print(f"  {token}")
-        print("add this entry to WILDINBOX_API_TOKENS (a JSON object) in the deployment's env:")
-        print(f"  {json.dumps({args.name: token_hash(token)})}")
+        if len(set(args.names)) != len(args.names):
+            print("error: names must be distinct", file=sys.stderr)
+            return 2
+        hashes = {}
+        for name in args.names:
+            token = new_token()
+            hashes[name] = token_hash(token)
+            print(f"token for {name} (give it to them; it is not stored anywhere):")
+            print(f"  {token}")
+        print("the deployment's env line (hashes only; replaces any earlier line):")
+        print(f"WILDINBOX_API_TOKENS='{json.dumps(hashes)}'")
         return 0
     if args.command == "api":
         import uvicorn
