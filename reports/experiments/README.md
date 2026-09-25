@@ -42,8 +42,9 @@ operating points.
 | E4 | 0.383 | 0.083 | 49 / 1577 | 222 (80.6%) | 19 | 133 | pass |
 
 All five models were re-evaluated back to back on the same machine (Apple M1,
-8 GB) so the latency column is comparable; every re-run reproduced its earlier
-metrics within the documented tolerance.
+8 GB) so the latency column is comparable. Each fine-tuned model's predictions
+were then recomputed from its weights with no cached scores, and the resulting
+metrics were identical to the committed ones.
 
 ## Decision
 

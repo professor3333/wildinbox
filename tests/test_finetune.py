@@ -151,3 +151,15 @@ def test_experiment_configs_are_valid(path: Path) -> None:
     cfg = load_finetune_config(path)
     assert cfg.name == path.stem
     assert cfg.augmentation.min_box_kept >= 0.9  # crops may not remove the animal
+
+
+def test_eval_cache_is_keyed_by_model_weights(tmp_path: Path) -> None:
+    from wildinbox.evaluation.predictors import FinetunedPredictor
+
+    (tmp_path / "meta.json").write_text(json.dumps({"classes": ["empty", "cat"]}))
+    digests = []
+    for seed in (0, 1):  # "retrain" into the same directory
+        torch.manual_seed(seed)
+        torch.save(build_model(2, None).state_dict(), tmp_path / "model.pt")
+        digests.append(FinetunedPredictor(None, tmp_path, "cpu").weights_digest)  # type: ignore[arg-type]
+    assert digests[0] != digests[1]

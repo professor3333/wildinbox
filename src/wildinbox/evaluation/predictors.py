@@ -3,6 +3,7 @@ same interface, so metrics, slices, and benchmarks are directly comparable."""
 
 from __future__ import annotations
 
+import hashlib
 import json
 from pathlib import Path
 from typing import Protocol
@@ -59,13 +60,16 @@ class FinetunedPredictor:
         self.ctx, self.device, self.model_dir = ctx, device, model_dir
         self.model, meta = load_finetuned(model_dir, device)
         self.classes = tuple(meta["classes"])
+        # Cached predictions are keyed by the weights, so a model retrained into
+        # the same directory can never be scored from the previous model's cache.
+        self.weights_digest = hashlib.sha256((model_dir / "model.pt").read_bytes()).hexdigest()[:12]
 
     def _probs(self, x: torch.Tensor) -> torch.Tensor:
         return torch.softmax(self.model(x), dim=1)
 
     def score(self, name: str, rows: list[ImageRow]) -> Extraction:
         ids = [r.source_id for r in rows]
-        path = self.model_dir / "eval-cache" / f"{name}.npz"
+        path = self.model_dir / "eval-cache" / self.weights_digest / f"{name}.npz"
         cached = load_cache(path, ids)
         if cached is not None:
             return cached
