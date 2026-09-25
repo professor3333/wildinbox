@@ -35,6 +35,18 @@ class ApiClient:
         out: dict[str, Any] = self._json(self.http.get("/version"))
         return out
 
+    def study_join(self, plan_id: str, code: str) -> dict[str, Any]:
+        out: dict[str, Any] = self._json(
+            self.http.post(f"/study/plans/{plan_id}/participants", json={"code": code})
+        )
+        return out
+
+    def study_trial(self, plan_id: str, trial: dict[str, Any]) -> None:
+        self._json(self.http.post(f"/study/plans/{plan_id}/trials", json=trial))
+
+    def study_rating(self, plan_id: str, rating: dict[str, Any]) -> None:
+        self._json(self.http.post(f"/study/plans/{plan_id}/ratings", json=rating))
+
     def monitoring(self) -> dict[str, Any]:
         out: dict[str, Any] = self._json(self.http.get("/monitoring", timeout=120))
         return out
