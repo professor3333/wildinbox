@@ -110,6 +110,93 @@ def render(data: dict[str, Any], latency: dict[str, dict[str, float]]) -> str:
             if v["review_coverage"] is not None
         ],
     )
+    work = ops.get("workers")
+    if work is not None:
+        metric("workers_live", "Worker processes reporting.", "gauge", [({}, len(work["live"]))])
+        metric(
+            "workers_started_window",
+            "Worker process starts in the restart window.",
+            "gauge",
+            [({}, work["starts_in_window"])],
+        )
+        metric(
+            "workers_died_window",
+            "Workers that stopped reporting without shutting down, in the restart window.",
+            "gauge",
+            [({}, len(work["died_in_window"]))],
+        )
+        metric(
+            "worker_rss_bytes",
+            "Resident memory of each live worker.",
+            "gauge",
+            [
+                ({"worker": w["id"]}, round((w["rss_mb"] or w["peak_rss_mb"]) * 2**20))
+                for w in work["live"]
+                if (w["rss_mb"] or w["peak_rss_mb"]) is not None
+            ],
+        )
+    api = ops.get("api")
+    if api is not None:
+        metric(
+            "http_responses",
+            "API responses since the API started, by status class.",
+            "gauge",
+            [
+                ({"class": "4xx"}, api["client_errors"]),
+                ({"class": "5xx"}, api["server_errors"]),
+                ({"class": "all"}, api["responses"]),
+            ],
+        )
+    store = ops.get("storage")
+    if store is not None:
+        metric(
+            "stored_original_bytes",
+            "Bytes of original photos stored.",
+            "gauge",
+            [({}, store["original_bytes"])],
+        )
+    latency_ = ops.get("job_latency")
+    if latency_ is not None:
+        metric(
+            "job_upload_to_done_seconds",
+            "Upload-to-done time of jobs finished in the window.",
+            "gauge",
+            [
+                ({"quantile": q}, latency_["upload_to_done_seconds"][k])
+                for q, k in (("0.50", "p50"), ("0.95", "p95"))
+                if latency_["upload_to_done_seconds"][k] is not None
+            ],
+        )
+    beh = data.get("behavior")
+    if beh is not None:
+        for share, help_ in (
+            ("filtered_share", "Share of a camera's events filtered as likely empty."),
+            ("auto_labeled_share", "Share of a camera's events labeled automatically."),
+        ):
+            metric(
+                f"camera_{share}",
+                help_,
+                "gauge",
+                [
+                    ({"camera": k}, v[share])
+                    for k, v in beh["cameras"].items()
+                    if v[share] is not None
+                ],
+            )
+    aud = data.get("audits")
+    if aud is not None:
+        metric(
+            "camera_audit_labels",
+            "Reviewed audit samples per camera (0: observed quality unknown).",
+            "gauge",
+            [({"camera": k}, v["audit_reviewed"]) for k, v in aud["by_camera"].items()],
+        )
+        metric(
+            "camera_audit_false_empty",
+            "Animals found by audits in automatically filtered events.",
+            "gauge",
+            [({"camera": k}, v["false_empty"]) for k, v in aud["by_camera"].items()],
+        )
     levels = Counter(a["level"] for a in data["alerts"])
     metric(
         "alerts",

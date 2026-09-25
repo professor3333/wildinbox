@@ -1,0 +1,205 @@
+{
+  "run": "20260925T165202",
+  "release": "finetune-e3-deep-balanced@7a25aea97c76",
+  "worker_failure": {
+    "batch_id": "9fc7891f-299e-435f-8e8e-e56c4005d4f7",
+    "photos": 1000,
+    "killed_at_scored": 208,
+    "worker_deaths_on_record_before": 3,
+    "alerts_fired": [
+      {
+        "level": "critical",
+        "area": "operations",
+        "camera": null,
+        "message": "no worker is running while jobs wait",
+        "value": 1,
+        "limit": 0
+      },
+      {
+        "level": "warning",
+        "area": "operations",
+        "camera": null,
+        "message": "a worker died without shutting down (last 24 h)",
+        "value": 4,
+        "limit": 0
+      },
+      {
+        "level": "critical",
+        "area": "operations",
+        "camera": null,
+        "message": "a worker stopped renewing its lease",
+        "value": 1,
+        "limit": 0
+      }
+    ],
+    "seconds_to_alert": {
+      "no live worker": 110.7,
+      "worker died": 110.7,
+      "stale lease": 122.2
+    },
+    "recovered_seconds_after_restart": 60.8,
+    "batch_status": "completed",
+    "operational_alerts_after_recovery": [
+      {
+        "level": "warning",
+        "area": "operations",
+        "camera": null,
+        "message": "a worker died without shutting down (last 24 h)",
+        "value": 4,
+        "limit": 0
+      }
+    ],
+    "workers_after": {
+      "window_hours": 24,
+      "live": [
+        {
+          "id": "5e9f59a2a014:1:c9095f7d",
+          "started_at": "2026-09-25T11:09:54.864557+00:00",
+          "last_seen_at": "2026-09-25T11:10:39.944799+00:00",
+          "rss_mb": 531.4,
+          "peak_rss_mb": 738.4
+        }
+      ],
+      "starts_in_window": 5,
+      "stopped_cleanly_in_window": 0,
+      "died_in_window": [
+        {
+          "id": "5e9f59a2a014:1:3db0b55c",
+          "started_at": "2026-09-25T10:27:12.434354+00:00",
+          "last_seen_at": "2026-09-25T10:27:42.600025+00:00",
+          "rss_mb": 361.1,
+          "peak_rss_mb": 361.5
+        },
+        {
+          "id": "5e9f59a2a014:1:136ff493",
+          "started_at": "2026-09-25T10:30:10.907686+00:00",
+          "last_seen_at": "2026-09-25T10:31:41.214875+00:00",
+          "rss_mb": 514.1,
+          "peak_rss_mb": 736.1
+        },
+        {
+          "id": "5e9f59a2a014:1:c7749301",
+          "started_at": "2026-09-25T10:33:56.869421+00:00",
+          "last_seen_at": "2026-09-25T10:36:27.493053+00:00",
+          "rss_mb": 372.6,
+          "peak_rss_mb": 735.8
+        },
+        {
+          "id": "5e9f59a2a014:1:06f1d6ce",
+          "started_at": "2026-09-25T10:38:47.759896+00:00",
+          "last_seen_at": "2026-09-25T11:07:27.779445+00:00",
+          "rss_mb": 456.5,
+          "peak_rss_mb": 731.5
+        }
+      ]
+    }
+  },
+  "changed_inputs": {
+    "camera": "cct-90",
+    "photos": 118,
+    "sequences": 40,
+    "control": {
+      "batch_id": "c9509ed8-4d41-49d5-a612-4a843f85903e",
+      "latest": {
+        "events": 40,
+        "filtered_share": 0.0,
+        "auto_labeled_share": 0.0,
+        "needs_review_share": 1.0,
+        "low_confidence_share": 0.175,
+        "unfamiliar_share": 0.0,
+        "mean_confidence": 0.4734152,
+        "labels": {
+          "coyote": 16,
+          "empty": 7,
+          "opossum": 5,
+          "cat": 4,
+          "dog": 3,
+          "raccoon": 3,
+          "rabbit": 1,
+          "bobcat": 1
+        },
+        "confidence": {
+          "0.0-0.2": 1,
+          "0.2-0.4": 17,
+          "0.4-0.6": 13,
+          "0.6-0.8": 7,
+          "0.8-1.0": 2
+        }
+      },
+      "comparison": {
+        "label_psi": 0.16668760362002077,
+        "confidence_psi": 0.039810602094278294,
+        "filtered_share_change": 0.0,
+        "auto_labeled_share_change": 0.0,
+        "needs_review_share_change": 0.0,
+        "low_confidence_share_change": -0.07558548009367683,
+        "unfamiliar_share_change": 0.0,
+        "mean_confidence_change": -0.011840326932084366,
+        "night_share_change": 0.024682031700684004,
+        "blur_change": 0.06465841850457238,
+        "release_changed": true,
+        "earlier_events": 427
+      },
+      "alerts": []
+    },
+    "degraded": {
+      "batch_id": "1ff3b617-9256-47c3-8a78-13f5eece3506",
+      "latest": {
+        "events": 40,
+        "filtered_share": 0.0,
+        "auto_labeled_share": 0.0,
+        "needs_review_share": 1.0,
+        "low_confidence_share": 0.375,
+        "unfamiliar_share": 0.0,
+        "mean_confidence": 0.5025834,
+        "labels": {
+          "empty": 16,
+          "dog": 10,
+          "bobcat": 10,
+          "raccoon": 2,
+          "cat": 1,
+          "rabbit": 1
+        },
+        "confidence": {
+          "0.0-0.2": 1,
+          "0.2-0.4": 16,
+          "0.4-0.6": 12,
+          "0.6-0.8": 4,
+          "0.8-1.0": 7
+        }
+      },
+      "comparison": {
+        "label_psi": 3.757189043803146,
+        "confidence_psi": 0.10701647439044197,
+        "filtered_share_change": 0.0,
+        "auto_labeled_share_change": 0.0,
+        "needs_review_share_change": 0.0,
+        "low_confidence_share_change": 0.13088865096359742,
+        "unfamiliar_share_change": 0.0,
+        "mean_confidence_change": 0.0183420338329765,
+        "night_share_change": 0.02252783070905623,
+        "blur_change": -0.9968253968253968,
+        "release_changed": true,
+        "earlier_events": 467
+      },
+      "alerts": [
+        {
+          "level": "info",
+          "area": "behavior",
+          "camera": "cct-90",
+          "message": "latest batch differs from earlier batches: suggested-label mix (the release also changed)",
+          "value": 3.757,
+          "limit": 0.25
+        },
+        {
+          "level": "info",
+          "area": "behavior",
+          "camera": "cct-90",
+          "message": "latest batch differs from earlier batches: image sharpness (the release also changed)",
+          "value": -0.997,
+          "limit": 0.5
+        }
+      ]
+    }
+  }
+}

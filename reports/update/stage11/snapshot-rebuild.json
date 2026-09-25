@@ -1,0 +1,57 @@
+{
+  "version": "de9679c534af",
+  "protocol": "configs/experiments/update_cycle.yaml",
+  "protocol_sha256": "508deb5534f052ba008e2e192fdfc3919d6ee95e6e3fedefe4d3b355343e1024",
+  "deployed_release": "finetune-e3-deep-balanced@518a8da39ee0",
+  "approved_reviewers": [
+    "simulated-ground-truth"
+  ],
+  "reviews_not_approved": 1,
+  "cutoffs": {
+    "cct-90": "2011-11-16T10:08:44",
+    "cct-125": "2012-01-16T08:25:23"
+  },
+  "train": {
+    "images": 1032,
+    "events": 359,
+    "per_class": {
+      "bobcat": 478,
+      "cat": 114,
+      "coyote": 69,
+      "dog": 12,
+      "empty": 110,
+      "opossum": 162,
+      "rabbit": 27,
+      "raccoon": 60
+    }
+  },
+  "holdout": {
+    "events": 458,
+    "by_kind": {
+      "supported": 413,
+      "unsupported": 43,
+      "unresolved": 2
+    }
+  },
+  "protected": {
+    "splits": "data/splits/cct20-splits-v1/images.jsonl.gz",
+    "splits_sha256": "84ca9997cfb689f4f9946d7d735677c9cd69bb1afa8fa14d68319c487687a959",
+    "partitions": {
+      "calibration": 2641,
+      "final_test": 23275,
+      "seen_camera_diagnostic": 4313
+    },
+    "snapshot_holdouts": [],
+    "holdout_events": 0
+  },
+  "excluded": {
+    "events": 0,
+    "by_reason": {},
+    "records": []
+  },
+  "provenance": {
+    "file": "labels.jsonl",
+    "sha256": "be9940110ee1ef77ad3a6633e1d98593f7fadeef542333bbd9cc42746051d0ee",
+    "events": 913
+  }
+}

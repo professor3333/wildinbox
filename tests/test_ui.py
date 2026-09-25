@@ -40,6 +40,9 @@ def test_review_outcome_follows_the_choice(
     assert review_for(suggested, chosen) == expected
 
 
+REPO_ROOT = Path(__file__).resolve().parents[1]
+
+
 def test_night_window_and_default_night() -> None:
     start, end = night_window(date(2024, 5, 1))
     assert (start, end) == (datetime(2024, 5, 1, 18), datetime(2024, 5, 2, 6))
@@ -320,13 +323,123 @@ def test_monitoring_page_separates_signals_from_measured_accuracy() -> None:
     at.sidebar.radio(key="page").set_value("Monitoring").run()
     assert not at.exception
     assert any("stopped renewing its lease" in e.value for e in at.error)
-    headers = [h.value for h in at.subheader]
-    assert headers == [
-        "Alerts",
-        "Operations",
-        "Signals per camera (no labels needed)",
-        "Accuracy measured from reviews",
+    assert [t.label for t in at.tabs] == ["Operational health", "Model behavior"]
+    text = " ".join(m.value for m in at.markdown)
+    assert "Over capture time, per camera" in text and "Accuracy measured from reviews" in text
+
+
+def test_monitoring_page_shows_workers_behavior_and_audits() -> None:
+    from datetime import UTC, timedelta
+
+    from wildinbox.monitoring.metrics import EventView, api_health, audits, behavior, load_config
+
+    cfg = load_config(REPO_ROOT / "configs/monitoring/monitoring.yaml")
+    now = datetime(2026, 9, 25, tzinfo=UTC)
+    views = [
+        EventView(
+            camera="north",
+            start_at=None,
+            release="r1",
+            disposition="likely_empty" if i % 2 else "needs_review",
+            label="empty" if i % 2 else "cat",
+            confidence=0.9,
+            reasons=[],
+            review_outcome=None,
+            reviewer=None,
+            night=[False],
+            blur=[100.0],
+            batch_id=f"b{i // 30}",
+            batch_created_at=now - timedelta(days=5 - i // 30),
+            decided_at=now - timedelta(days=5 - i // 30),
+            audit_selected=i % 10 == 1,
+        )
+        for i in range(120)
     ]
+    ops = {
+        "window_days": 7,
+        "jobs": {"succeeded": 4},
+        "queued_waiting": 0,
+        "oldest_queued_seconds": 0.0,
+        "retrying": 0,
+        "stale_leases": 0,
+        "failed_jobs_in_window": [],
+        "files_uploaded": 120,
+        "files_unreadable": 0,
+        "unreadable_rate": 0.0,
+        "images_scored": 120,
+        "frames_failed": 0,
+        "processing_error_rate": 0.0,
+        "images_scored_last_24h": 30,
+        "cost_by_release": {},
+        "job_latency": {
+            "jobs": 4,
+            "queue_wait_seconds": {"p50": 1.0, "p95": 2.0},
+            "run_seconds": {"p50": 5.0, "p95": 9.0},
+            "upload_to_done_seconds": {"p50": 6.0, "p95": 11.0},
+        },
+        "workers": {
+            "window_hours": 24,
+            "live": [
+                {
+                    "id": "w1",
+                    "started_at": "2026-09-25T00:00:00",
+                    "last_seen_at": "2026-09-25T01:00:00",
+                    "rss_mb": 900.0,
+                    "peak_rss_mb": 950.0,
+                }
+            ],
+            "starts_in_window": 2,
+            "stopped_cleanly_in_window": 0,
+            "died_in_window": [
+                {
+                    "id": "w0",
+                    "started_at": "2026-09-24T23:00:00",
+                    "last_seen_at": "2026-09-24T23:30:00",
+                    "rss_mb": 800.0,
+                    "peak_rss_mb": 800.0,
+                }
+            ],
+        },
+        "api": api_health(
+            {
+                "GET /events": {
+                    "requests": 30,
+                    "p50_ms": 20.0,
+                    "p95_ms": 40.0,
+                    "responses": 30,
+                    "client_errors": 1,
+                    "server_errors": 0,
+                }
+            },
+            cfg["operations"],
+        ),
+        "storage": {
+            "original_bytes": 10**9,
+            "original_gb": 1.0,
+            "images": 120,
+            "daily": [{"day": "2026-09-24", "bytes": 5 * 10**8, "images": 60}],
+        },
+        "batches": [{"batch_id": "b3", "images": 30, "run_seconds": 3.0}],
+    }
+    api = FakeApi()
+    api.monitoring = lambda: {  # type: ignore[attr-defined]
+        "operations": ops,
+        "behavior": behavior(views, cfg["behavior"], now),
+        "signals": {},
+        "audits": audits(views, cfg["audits"]),
+        "accuracy": {"by_camera": {}, "by_release": {}},
+        "alerts": [],
+        "notes": {},
+    }
+    at = _app(api)
+    at.sidebar.radio(key="page").set_value("Monitoring").run()
+    assert not at.exception
+    metrics = {m.label: m.value for m in at.metric}
+    assert metrics["Live workers"] == "1" and metrics["Died without shutting down"] == "1"
+    assert metrics["Filtered as empty"] == "50%"
+    assert metrics["Original photos stored"].startswith("1.00 GB")
+    audit_table = next(d.value for d in at.dataframe if "observed quality" in d.value.columns)
+    assert list(audit_table["observed quality"]) == ["unknown: no audit labels"]
 
 
 def _auto_api() -> FakeApi:

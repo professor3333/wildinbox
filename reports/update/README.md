@@ -75,6 +75,62 @@ Activation history (`GET /releases`, append-only): E3 (initial) -> candidate
 re-activating the candidate is one command:
 `docker compose exec api wildinbox release activate finetune-e3-update1@449138a9c367`.
 
+## Stage 11: the learning loop under the current controls
+
+The cycle's tooling now enforces approval, protection, provenance,
+development-only comparison, and a checked rollback
+([workflow](../../docs/retraining.md)). Each was run against this cycle.
+
+**Snapshot rebuilt with the current command.** The deployment database had
+been reset since cycle 1, so `scripts/simulate_deployment.py` uploaded and
+reviewed cameras 90 and 125 again (913 events: 444 confirmed, 448 corrected,
+21 unresolved). `wildinbox snapshot build` then produced
+[`stage11/snapshot-rebuild.json`](stage11/snapshot-rebuild.json):
+
+- **Approved reviewers only**: `simulated-ground-truth`. One reviewed event on
+  those cameras (a `demo-reviewer` correction from the demo script) was
+  skipped as not approved.
+- **Protected records**: 30,229 frames of the final test (23,275), calibration
+  (2,641), and seen-camera diagnostic (4,313) were checked by SHA-256 and file
+  name. None were among these cameras' events, as the split design requires,
+  so none were excluded.
+- **Provenance**: `labels.jsonl` records the label, review, reviewer,
+  suggestion, suggesting release, review chain, and use of all 913 events.
+- **Same data as cycle 1.** All 1,032 training frames and 458 holdout events
+  match snapshot `0837a1422904` exactly (frames and labels). The rebuild has
+  34 fewer training frames and 13 fewer holdout events. 67 of the photos
+  involved were already in the deployment from earlier batches that day, and
+  duplicate detection skipped them. Two further unsupported-species (skunk)
+  events moved before camera 125's median cutoff, which shifted as a result,
+  and unsupported labels are not fit. On a fresh deployment the rebuild
+  would match. The candidate stays the one trained on `0837a1422904`.
+
+**Gate rerun with the new controls.** `wildinbox update gate` reproduced
+every number (holdout gain +0.062, both regression checks, 41 false-empty
+suggestions; candidate release `finetune-e3-update1@449138a9c367`). It now
+also:
+- verifies before scoring that the snapshot holds no protected frame;
+- records that only development data was read;
+- logs itself in [`comparisons.jsonl`](comparisons.jsonl) as comparison #2 on
+  holdout `0837a1422904`. The original run is entry #1, recorded
+  retroactively because it predates the log.
+
+**Rollback restores predictions** (`scripts/rollback_restores.py`,
+[report](rollback-restore.json)). The same 62 photos (cameras 51 and 108) were
+processed three times:
+1. on E3;
+2. on the update candidate;
+3. on E3 again after rolling back.
+
+| | Batch 3 (after rollback) vs batch 1 | Batch 2 (candidate) vs batch 1 |
+|---|---|---|
+| Max calibrated-probability difference | **0** | 0.479 |
+| Frame labels | **62 / 62 identical** | 17 / 62 changed |
+| Event decisions | **22 / 22 identical** | 22 / 22 name the candidate |
+
+The stored results of batches 1 and 2 were unchanged after both switches.
+The activation history records the candidate and the rollback as new rows.
+
 ## Reproduce
 
 ```bash

@@ -51,6 +51,8 @@ class Settings(BaseSettings):
     retry_backoff_seconds: int = Field(default=30, ge=0)
     retry_backoff_max_seconds: int = Field(default=900, ge=0)
     recovery_interval_seconds: int = Field(default=30, gt=0)
+    # Each worker process records liveness and memory this often (Monitoring).
+    worker_heartbeat_seconds: int = Field(default=15, gt=0)
 
     # Share of automatically handled events (filtered or auto-labeled) sent to
     # the audit queue anyway, so confident mistakes are measured.

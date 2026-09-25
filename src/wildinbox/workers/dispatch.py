@@ -17,6 +17,7 @@ from typing import Protocol
 from wildinbox.settings import Settings
 from wildinbox.storage.db import session_factory
 from wildinbox.storage.objects import ObjectStore, store_from_settings
+from wildinbox.workers import liveness
 from wildinbox.workers.process import process_batch, recover_stale, worker_id
 
 log = logging.getLogger(__name__)
@@ -111,7 +112,14 @@ def run_worker(settings: Settings) -> None:
     from rq import Queue, SimpleWorker
 
     stop = threading.Event()
+    factory = session_factory(settings.database_url)
+    liveness.beat(factory, worker_id())
     threading.Thread(target=_recovery_loop, args=(settings, stop), daemon=True).start()
+    threading.Thread(
+        target=liveness.heartbeat_loop,
+        args=(factory, worker_id(), settings.worker_heartbeat_seconds, stop),
+        daemon=True,
+    ).start()
     conn = Redis.from_url(settings.redis_url)
     try:
         SimpleWorker(
@@ -119,3 +127,4 @@ def run_worker(settings: Settings) -> None:
         ).work()
     finally:
         stop.set()
+        liveness.stopped(factory, worker_id())

@@ -206,4 +206,13 @@ applies to cameras that were reviewed; it is not a new-camera result.
 2. Releases are immutable; `GET /version` reports the active release's model,
    preprocessing, calibration, and policy versions. Rolling back is
    `wildinbox release activate <previous release>` (new batches only; running
-   jobs keep their release).
+   jobs keep their release). Reverting restores the previous release's
+   predictions exactly: the same photos get identical probabilities and
+   decisions ([check](../reports/update/rollback-restore.json)).
+3. Retraining data comes only from approved reviews, never includes protected
+   evaluation records (final test, calibration, seen-camera diagnostic, or
+   earlier holdouts, including any corrections made to them), and keeps
+   per-label provenance. Candidate comparisons use development data only,
+   and each is logged ([workflow](retraining.md)). After release, the Model
+   behavior monitoring view and audit samples watch for trouble on each
+   camera ([rules](monitoring.md)).
