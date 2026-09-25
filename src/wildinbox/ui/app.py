@@ -17,6 +17,7 @@ import streamlit as st
 from wildinbox.ui import monitoring, review
 from wildinbox.ui.client import ApiClient, ApiError
 from wildinbox.ui.logic import (
+    card_metadata,
     current_label,
     is_visitor,
     last_night,
@@ -186,10 +187,20 @@ def upload_page(api: ApiClient) -> None:
             "Photos (JPEG or PNG)", type=["jpg", "jpeg", "png"], accept_multiple_files=True
         )
         camera = st.text_input("Camera name (optional)")
+        meta_file = st.file_uploader(
+            "Card metadata (optional JSON: capture times, sequence ids, cameras per file)",
+            type=["json"],
+            help="Without it, photos are grouped by camera and EXIF capture time.",
+        )
         submitted = st.form_submit_button("Upload and process", type="primary")
     if submitted and files:
         try:
-            batch = api.upload([(f.name, f.getvalue()) for f in files], camera.strip() or None)
+            metadata = card_metadata(camera, meta_file.getvalue() if meta_file else None)
+        except ValueError as e:
+            st.error(str(e))
+            return
+        try:
+            batch = api.upload([(f.name, f.getvalue()) for f in files], metadata=metadata)
         except ApiError as e:
             st.error(f"Upload rejected: {e.detail}")
             return

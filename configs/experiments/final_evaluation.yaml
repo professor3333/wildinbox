@@ -1,0 +1,88 @@
+# Stage 13 analysis plan, fixed BEFORE any number below is computed.
+# Applied by: uv run wildinbox final-evaluation
+#
+# The locked final test was opened once (reports/final_test/opened.json) under
+# configs/experiments/final_test.yaml. This plan adds the capstone's metric
+# definitions, clustered uncertainty, and an error gallery to that same test.
+# Nothing is chosen here: every model, threshold, and rule is frozen below, and
+# the run refuses to proceed if any frozen artifact differs. Results computed
+# after this plan, but before it was written, do not exist: the only final-test
+# numbers seen so far are those in reports/final_test/ (Stage 10).
+
+freeze:
+  # The deployed release (v1.4.1): E3 weights with the conservative/v2 policy.
+  release_id: finetune-e3-deep-balanced@7a25aea97c76
+  weights_sha256: 3ab6fec236ce4b418acdda78f94078ec3bd6331983e2186bd52aa11a1fd9b360
+  preprocessing_version: 6d9a950a6543
+  class_map_fingerprint: a833b676ea03        # taxonomy: empty + 7 supported species
+  calibration_version: 55cdb7daad08          # temperature scaling, fitted on calibration cameras
+  policy_artifact: reports/policy/finetune-e3-deep-balanced-v2/policy.json
+  policy_artifact_sha256: 2075a92828f86d0222b4da764d14e134681c6f8e9da739f06543a1c12e59fe6b
+  released_policy_version: conservative/v2+378312635a29   # automation off
+  rule_policy_version: conservative/v2+60aa73046092       # empty filter 0.65 (not released)
+  # v2 was derived from the v1 artifact the final test measured; the run
+  # verifies on every final-test event that v2 and v1 decide identically.
+  measured_policy_artifact: reports/calibration/policy.json
+  measured_policy_artifact_sha256: 7ce10d8631f8c37e4944932083f209d345709ec90f2addc5d95fa96d09489df6
+  split_lock_sha256: 704ab2c4f0caf0f6529ec4f396ef0dca338cb0e53ca8aa9bf63bf97bae5e6cff
+  taxonomy_sha256: b357e1904c75d72444255f38a38c7e8ad0d67b6af27a2c469a642eabedba63c4
+  # Grouping: final-test events are the dataset's capture sequences (supplied
+  # sequence ids), built by datasets/events.py at this content hash.
+  grouping_source_sha256: 295d1eabb46cfa14b8ccc4020bb8e506fd6e230b2d4b800ff3f80b24efc30c3c
+  audit: {rate: 0.05, seed: wildinbox-audit-v1}   # policy/audit.py, as deployed
+
+final_test:
+  protocol: configs/experiments/final_test.yaml
+  protocol_sha256: acb50faccc40cffa0df8994c93c2e81c4a4f4bdb96241931c29789bf5d3d62d0
+  # Re-run under the unchanged protocol in a scratch copy of reports/final_test/;
+  # the recorded results must be reproduced exactly (the committed record is
+  # not rewritten).
+  recorded_metrics_sha256: d3fbd379f3793d97f301480864ae95d1b80b9f6270f5e7071e80de18aaac20de
+  recorded_decisions_sha256: e6b883d8f225d8aa12a22fe801bf4741cf59ad35b797063660babc74a4045fb3
+
+# The unit of evidence is the capture EVENT (frames are aggregated by the
+# policy and never counted as independent). Events from one camera on one night
+# share lighting, background, and often the same animal, so intervals resample
+# clusters, not events.
+definitions:
+  animal_events: "roles supported_species + unsupported_animal + mixed_species (cars are neither animal nor empty)"
+  eligible_events: "every final-test event (8,982): each could be handled automatically"
+  animal_event_retention: "animal events NOT disposed likely_empty / animal events"
+  accepted_species_precision: "species_identified events whose true label is that species / species_identified events; undefined when there are none"
+  automatic_coverage: "events disposed likely_empty or species_identified / eligible events"
+  review_reduction: "1 - (events needing review + automatic events selected for audit) / events after grouping; the grouped manual baseline reviews every event once"
+  unsupported_false_acceptance: "unsupported_animal events disposed species_identified / unsupported_animal events"
+  retention_groups: [all_animals, supported_species, unsupported_animal, mixed_species]
+
+policies:
+  released: "the deployed policy (automation off)"
+  rule: "the rule's operating point from development data (empty filter 0.65), evaluated as the automation that WOULD run; not released"
+
+targets:
+  animal_event_retention: 0.98
+  accepted_species_precision: 0.95
+  review_reduction: 0.50
+# A target is "met" when the point estimate reaches it and "met with
+# confidence" when the lower bound of the primary interval does. An undefined
+# metric (zero denominator) is reported as undefined, never as 0% or 100%.
+
+uncertainty:
+  primary: "cluster bootstrap over camera-nights (camera x night; a night runs noon to noon in capture time)"
+  sensitivity: "cluster bootstrap over the 9 cameras; with 9 clusters this interval is coarse and is shown to make that visible"
+  naive: "Wilson 95% on events as if independent, shown only for comparison"
+  resamples: 2000
+  seed: 20260925
+  level: 0.95
+per_camera: "every metric for each of the 9 cameras, with min / median / max"
+
+# Error gallery: final-test mistakes shown to explain failure modes. Selected
+# by a fixed rule (sha256 of the event id, ascending), never by eye, and used
+# for documentation only: nothing is tuned from it.
+gallery:
+  frame: "the event's frame with the highest calibrated probability for the predicted class"
+  thumbnail_px: 320
+  categories:
+    - {name: animal_filtered_as_empty, rule: "animal event disposed likely_empty under the rule's operating point", count: 8}
+    - {name: confident_wrong_species, rule: "supported-species event whose suggested species is wrong with confidence >= 0.9", count: 8}
+    - {name: unsupported_as_known, rule: "unsupported-species event suggested as a supported species with confidence >= 0.9", count: 6}
+    - {name: animal_suggested_empty_night, rule: "animal event at night whose suggestion is empty (needs review under the released policy)", count: 6}

@@ -1,9 +1,15 @@
 # Model card: WildInbox species classifier
 
-**Status: released as `finetune-e3-deep-balanced@518a8da39ee0`, automation
-off.** Every event goes to review with its suggested label. The locked final
-test was opened once, under a pre-registered protocol, after everything was
-frozen: [`reports/final_test/README.md`](../reports/final_test/README.md).
+**Status: released as `finetune-e3-deep-balanced@7a25aea97c76` (tag v1.4.1),
+automation off.** Every event goes to review with its suggested label. The
+release pairs the E3 weights with the `conservative/v2` policy, which decides
+every event exactly as the `@518a8da39ee0` (v1) artifact the final test
+measured; only the reasons shown to reviewers differ (verified on all 8,982
+final-test events). The locked final test was opened once, under a
+pre-registered protocol, after everything was frozen
+([`reports/final_test/README.md`](../reports/final_test/README.md)). The
+capstone metrics were added to the same frozen test under a second
+pre-registered plan ([`reports/final_evaluation/README.md`](../reports/final_evaluation/README.md)).
 
 | | |
 |---|---|
@@ -77,6 +83,29 @@ The rule's empty filter, released as disabled after it failed on development
 camera 51, met the 98% retention target on the final test overall (worst case
 98.69%) but lost 5.8% of animal events on camera 0. This measurement does not
 change the release: nothing is chosen on the final test.
+
+## Final evaluation (capstone metrics, same frozen test)
+
+Events are the unit; 95% intervals are cluster bootstraps over camera-nights
+(2,251 clusters). Full report, per-camera table, and error gallery:
+[`reports/final_evaluation/README.md`](../reports/final_evaluation/README.md).
+
+| Metric (target) | Released: automation off | Rule's empty filter 0.65 (not released) |
+|---|---|---|
+| Animal-event retention (≥ 98%) | 100% | 98.95% [98.68, 99.22] |
+| · supported species / unsupported species | 100% / 100% | 99.11% / 97.14% [95.20, 98.66] |
+| Accepted species precision (≥ 95%) | undefined: nothing accepted | undefined: nothing accepted |
+| Automatic coverage | 0% | 6.28% [5.46, 7.07] |
+| Review reduction vs grouped workflow, with audits (≥ 50%) | 0% | 5.99% [5.21, 6.76] |
+| Unsupported-species false acceptance | 0 / 594 | 0 / 594 |
+
+The 50% review-reduction target is not met, and the only candidate automation
+also falls below 98% retention for unsupported species (97.1%), by day
+(97.1%), and on camera 0 (94.2%). **Automation therefore stays off.** It is
+not enabled for a subset of cameras or hours either: that restriction would be
+chosen from final-test results and turn them into development evidence. The
+value delivered as released comes from grouping (23,275 images become 8,982
+events to review) and from suggestions shown to the reviewer.
 
 ## Metrics on unseen cameras (development partitions)
 

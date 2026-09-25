@@ -1,0 +1,1008 @@
+{
+  "plan": "configs/experiments/final_evaluation.yaml",
+  "plan_sha256": "86d97ddb2068b3757bca0e7809e751235b8996423b3199764d3fb94291bcbf41",
+  "frozen_artifacts": {
+    "policy artifact (deployed, v2)": "2075a92828f86d0222b4da764d14e134681c6f8e9da739f06543a1c12e59fe6b",
+    "policy artifact (measured, v1)": "7ce10d8631f8c37e4944932083f209d345709ec90f2addc5d95fa96d09489df6",
+    "E3 weights": "3ab6fec236ce4b418acdda78f94078ec3bd6331983e2186bd52aa11a1fd9b360",
+    "split lock": "704ab2c4f0caf0f6529ec4f396ef0dca338cb0e53ca8aa9bf63bf97bae5e6cff",
+    "taxonomy": "b357e1904c75d72444255f38a38c7e8ad0d67b6af27a2c469a642eabedba63c4",
+    "grouping (datasets/events.py)": "295d1eabb46cfa14b8ccc4020bb8e506fd6e230b2d4b800ff3f80b24efc30c3c",
+    "final-test protocol": "acb50faccc40cffa0df8994c93c2e81c4a4f4bdb96241931c29789bf5d3d62d0",
+    "recorded final-test metrics": "d3fbd379f3793d97f301480864ae95d1b80b9f6270f5e7071e80de18aaac20de",
+    "recorded final-test decisions": "e6b883d8f225d8aa12a22fe801bf4741cf59ad35b797063660babc74a4045fb3"
+  },
+  "code": {
+    "commit": "634a7e39926d7e8c044ecd2fe55e152af7b2d77e",
+    "dirty": false
+  },
+  "reproduction": {
+    "results_identical": true,
+    "decisions_identical": true,
+    "rerun_code": {
+      "commit": "634a7e39926d7e8c044ecd2fe55e152af7b2d77e",
+      "dirty": false
+    },
+    "seconds": 15.0
+  },
+  "consistency": {
+    "events": 8982,
+    "match_recorded": true,
+    "v2_equals_v1": true
+  },
+  "results": {
+    "images": 23275,
+    "events": 8982,
+    "roles": {
+      "empty": 715,
+      "supported_species": 6548,
+      "unsupported_animal": 594,
+      "mixed_species": 12,
+      "non_animal": 1113
+    },
+    "camera_nights": 2251,
+    "cameras": [
+      "0",
+      "7",
+      "28",
+      "40",
+      "46",
+      "78",
+      "100",
+      "105",
+      "130"
+    ],
+    "released": {
+      "dispositions": {
+        "needs_review": 8982
+      },
+      "audited_events": 0,
+      "metrics": {
+        "animal_event_retention": {
+          "value": 1.0,
+          "numerator": 7154,
+          "denominator": 7154,
+          "ci_camera_night": [
+            1.0,
+            1.0
+          ],
+          "ci_camera": [
+            1.0,
+            1.0
+          ],
+          "ci_naive_events": [
+            0.999463,
+            1.0
+          ],
+          "clusters": {
+            "camera_nights": 2251,
+            "cameras": 9
+          }
+        },
+        "accepted_species_precision": {
+          "value": null,
+          "numerator": 0,
+          "denominator": 0,
+          "ci_camera_night": null,
+          "ci_camera": null,
+          "ci_naive_events": null,
+          "clusters": {
+            "camera_nights": 2251,
+            "cameras": 9
+          }
+        },
+        "automatic_coverage": {
+          "value": 0.0,
+          "numerator": 0,
+          "denominator": 8982,
+          "ci_camera_night": [
+            0.0,
+            0.0
+          ],
+          "ci_camera": [
+            0.0,
+            0.0
+          ],
+          "ci_naive_events": [
+            0.0,
+            0.000428
+          ],
+          "clusters": {
+            "camera_nights": 2251,
+            "cameras": 9
+          }
+        },
+        "review_reduction": {
+          "value": 0.0,
+          "numerator": 0,
+          "denominator": 8982,
+          "ci_camera_night": [
+            0.0,
+            0.0
+          ],
+          "ci_camera": [
+            0.0,
+            0.0
+          ],
+          "ci_naive_events": [
+            0.0,
+            0.000428
+          ],
+          "clusters": {
+            "camera_nights": 2251,
+            "cameras": 9
+          }
+        },
+        "unsupported_false_acceptance": {
+          "value": 0.0,
+          "numerator": 0,
+          "denominator": 594,
+          "ci_camera_night": [
+            0.0,
+            0.0
+          ],
+          "ci_camera": [
+            0.0,
+            0.0
+          ],
+          "ci_naive_events": [
+            0.0,
+            0.006426
+          ],
+          "clusters": {
+            "camera_nights": 2251,
+            "cameras": 9
+          }
+        },
+        "retention_supported_species": {
+          "value": 1.0,
+          "numerator": 6548,
+          "denominator": 6548,
+          "ci_camera_night": [
+            1.0,
+            1.0
+          ],
+          "ci_camera": [
+            1.0,
+            1.0
+          ],
+          "ci_naive_events": [
+            0.999414,
+            1.0
+          ],
+          "clusters": {
+            "camera_nights": 2251,
+            "cameras": 9
+          }
+        },
+        "retention_unsupported_animal": {
+          "value": 1.0,
+          "numerator": 594,
+          "denominator": 594,
+          "ci_camera_night": [
+            1.0,
+            1.0
+          ],
+          "ci_camera": [
+            1.0,
+            1.0
+          ],
+          "ci_naive_events": [
+            0.993574,
+            1.0
+          ],
+          "clusters": {
+            "camera_nights": 2251,
+            "cameras": 9
+          }
+        },
+        "retention_mixed_species": {
+          "value": 1.0,
+          "numerator": 12,
+          "denominator": 12,
+          "ci_camera_night": [
+            1.0,
+            1.0
+          ],
+          "ci_camera": [
+            1.0,
+            1.0
+          ],
+          "ci_naive_events": [
+            0.757506,
+            1.0
+          ],
+          "clusters": {
+            "camera_nights": 2251,
+            "cameras": 9
+          }
+        }
+      },
+      "targets": {
+        "animal_event_retention": {
+          "target": 0.98,
+          "value": 1.0,
+          "met": true,
+          "met_with_confidence": true
+        },
+        "accepted_species_precision": {
+          "target": 0.95,
+          "value": null,
+          "met": null,
+          "met_with_confidence": null
+        },
+        "review_reduction": {
+          "target": 0.5,
+          "value": 0.0,
+          "met": false,
+          "met_with_confidence": false
+        }
+      },
+      "per_camera": {
+        "0": {
+          "events": 1861,
+          "animal_events": 705,
+          "animal_event_retention": 1.0,
+          "accepted_species_precision": null,
+          "automatic_coverage": 0.0,
+          "review_reduction": 0.0,
+          "unsupported_false_acceptance": 0.0,
+          "retention_supported_species": 1.0,
+          "retention_unsupported_animal": 1.0,
+          "retention_mixed_species": null
+        },
+        "7": {
+          "events": 632,
+          "animal_events": 555,
+          "animal_event_retention": 1.0,
+          "accepted_species_precision": null,
+          "automatic_coverage": 0.0,
+          "review_reduction": 0.0,
+          "unsupported_false_acceptance": 0.0,
+          "retention_supported_species": 1.0,
+          "retention_unsupported_animal": 1.0,
+          "retention_mixed_species": null
+        },
+        "28": {
+          "events": 459,
+          "animal_events": 396,
+          "animal_event_retention": 1.0,
+          "accepted_species_precision": null,
+          "automatic_coverage": 0.0,
+          "review_reduction": 0.0,
+          "unsupported_false_acceptance": 0.0,
+          "retention_supported_species": 1.0,
+          "retention_unsupported_animal": 1.0,
+          "retention_mixed_species": null
+        },
+        "40": {
+          "events": 325,
+          "animal_events": 282,
+          "animal_event_retention": 1.0,
+          "accepted_species_precision": null,
+          "automatic_coverage": 0.0,
+          "review_reduction": 0.0,
+          "unsupported_false_acceptance": 0.0,
+          "retention_supported_species": 1.0,
+          "retention_unsupported_animal": 1.0,
+          "retention_mixed_species": null
+        },
+        "46": {
+          "events": 2125,
+          "animal_events": 1869,
+          "animal_event_retention": 1.0,
+          "accepted_species_precision": null,
+          "automatic_coverage": 0.0,
+          "review_reduction": 0.0,
+          "unsupported_false_acceptance": 0.0,
+          "retention_supported_species": 1.0,
+          "retention_unsupported_animal": 1.0,
+          "retention_mixed_species": 1.0
+        },
+        "78": {
+          "events": 799,
+          "animal_events": 725,
+          "animal_event_retention": 1.0,
+          "accepted_species_precision": null,
+          "automatic_coverage": 0.0,
+          "review_reduction": 0.0,
+          "unsupported_false_acceptance": 0.0,
+          "retention_supported_species": 1.0,
+          "retention_unsupported_animal": 1.0,
+          "retention_mixed_species": 1.0
+        },
+        "100": {
+          "events": 1547,
+          "animal_events": 1480,
+          "animal_event_retention": 1.0,
+          "accepted_species_precision": null,
+          "automatic_coverage": 0.0,
+          "review_reduction": 0.0,
+          "unsupported_false_acceptance": 0.0,
+          "retention_supported_species": 1.0,
+          "retention_unsupported_animal": 1.0,
+          "retention_mixed_species": 1.0
+        },
+        "105": {
+          "events": 735,
+          "animal_events": 693,
+          "animal_event_retention": 1.0,
+          "accepted_species_precision": null,
+          "automatic_coverage": 0.0,
+          "review_reduction": 0.0,
+          "unsupported_false_acceptance": 0.0,
+          "retention_supported_species": 1.0,
+          "retention_unsupported_animal": 1.0,
+          "retention_mixed_species": null
+        },
+        "130": {
+          "events": 499,
+          "animal_events": 449,
+          "animal_event_retention": 1.0,
+          "accepted_species_precision": null,
+          "automatic_coverage": 0.0,
+          "review_reduction": 0.0,
+          "unsupported_false_acceptance": 0.0,
+          "retention_supported_species": 1.0,
+          "retention_unsupported_animal": 1.0,
+          "retention_mixed_species": 1.0
+        }
+      },
+      "camera_spread": {
+        "animal_event_retention": {
+          "min": 1.0,
+          "median": 1.0,
+          "max": 1.0,
+          "cameras": 9
+        },
+        "automatic_coverage": {
+          "min": 0.0,
+          "median": 0.0,
+          "max": 0.0,
+          "cameras": 9
+        },
+        "review_reduction": {
+          "min": 0.0,
+          "median": 0.0,
+          "max": 0.0,
+          "cameras": 9
+        },
+        "retention_supported_species": {
+          "min": 1.0,
+          "median": 1.0,
+          "max": 1.0,
+          "cameras": 9
+        },
+        "retention_unsupported_animal": {
+          "min": 1.0,
+          "median": 1.0,
+          "max": 1.0,
+          "cameras": 9
+        }
+      }
+    },
+    "rule": {
+      "dispositions": {
+        "likely_empty": 564,
+        "needs_review": 8418
+      },
+      "audited_events": 26,
+      "metrics": {
+        "animal_event_retention": {
+          "value": 0.989516,
+          "numerator": 7079,
+          "denominator": 7154,
+          "ci_camera_night": [
+            0.98676,
+            0.992162
+          ],
+          "ci_camera": [
+            0.975171,
+            0.997294
+          ],
+          "ci_naive_events": [
+            0.98688,
+            0.991628
+          ],
+          "clusters": {
+            "camera_nights": 2251,
+            "cameras": 9
+          }
+        },
+        "accepted_species_precision": {
+          "value": null,
+          "numerator": 0,
+          "denominator": 0,
+          "ci_camera_night": null,
+          "ci_camera": null,
+          "ci_naive_events": null,
+          "clusters": {
+            "camera_nights": 2251,
+            "cameras": 9
+          }
+        },
+        "automatic_coverage": {
+          "value": 0.062792,
+          "numerator": 564,
+          "denominator": 8982,
+          "ci_camera_night": [
+            0.054592,
+            0.070724
+          ],
+          "ci_camera": [
+            0.015645,
+            0.1375
+          ],
+          "ci_naive_events": [
+            0.05796,
+            0.067998
+          ],
+          "clusters": {
+            "camera_nights": 2251,
+            "cameras": 9
+          }
+        },
+        "review_reduction": {
+          "value": 0.059898,
+          "numerator": 538,
+          "denominator": 8982,
+          "ci_camera_night": [
+            0.052067,
+            0.067611
+          ],
+          "ci_camera": [
+            0.014581,
+            0.131638
+          ],
+          "ci_naive_events": [
+            0.055176,
+            0.064996
+          ],
+          "clusters": {
+            "camera_nights": 2251,
+            "cameras": 9
+          }
+        },
+        "unsupported_false_acceptance": {
+          "value": 0.0,
+          "numerator": 0,
+          "denominator": 594,
+          "ci_camera_night": [
+            0.0,
+            0.0
+          ],
+          "ci_camera": [
+            0.0,
+            0.0
+          ],
+          "ci_naive_events": [
+            0.0,
+            0.006426
+          ],
+          "clusters": {
+            "camera_nights": 2251,
+            "cameras": 9
+          }
+        },
+        "retention_supported_species": {
+          "value": 0.991142,
+          "numerator": 6490,
+          "denominator": 6548,
+          "ci_camera_night": [
+            0.98852,
+            0.993533
+          ],
+          "ci_camera": [
+            0.979247,
+            0.998209
+          ],
+          "ci_naive_events": [
+            0.988567,
+            0.993141
+          ],
+          "clusters": {
+            "camera_nights": 2251,
+            "cameras": 9
+          }
+        },
+        "retention_unsupported_animal": {
+          "value": 0.97138,
+          "numerator": 577,
+          "denominator": 594,
+          "ci_camera_night": [
+            0.951968,
+            0.986577
+          ],
+          "ci_camera": [
+            0.913018,
+            0.997298
+          ],
+          "ci_naive_events": [
+            0.954647,
+            0.982056
+          ],
+          "clusters": {
+            "camera_nights": 2251,
+            "cameras": 9
+          }
+        },
+        "retention_mixed_species": {
+          "value": 1.0,
+          "numerator": 12,
+          "denominator": 12,
+          "ci_camera_night": [
+            1.0,
+            1.0
+          ],
+          "ci_camera": [
+            1.0,
+            1.0
+          ],
+          "ci_naive_events": [
+            0.757506,
+            1.0
+          ],
+          "clusters": {
+            "camera_nights": 2251,
+            "cameras": 9
+          }
+        }
+      },
+      "targets": {
+        "animal_event_retention": {
+          "target": 0.98,
+          "value": 0.989516,
+          "met": true,
+          "met_with_confidence": true
+        },
+        "accepted_species_precision": {
+          "target": 0.95,
+          "value": null,
+          "met": null,
+          "met_with_confidence": null
+        },
+        "review_reduction": {
+          "target": 0.5,
+          "value": 0.059898,
+          "met": false,
+          "met_with_confidence": false
+        }
+      },
+      "per_camera": {
+        "0": {
+          "events": 1861,
+          "animal_events": 705,
+          "animal_event_retention": 0.941844,
+          "accepted_species_precision": null,
+          "automatic_coverage": 0.225148,
+          "review_reduction": 0.216013,
+          "unsupported_false_acceptance": 0.0,
+          "retention_supported_species": 0.949206,
+          "retention_unsupported_animal": 0.88,
+          "retention_mixed_species": null
+        },
+        "7": {
+          "events": 632,
+          "animal_events": 555,
+          "animal_event_retention": 1.0,
+          "accepted_species_precision": null,
+          "automatic_coverage": 0.011076,
+          "review_reduction": 0.011076,
+          "unsupported_false_acceptance": 0.0,
+          "retention_supported_species": 1.0,
+          "retention_unsupported_animal": 1.0,
+          "retention_mixed_species": null
+        },
+        "28": {
+          "events": 459,
+          "animal_events": 396,
+          "animal_event_retention": 0.984848,
+          "accepted_species_precision": null,
+          "automatic_coverage": 0.050109,
+          "review_reduction": 0.04793,
+          "unsupported_false_acceptance": 0.0,
+          "retention_supported_species": 0.983193,
+          "retention_unsupported_animal": 1.0,
+          "retention_mixed_species": null
+        },
+        "40": {
+          "events": 325,
+          "animal_events": 282,
+          "animal_event_retention": 0.975177,
+          "accepted_species_precision": null,
+          "automatic_coverage": 0.061538,
+          "review_reduction": 0.052308,
+          "unsupported_false_acceptance": 0.0,
+          "retention_supported_species": 0.996283,
+          "retention_unsupported_animal": 0.538462,
+          "retention_mixed_species": null
+        },
+        "46": {
+          "events": 2125,
+          "animal_events": 1869,
+          "animal_event_retention": 0.992509,
+          "accepted_species_precision": null,
+          "automatic_coverage": 0.018824,
+          "review_reduction": 0.017882,
+          "unsupported_false_acceptance": 0.0,
+          "retention_supported_species": 0.992126,
+          "retention_unsupported_animal": 1.0,
+          "retention_mixed_species": 1.0
+        },
+        "78": {
+          "events": 799,
+          "animal_events": 725,
+          "animal_event_retention": 1.0,
+          "accepted_species_precision": null,
+          "automatic_coverage": 0.010013,
+          "review_reduction": 0.007509,
+          "unsupported_false_acceptance": 0.0,
+          "retention_supported_species": 1.0,
+          "retention_unsupported_animal": 1.0,
+          "retention_mixed_species": 1.0
+        },
+        "100": {
+          "events": 1547,
+          "animal_events": 1480,
+          "animal_event_retention": 0.998649,
+          "accepted_species_precision": null,
+          "automatic_coverage": 0.011635,
+          "review_reduction": 0.011635,
+          "unsupported_false_acceptance": 0.0,
+          "retention_supported_species": 0.999264,
+          "retention_unsupported_animal": 0.991667,
+          "retention_mixed_species": 1.0
+        },
+        "105": {
+          "events": 735,
+          "animal_events": 693,
+          "animal_event_retention": 0.992785,
+          "accepted_species_precision": null,
+          "automatic_coverage": 0.029932,
+          "review_reduction": 0.028571,
+          "unsupported_false_acceptance": 0.0,
+          "retention_supported_species": 0.994135,
+          "retention_unsupported_animal": 0.909091,
+          "retention_mixed_species": null
+        },
+        "130": {
+          "events": 499,
+          "animal_events": 449,
+          "animal_event_retention": 1.0,
+          "accepted_species_precision": null,
+          "automatic_coverage": 0.014028,
+          "review_reduction": 0.014028,
+          "unsupported_false_acceptance": 0.0,
+          "retention_supported_species": 1.0,
+          "retention_unsupported_animal": 1.0,
+          "retention_mixed_species": 1.0
+        }
+      },
+      "camera_spread": {
+        "animal_event_retention": {
+          "min": 0.941844,
+          "median": 0.992785,
+          "max": 1.0,
+          "cameras": 9
+        },
+        "automatic_coverage": {
+          "min": 0.010013,
+          "median": 0.018824,
+          "max": 0.225148,
+          "cameras": 9
+        },
+        "review_reduction": {
+          "min": 0.007509,
+          "median": 0.017882,
+          "max": 0.216013,
+          "cameras": 9
+        },
+        "retention_supported_species": {
+          "min": 0.949206,
+          "median": 0.996283,
+          "max": 1.0,
+          "cameras": 9
+        },
+        "retention_unsupported_animal": {
+          "min": 0.538462,
+          "median": 1.0,
+          "max": 1.0,
+          "cameras": 9
+        }
+      }
+    },
+    "day_night_rule": {
+      "day": {
+        "value": 0.971342,
+        "numerator": 1932,
+        "denominator": 1989,
+        "ci_camera_night": [
+          0.961995,
+          0.979916
+        ],
+        "ci_camera": [
+          0.946175,
+          0.990731
+        ],
+        "ci_naive_events": [
+          0.963053,
+          0.977815
+        ],
+        "clusters": {
+          "camera_nights": 1222,
+          "cameras": 9
+        }
+      },
+      "night": {
+        "value": 0.996515,
+        "numerator": 5147,
+        "denominator": 5165,
+        "ci_camera_night": [
+          0.994592,
+          0.998176
+        ],
+        "ci_camera": [
+          0.990524,
+          1.0
+        ],
+        "ci_naive_events": [
+          0.994498,
+          0.997794
+        ],
+        "clusters": {
+          "camera_nights": 1610,
+          "cameras": 9
+        }
+      }
+    },
+    "gallery": {
+      "animal_filtered_as_empty": {
+        "rule": "animal event disposed likely_empty under the rule's operating point",
+        "matching_events": 75,
+        "shown": [
+          {
+            "file": "animal_filtered_as_empty-000339fe62.jpg",
+            "event_id": "cct20:700c8fca-5567-11e8-879d-dca9047ef277",
+            "camera": "0",
+            "night": true,
+            "true": "skunk",
+            "role": "unsupported_animal",
+            "suggested": "empty",
+            "confidence": 0.767,
+            "frame_probability": 0.767,
+            "frames": 1,
+            "released": "needs_review",
+            "rule": "likely_empty"
+          },
+          {
+            "file": "animal_filtered_as_empty-019eb799b0.jpg",
+            "event_id": "cct20:6f17a60f-5567-11e8-aef4-dca9047ef277",
+            "camera": "46",
+            "night": false,
+            "true": "bobcat",
+            "role": "supported_species",
+            "suggested": "empty",
+            "confidence": 0.694,
+            "frame_probability": 0.941,
+            "frames": 3,
+            "released": "needs_review",
+            "rule": "likely_empty"
+          },
+          {
+            "file": "animal_filtered_as_empty-02dd158904.jpg",
+            "event_id": "cct20:6f0601c5-5567-11e8-96b0-dca9047ef277",
+            "camera": "40",
+            "night": false,
+            "true": "dog",
+            "role": "supported_species",
+            "suggested": "empty",
+            "confidence": 0.787,
+            "frame_probability": 0.816,
+            "frames": 3,
+            "released": "needs_review",
+            "rule": "likely_empty"
+          },
+          {
+            "file": "animal_filtered_as_empty-033332b95c.jpg",
+            "event_id": "cct20:700c3840-5567-11e8-8dcb-dca9047ef277",
+            "camera": "0",
+            "night": true,
+            "true": "coyote",
+            "role": "supported_species",
+            "suggested": "empty",
+            "confidence": 0.662,
+            "frame_probability": 0.662,
+            "frames": 1,
+            "released": "needs_review",
+            "rule": "likely_empty"
+          },
+          {
+            "file": "animal_filtered_as_empty-0586fba941.jpg",
+            "event_id": "cct20:700c2061-5567-11e8-9f9f-dca9047ef277",
+            "camera": "0",
+            "night": false,
+            "true": "bird",
+            "role": "unsupported_animal",
+            "suggested": "empty",
+            "confidence": 0.688,
+            "frame_probability": 0.688,
+            "frames": 1,
+            "released": "needs_review",
+            "rule": "likely_empty"
+          },
+          {
+            "file": "animal_filtered_as_empty-078ad88d90.jpg",
+            "event_id": "cct20:6f1ed140-5567-11e8-8440-dca9047ef277",
+            "camera": "100",
+            "night": false,
+            "true": "cat",
+            "role": "supported_species",
+            "suggested": "empty",
+            "confidence": 0.674,
+            "frame_probability": 0.73,
+            "frames": 3,
+            "released": "needs_review",
+            "rule": "likely_empty"
+          },
+          {
+            "file": "animal_filtered_as_empty-07f75e2e5e.jpg",
+            "event_id": "cct20:6f05d60c-5567-11e8-8655-dca9047ef277",
+            "camera": "40",
+            "night": false,
+            "true": "squirrel",
+            "role": "unsupported_animal",
+            "suggested": "empty",
+            "confidence": 0.715,
+            "frame_probability": 0.73,
+            "frames": 3,
+            "released": "needs_review",
+            "rule": "likely_empty"
+          },
+          {
+            "file": "animal_filtered_as_empty-0ca2adb301.jpg",
+            "event_id": "cct20:700c04eb-5567-11e8-bfb5-dca9047ef277",
+            "camera": "0",
+            "night": false,
+            "true": "coyote",
+            "role": "supported_species",
+            "suggested": "empty",
+            "confidence": 0.713,
+            "frame_probability": 0.713,
+            "frames": 1,
+            "released": "needs_review",
+            "rule": "likely_empty"
+          }
+        ]
+      },
+      "confident_wrong_species": {
+        "rule": "supported-species event whose suggested species is wrong with confidence >= 0.9",
+        "matching_events": 2,
+        "shown": [
+          {
+            "file": "confident_wrong_species-102aeca72f.jpg",
+            "event_id": "cct20:6f1c0654-5567-11e8-a828-dca9047ef277",
+            "camera": "78",
+            "night": true,
+            "true": "raccoon",
+            "role": "supported_species",
+            "suggested": "cat",
+            "confidence": 0.902,
+            "frame_probability": 0.981,
+            "frames": 3,
+            "released": "needs_review",
+            "rule": "needs_review"
+          },
+          {
+            "file": "confident_wrong_species-460459c8b4.jpg",
+            "event_id": "cct20:6f1bf7ae-5567-11e8-94c6-dca9047ef277",
+            "camera": "78",
+            "night": true,
+            "true": "bobcat",
+            "role": "supported_species",
+            "suggested": "cat",
+            "confidence": 0.907,
+            "frame_probability": 0.945,
+            "frames": 3,
+            "released": "needs_review",
+            "rule": "needs_review"
+          }
+        ]
+      },
+      "unsupported_as_known": {
+        "rule": "unsupported-species event suggested as a supported species with confidence >= 0.9",
+        "matching_events": 0,
+        "shown": []
+      },
+      "animal_suggested_empty_night": {
+        "rule": "animal event at night whose suggestion is empty (needs review under the released policy)",
+        "matching_events": 280,
+        "shown": [
+          {
+            "file": "animal_suggested_empty_night-000339fe62.jpg",
+            "event_id": "cct20:700c8fca-5567-11e8-879d-dca9047ef277",
+            "camera": "0",
+            "night": true,
+            "true": "skunk",
+            "role": "unsupported_animal",
+            "suggested": "empty",
+            "confidence": 0.767,
+            "frame_probability": 0.767,
+            "frames": 1,
+            "released": "needs_review",
+            "rule": "likely_empty"
+          },
+          {
+            "file": "animal_suggested_empty_night-006a0a0c45.jpg",
+            "event_id": "cct20:6f12cf9c-5567-11e8-b14f-dca9047ef277",
+            "camera": "28",
+            "night": true,
+            "true": "opossum",
+            "role": "supported_species",
+            "suggested": "empty",
+            "confidence": 0.393,
+            "frame_probability": 0.414,
+            "frames": 3,
+            "released": "needs_review",
+            "rule": "needs_review"
+          },
+          {
+            "file": "animal_suggested_empty_night-021ea98d83.jpg",
+            "event_id": "cct20:6f12ca11-5567-11e8-b2c4-dca9047ef277",
+            "camera": "28",
+            "night": true,
+            "true": "opossum",
+            "role": "supported_species",
+            "suggested": "empty",
+            "confidence": 0.406,
+            "frame_probability": 0.476,
+            "frames": 3,
+            "released": "needs_review",
+            "rule": "needs_review"
+          },
+          {
+            "file": "animal_suggested_empty_night-033332b95c.jpg",
+            "event_id": "cct20:700c3840-5567-11e8-8dcb-dca9047ef277",
+            "camera": "0",
+            "night": true,
+            "true": "coyote",
+            "role": "supported_species",
+            "suggested": "empty",
+            "confidence": 0.662,
+            "frame_probability": 0.662,
+            "frames": 1,
+            "released": "needs_review",
+            "rule": "likely_empty"
+          },
+          {
+            "file": "animal_suggested_empty_night-04b325b222.jpg",
+            "event_id": "cct20:6f05fc38-5567-11e8-8724-dca9047ef277",
+            "camera": "40",
+            "night": true,
+            "true": "cat",
+            "role": "supported_species",
+            "suggested": "empty",
+            "confidence": 0.301,
+            "frame_probability": 0.338,
+            "frames": 3,
+            "released": "needs_review",
+            "rule": "needs_review"
+          },
+          {
+            "file": "animal_suggested_empty_night-05f71c90b0.jpg",
+            "event_id": "cct20:6f185bb0-5567-11e8-9ef4-dca9047ef277",
+            "camera": "46",
+            "night": true,
+            "true": "raccoon",
+            "role": "supported_species",
+            "suggested": "empty",
+            "confidence": 0.351,
+            "frame_probability": 0.524,
+            "frames": 3,
+            "released": "needs_review",
+            "rule": "needs_review"
+          }
+        ]
+      }
+    }
+  }
+}

@@ -6,6 +6,26 @@ Caltech Camera Traps covering every supported species, empty frames, and four
 species the model does not support (license and attribution:
 [`samples/cct-dev/LICENSE.md`](../samples/cct-dev/LICENSE.md)).
 
+## Video
+
+[`media/demo.webm`](media/demo.webm) (about 80 s, 1280×720) is recorded from the
+live application, with nothing staged. It starts from a fresh deployment with the
+trained release active, uploads the sample with its card metadata in the
+browser, accepts one suggestion, corrects another, opens last night's visitors
+and the timeline, exports the observation log, and shows monitoring.
+
+| Upload with card metadata | Review queue | Last night's visitors |
+|---|---|---|
+| ![upload](media/demo-upload.png) | ![review](media/demo-review.png) | ![visitors](media/demo-visitors.png) |
+
+To record it again against a fresh deployment (steps 1 and the release
+registration below; the database must not already hold the sample):
+
+```bash
+uv run --with playwright playwright install chromium
+uv run --with playwright python scripts/record_demo.py --out docs/media/demo.webm
+```
+
 ## 1. Start the deployment
 
 ```bash
@@ -60,9 +80,11 @@ evaluation did not support them (see the [model card](model_card.md)).
 
 Open **http://localhost:8501**:
 
-1. **Upload**: choose the files in `samples/cct-dev/images`, give a camera name,
-   and watch progress. (The demo script above sends per-file camera, sequence,
-   and capture time; the upload page applies one camera name to every file.)
+1. **Upload**: choose the files in `samples/cct-dev/images` and, as the card
+   metadata, `samples/cct-dev/metadata.json` (per-file camera, sequence, and
+   capture time), then watch progress: 37 photos become 13 capture events.
+   Without a metadata file, a camera name applies to every file and photos are
+   grouped by EXIF capture time.
 2. **Review queue**: enter your name in the sidebar. Each event shows its frames,
    the suggestion, and why it needs review. Accept, choose another label, type an
    unsupported species, or mark "can't tell".

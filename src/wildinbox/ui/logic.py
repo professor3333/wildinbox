@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 from datetime import date, datetime, time, timedelta
 from typing import Any
 
@@ -95,3 +96,22 @@ def representative_frame(detail: dict[str, Any]) -> dict[str, Any] | None:
 def label_choices(class_names: list[str]) -> list[str]:
     """Species first, then empty; free-text 'other' and 'can't tell' are added by the UI."""
     return [c for c in class_names if c != EMPTY_CLASS] + [EMPTY_CLASS]
+
+
+def card_metadata(camera: str | None, raw: bytes | None) -> dict[str, Any] | None:
+    """The upload's `metadata` field from an optional card metadata file (the
+    API's format: `camera_id`, `captured_at`, `sequence_id`, or per-file values
+    under `files`) and the optional camera name typed in the form. The camera
+    name fills `camera_id` only when the file does not set one."""
+    meta: dict[str, Any] = {}
+    if raw:
+        try:
+            loaded = json.loads(raw)
+        except ValueError as e:
+            raise ValueError(f"the metadata file is not valid JSON: {e}") from None
+        if not isinstance(loaded, dict):
+            raise ValueError("the metadata file must hold a JSON object")
+        meta = loaded
+    if camera and camera.strip() and "camera_id" not in meta:
+        meta["camera_id"] = camera.strip()
+    return meta or None

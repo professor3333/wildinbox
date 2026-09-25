@@ -87,9 +87,15 @@ class ApiClient:
         return out
 
     def upload(
-        self, files: list[tuple[str, bytes]], camera_id: str | None = None
+        self,
+        files: list[tuple[str, bytes]],
+        camera_id: str | None = None,
+        metadata: dict[str, Any] | None = None,
     ) -> dict[str, Any]:
-        data = {"metadata": json.dumps({"camera_id": camera_id})} if camera_id else None
+        meta = (
+            metadata if metadata is not None else ({"camera_id": camera_id} if camera_id else None)
+        )
+        data = {"metadata": json.dumps(meta)} if meta else None
         res = self.http.post(
             "/batches",
             files=[
