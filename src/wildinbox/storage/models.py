@@ -60,13 +60,15 @@ def _now() -> Mapped[datetime]:
 
 class ModelRelease(Base):
     """Everything needed to reproduce a prediction: weights, classes, preprocessing,
-    calibration, and decision policy."""
+    calibration, and decision policy. Immutable once written (a database trigger
+    rejects UPDATE), so a job pinned to a release always runs the same thing."""
 
     __tablename__ = "model_releases"
     id: Mapped[str] = mapped_column(String(100), primary_key=True)
     kind: Mapped[str] = mapped_column(String(40))
     is_test: Mapped[bool] = mapped_column(Boolean)
     weights_key: Mapped[str | None] = mapped_column(Text)
+    weights_sha256: Mapped[str | None] = mapped_column(String(64))
     class_names: Mapped[list[Any]]
     class_map_fingerprint: Mapped[str] = mapped_column(String(64))
     preprocessing: Mapped[dict[str, Any]]
@@ -74,8 +76,21 @@ class ModelRelease(Base):
     calibration: Mapped[dict[str, Any] | None]
     policy: Mapped[dict[str, Any]]
     policy_version: Mapped[str] = mapped_column(String(100))
+    # Where the release came from: training run, code commit, split, artifacts.
+    provenance: Mapped[dict[str, Any]] = mapped_column(JSONB, server_default=text("'{}'"))
     notes: Mapped[str | None] = mapped_column(Text)
     created_at: Mapped[datetime] = _now()
+
+
+class ReleaseActivation(Base):
+    """Append-only log of which release new batches use. The latest row wins,
+    so activating and rolling back are both a new row, never an edit."""
+
+    __tablename__ = "release_activations"
+    id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=True)
+    release_id: Mapped[str] = mapped_column(ForeignKey("model_releases.id"))
+    note: Mapped[str | None] = mapped_column(Text)
+    activated_at: Mapped[datetime] = _now()
 
 
 class Batch(Base):
@@ -127,6 +142,8 @@ class Image(Base):
     user_metadata: Mapped[dict[str, Any]] = mapped_column(JSONB, server_default=text("'{}'"))
     validation_status: Mapped[str] = mapped_column(String(20))
     validation_error: Mapped[str | None] = mapped_column(Text)
+    # A valid image whose inference failed after the job's retries: a failed frame.
+    processing_error: Mapped[str | None] = mapped_column(Text)
     duplicate_of: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("images.id"))
     event_id: Mapped[uuid.UUID | None] = mapped_column(
         ForeignKey("events.id", ondelete="SET NULL"), index=True
@@ -173,6 +190,13 @@ class Job(Base):
     created_at: Mapped[datetime] = _now()
     started_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     finished_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    # Lease: the worker holding `lease_token` owns the job while `heartbeat_at`
+    # is fresh. Every progress commit is conditional on still holding it.
+    lease_token: Mapped[uuid.UUID | None] = mapped_column()
+    worker_id: Mapped[str | None] = mapped_column(String(200))
+    heartbeat_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    # A failed attempt with retries left waits until this time.
+    next_attempt_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
 
     batch: Mapped[Batch] = relationship(back_populates="jobs")
     release: Mapped[ModelRelease] = relationship()
@@ -187,7 +211,8 @@ class Prediction(Base):
         ForeignKey("events.id", ondelete="SET NULL"), index=True
     )
     model_release_id: Mapped[str] = mapped_column(ForeignKey("model_releases.id"))
-    class_probabilities: Mapped[dict[str, Any]]
+    class_probabilities: Mapped[dict[str, Any]]  # raw model output
+    calibrated_probabilities: Mapped[dict[str, Any] | None]  # what the policy uses
     suggested_label: Mapped[str] = mapped_column(String(100))
     confidence: Mapped[float] = mapped_column(Float)
     created_at: Mapped[datetime] = _now()

@@ -27,6 +27,7 @@ from torch.utils.data import DataLoader, Dataset, WeightedRandomSampler
 from wildinbox.config import ConfigError, PreprocessingConfig
 from wildinbox.datasets.spec import Partition
 from wildinbox.evaluation.data import ImageRow, box_lists, load_rows
+from wildinbox.inference.architecture import build_model
 from wildinbox.preprocessing import Box, TrainAugmentation, load_image, resize_shorter_side
 from wildinbox.training.run import MLFLOW_URI, git_state, hardware, load_context, seed_everything
 
@@ -80,17 +81,6 @@ def load_finetune_config(path: str | Path) -> FinetuneConfig:
 
 
 # ------------------------------------------------------------------- model
-
-
-def build_model(num_classes: int, weights: str | None) -> nn.Module:
-    from torchvision.models import EfficientNet_B0_Weights, efficientnet_b0
-
-    model = efficientnet_b0(weights=EfficientNet_B0_Weights[weights] if weights else None)
-    head = model.classifier[1]
-    assert isinstance(head, nn.Linear)
-    model.classifier[1] = nn.Linear(head.in_features, num_classes)
-    result: nn.Module = model
-    return result
 
 
 def freeze_below(model: nn.Module, block: int) -> list[nn.Module]:
