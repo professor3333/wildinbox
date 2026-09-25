@@ -1,0 +1,53 @@
+# Update-cycle protocol, fixed BEFORE any reviewed data was collected or any
+# candidate trained. Applied by: wildinbox snapshot build / wildinbox update gate
+#
+# One complete cycle: collect corrections from a deployment, build a versioned
+# training snapshot, train a candidate with the deployed recipe, compare it
+# with the deployed model on data neither was trained on, release it only if
+# it passes, and demonstrate a rollback.
+deployed_release: finetune-e3-deep-balanced@518a8da39ee0
+recipe: configs/experiments/finetune-e3-deep-balanced.yaml   # unchanged: same layers, sampling, epochs, seed
+
+deployment:
+  # The deployment batch: every image of these cameras (the policy-validation
+  # partition), uploaded through the API like a memory card.
+  cameras: ["90", "125"]
+  partition: policy_validation
+  # Reviews are SIMULATED from the dataset's ground truth (reviewer name below)
+  # because no real reviewer labeled these cameras. Event label rules:
+  # supported species -> that species; empty -> empty; unsupported species ->
+  # its name; mixed species -> unresolved.
+  reviewer: simulated-ground-truth
+
+snapshot:
+  # Per camera, reviewed events that start before the camera's median reviewed
+  # event start time feed the snapshot; later events form the gate holdout and
+  # are never trained on. Sequences are never split.
+  split: per_camera_median_time
+  # Frames of pre-cutoff events whose review label is a supported class
+  # (species or empty) join the E3 training images, each labeled with its
+  # event's reviewed label. Unsupported and unresolved events are not fit.
+  fit_labels: supported_only
+
+calibration:
+  # Temperature refit on cameras 51 and 108 (calibration partition), which
+  # the candidate never trains on. Thresholds are NOT re-chosen: the candidate
+  # keeps the deployed policy settings (automation off).
+  fit_partition: calibration
+
+gate:
+  # Candidate vs deployed release, same data, calibrated scores.
+  holdout_metric: event_macro_f1      # suggested label vs reviewed label, events with a supported label
+  min_holdout_gain: 0.02              # absolute
+  # No regression beyond this (absolute macro-F1) on data neither model was
+  # trained on (cameras 51 and 108), nor on held-out sequences of the training
+  # cameras (seen-camera diagnostic).
+  max_regression: 0.02
+  # Animal events on the holdout whose suggestion is empty may not rise by more
+  # than 10% relative.
+  max_false_empty_suggestion_increase: 0.10
+
+# What this measures: improvement on cameras that were reviewed, over time.
+# Holdout and snapshot share cameras and backgrounds by design, so this is
+# not evidence of generalization to new cameras; the regression checks cover
+# cameras outside the update.
