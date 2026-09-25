@@ -31,7 +31,7 @@ key to the request's JSON log line.
 | `GET /batches/{id}/images` | Every uploaded file with validation and processing status. |
 | `GET /batches/{id}/export` | Current observations with provenance, one row per capture event. `?format=csv` (default) or `json`. |
 | `GET /events` | Paginated, filterable events: `batch_id`, `camera_id`, `disposition`, `label`, `reason`, `reviewed`, `audit`, `start_after`, `start_before`, `limit` (≤ 500), `offset`. Returns `total` and `next_offset`. |
-| `GET /events/{id}` | Frames with status, raw and calibrated predictions, the decision, and every review. |
+| `GET /events/{id}` | Frames with status (`completed`, `invalid`, `duplicate`, `failed`, `pending`), raw and calibrated predictions, the decision, and every review. An event keeps every file of its sequence; any frame that could not be scored sends it to review. |
 | `POST /events/{id}/reviews` | Append a human review (`reviewer`, `outcome`: confirmed / corrected / unresolved, `confirmed_label`, `note`). Reviews are never overwritten; each links to the one it supersedes. |
 | `GET /jobs/{id}` | Job lifecycle only. |
 | `GET /version` | The active release's id, weights SHA-256, preprocessing, calibration, and policy versions. The deploy check. |

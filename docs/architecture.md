@@ -73,6 +73,13 @@ sequenceDiagram
 - **Grouping:** supplied sequence ids, otherwise the camera plus capture-time
   gaps (an editable rule). Events are written only when the whole batch is
   scored, never from a partial one.
+- **Every file keeps its place in its event.** A frame that fails to decode,
+  is rejected at upload, or duplicates an earlier file remains a member of the
+  event its sequence id or capture time puts it in. A failed member makes the
+  event incomplete, so the policy sends it to review (`processing_failure`)
+  rather than deciding on the remaining frames. A duplicate counts through its
+  original's prediction. Failed files with no usable companion create no
+  event and are reported with the batch.
 - **Decisions** come from the release's versioned policy
   (`policy/conservative.py`), which gives likely empty, species identified, or
   needs review, with machine-readable reasons. An event is filtered only when

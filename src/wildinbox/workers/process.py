@@ -281,20 +281,34 @@ def _group_key(rule: str, image_ids: list[str]) -> str:
 
 
 def _group_events(session: Session, batch: Batch) -> list[Event]:
-    valid = [i for i in batch.images if i.validation_status == "valid"]
-    by_id = {str(i.id): i for i in valid}
+    """Every file belongs to the event its sequence id, or its camera and capture
+    time, place it in, whatever became of it. A frame that failed to decode, was
+    rejected at upload, or duplicates an earlier file stays a member, so the
+    policy sees an incomplete event (and sends it to review) instead of deciding
+    on the remaining frames alone. A group becomes an event only when at least
+    one member is usable (decoded, or a duplicate of a decoded file): a group
+    of failed files alone has nothing to review and stays in the batch's
+    failures, as before."""
+    members = list(batch.images)
+    by_id = {str(i.id): i for i in members}
     with_seq = [
         GroupableImage(str(i.id), i.camera_id, i.captured_at, i.sequence_id)
-        for i in valid
+        for i in members
         if i.sequence_id
     ]
     without = [
-        GroupableImage(str(i.id), i.camera_id, i.captured_at) for i in valid if not i.sequence_id
+        GroupableImage(str(i.id), i.camera_id, i.captured_at) for i in members if not i.sequence_id
     ]
     groups = [(SEQUENCE_RULE, g) for g in group_by_sequence(with_seq)]
     groups += [
         (time_gap_rule_id(DEFAULT_GAP_SECONDS), g)
         for g in group_by_time_gap(without, DEFAULT_GAP_SECONDS)
+    ]
+    usable = ("valid", "duplicate")
+    groups = [
+        (rule, ids)
+        for rule, ids in groups
+        if any(by_id[i].validation_status in usable for i in ids)
     ]
 
     keys = []
@@ -328,6 +342,31 @@ def _group_events(session: Session, batch: Batch) -> list[Event]:
     return list(events.values())
 
 
+def _member_predictions(
+    session: Session, event: Event, preds: dict[uuid.UUID, Prediction], release: ModelRelease
+) -> dict[uuid.UUID, Prediction]:
+    """Each member's prediction under `release`: its own, or for an exact
+    duplicate, its original's (the same bytes, so the same evidence)."""
+    out = dict(preds)
+    originals = {
+        i.id: i.duplicate_of
+        for i in event.images
+        if i.id not in preds and i.validation_status == "duplicate" and i.duplicate_of
+    }
+    if originals:
+        found = {
+            p.image_id: p
+            for p in session.scalars(
+                select(Prediction).where(
+                    Prediction.image_id.in_(set(originals.values())),
+                    Prediction.model_release_id == release.id,
+                )
+            )
+        }
+        out.update({i: found[o] for i, o in originals.items() if o in found})
+    return out
+
+
 def _frames(event: Event, preds: dict[uuid.UUID, Prediction], release: ModelRelease) -> list[Frame]:
     frames = []
     for img in event.images:
@@ -335,9 +374,9 @@ def _frames(event: Event, preds: dict[uuid.UUID, Prediction], release: ModelRele
         if p is not None:
             probs = p.calibrated_probabilities or calibrated(release, p.class_probabilities)
             frames.append(Frame(probs, FrameStatus.COMPLETED))
-        elif img.processing_error:
+        elif img.processing_error or img.validation_status == "invalid":
             frames.append(Frame(None, FrameStatus.FAILED))
-        else:
+        else:  # e.g. a duplicate whose original was not scored with this release
             frames.append(Frame(None, FrameStatus.PENDING))
     return frames
 
@@ -354,7 +393,9 @@ def _decide(
         preds = {p.image_id: p for p in rows}
         for p in rows:
             p.event_id = event.id
-        values, policy_version = _decision(event, preds, release)
+        values, policy_version = _decision(
+            event, _member_predictions(session, event, preds, release), release
+        )
         chosen = audit.selected(
             event.id, str(values["disposition"]), settings.audit_rate, settings.audit_seed
         )
@@ -384,7 +425,12 @@ def _decision(
 ) -> tuple[dict[str, object], str]:
     frames = _frames(event, preds, release)
     if release.kind == "test_predictor":
-        done = [p for p in (preds.get(i.id) for i in event.images) if p is not None]
+        # A duplicate's prediction is its original's: pass each prediction once.
+        done = list(
+            {
+                p.image_id: p for p in (preds.get(i.id) for i in event.images) if p is not None
+            }.values()
+        )
         if not done:
             return _values(
                 Disposition.NEEDS_REVIEW, None, None, [ReviewReason.PROCESSING_FAILURE]
@@ -397,7 +443,7 @@ def _decision(
             preprocessing_version=release.preprocessing_version,
         )
         reasons = list(d.reasons)
-        if len(done) < len(frames):
+        if any(f.status is not FrameStatus.COMPLETED for f in frames):
             reasons.insert(0, ReviewReason.PROCESSING_FAILURE)
         return _values(d.disposition, d.suggested_label, d.confidence, reasons), d.policy_version
     c = release.policy["config"]

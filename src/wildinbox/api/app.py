@@ -90,6 +90,8 @@ def _release(release: ModelRelease) -> dict[str, Any]:
 def _frame_status(img: Image, has_prediction: bool) -> str:
     if img.validation_status == "invalid":
         return "invalid"
+    if img.validation_status == "duplicate":
+        return "duplicate"
     if has_prediction:
         return "completed"
     return "failed" if img.processing_error else "pending"
