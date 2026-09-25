@@ -231,19 +231,44 @@ def event_row(session: Session, event: Event, detail: bool = False) -> dict[str,
             p.image_id: p
             for p in session.scalars(select(Prediction).where(Prediction.event_id == event.id))
         }
+        # A duplicate frame's evidence is its original's prediction under the
+        # release that decided the event (the worker uses the same one).
+        originals = {
+            i.id: i.duplicate_of
+            for i in event.images
+            if i.id not in preds and i.validation_status == "duplicate" and i.duplicate_of
+        }
+        if originals and decision is not None:
+            found = {
+                p.image_id: p
+                for p in session.scalars(
+                    select(Prediction).where(
+                        Prediction.image_id.in_(set(originals.values())),
+                        Prediction.model_release_id == decision.model_release_id,
+                    )
+                )
+            }
+            preds.update({i: found[o] for i, o in originals.items() if o in found})
+
+        def prediction(i: Image) -> dict[str, Any] | None:
+            p = preds.get(i.id)
+            if p is None:
+                return None
+            return {
+                "suggested_label": p.suggested_label,
+                "confidence": p.confidence,
+                "class_probabilities": p.class_probabilities,
+                "calibrated_probabilities": p.calibrated_probabilities,
+                "model_release_id": p.model_release_id,
+                # Set when the prediction was made for an earlier upload of the same file.
+                "from_image_id": None if p.image_id == i.id else str(p.image_id),
+            }
+
         row["images"] = [
             {
                 **image_row(i),
                 "frame_status": _frame_status(i, i.id in preds),
-                "prediction": None
-                if i.id not in preds
-                else {
-                    "suggested_label": preds[i.id].suggested_label,
-                    "confidence": preds[i.id].confidence,
-                    "class_probabilities": preds[i.id].class_probabilities,
-                    "calibrated_probabilities": preds[i.id].calibrated_probabilities,
-                    "model_release_id": preds[i.id].model_release_id,
-                },
+                "prediction": prediction(i),
             }
             for i in event.images
         ]

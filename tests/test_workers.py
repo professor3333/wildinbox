@@ -675,3 +675,94 @@ def test_a_duplicate_frame_counts_with_its_originals_prediction(filtering: Setti
     # so the event is complete and the release may filter it.
     assert event["decision"]["disposition"] == "likely_empty"
     assert "processing_failure" not in event["decision"]["reasons"]
+
+
+class ByContentScorer:
+    """Deterministic scores by file content: the listed hashes look like a
+    bobcat, everything else looks empty."""
+
+    def __init__(self, release: ModelRelease, animals: set[str]) -> None:
+        self.release_id, self.class_names = release.id, list(release.class_names)
+        self.animals = animals
+
+    def score(self, images: Any, sha256s: Any) -> list[dict[str, float]]:
+        out = []
+        for sha in sha256s:
+            top = "bobcat" if sha in self.animals else "empty"
+            rest = (1 - 0.97) / (len(self.class_names) - 1)
+            out.append({c: 0.97 if c == top else rest for c in self.class_names})
+        return out
+
+
+def test_overlapping_upload_keeps_the_earlier_animal_frame_as_evidence(
+    worker_settings: Settings, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """External review, issue 2: upload an animal frame, then a batch with the
+    same frame plus an empty frame of its sequence. The second event must not
+    be decided on the empty frame alone."""
+    serving._LOADED.clear()
+    model_dir, policy = _fake_model_dir(
+        tmp_path, seed=8, empty_threshold=0.6, auto_filter=True
+    )  # calibrated 0.97 -> ~0.68
+    with TestClient(create_app(worker_settings, dispatcher=NoopDispatcher())):
+        pass
+    with session_factory(worker_settings.database_url)() as s:
+        release, _ = register_release(
+            s, LocalStore(worker_settings.local_store_dir), model_dir, policy, None
+        )
+        activate(s, release.id)
+        s.commit()
+    animal, empty = jpeg(20), jpeg(21)
+    animal_sha = hashlib.sha256(animal).hexdigest()
+    monkeypatch.setattr(
+        process, "scorer_for", lambda r, store, device="cpu": ByContentScorer(r, {animal_sha})
+    )
+
+    first = _process(worker_settings, [("bobcat.jpg", animal)], {"bobcat.jpg": "seq-1"})
+    assert first["events"][0]["decision"]["disposition"] == "needs_review"  # an animal
+
+    control = _process(worker_settings, [("bare.jpg", jpeg(22))], {"bare.jpg": "seq-2"})
+    assert control["events"][0]["decision"]["disposition"] == "likely_empty"  # it filters
+
+    out = _process(
+        worker_settings,
+        [("bobcat-copy.jpg", animal), ("after.jpg", empty)],
+        {"bobcat-copy.jpg": "seq-1", "after.jpg": "seq-1"},
+    )
+    (event,) = out["events"]
+    frames = {i["filename"]: i for i in event["images"]}
+    assert set(frames) == {"bobcat-copy.jpg", "after.jpg"}  # membership preserved
+    assert frames["bobcat-copy.jpg"]["frame_status"] == "duplicate"
+    # The duplicate's evidence is its original's prediction: shown and used.
+    assert frames["bobcat-copy.jpg"]["prediction"]["suggested_label"] == "bobcat"
+    assert event["decision"]["disposition"] == "needs_review"
+    assert event["decision"]["suggested_label"] == "bobcat"
+    assert out["summary"]["counts"]["duplicate"] == 1  # stored and scored once
+    assert _count(worker_settings, Prediction) == 3  # bobcat, bare, after: no rescoring
+    serving._LOADED.clear()
+
+
+def test_a_duplicate_scored_only_by_another_release_sends_its_event_to_review(
+    worker_settings: Settings, tmp_path: Path
+) -> None:
+    """The original's prediction is reused only under the same release; otherwise
+    the duplicate is a pending frame and the event goes to review."""
+    serving._LOADED.clear()
+    frame = jpeg(30)
+    _process(worker_settings, [("old.jpg", frame)], {"old.jpg": "s"})  # test predictor release
+    model_dir, policy = _fake_model_dir(tmp_path, seed=9, empty_threshold=0.0001, auto_filter=True)
+    with session_factory(worker_settings.database_url)() as s:
+        release, _ = register_release(
+            s, LocalStore(worker_settings.local_store_dir), model_dir, policy, None
+        )
+        activate(s, release.id)
+        s.commit()
+    out = _process(
+        worker_settings,
+        [("old-again.jpg", frame), ("new.jpg", jpeg(31))],
+        {"old-again.jpg": "t", "new.jpg": "t"},
+    )
+    (event,) = out["events"]
+    assert event["decision"]["disposition"] == "needs_review"
+    assert "processing_failure" in event["decision"]["reasons"]
+    serving._LOADED.clear()
