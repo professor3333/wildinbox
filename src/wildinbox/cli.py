@@ -200,6 +200,15 @@ def main(argv: Sequence[str] | None = None) -> int:
     p_cmp.add_argument("--rule", type=Path, default=Path("configs/experiments/selection.yaml"))
     p_cmp.add_argument("--out", type=Path, default=None, help="Write the comparison here.")
 
+    p_cal = sub.add_parser(
+        "calibrate", help="Fit calibration and choose the operating point (pre-registered rule)."
+    )
+    p_cal.add_argument(
+        "--rule", type=Path, default=Path("configs/experiments/operating_point.yaml")
+    )
+    p_cal.add_argument("--config", type=Path, default=Path("configs/experiments/baseline.yaml"))
+    p_cal.add_argument("--report-dir", type=Path, default=Path("reports/calibration"))
+
     p_api = sub.add_parser("api", help="Serve the HTTP API.")
     p_api.add_argument("--host", default="127.0.0.1")
     p_api.add_argument("--port", type=int, default=8000)
@@ -239,6 +248,18 @@ def main(argv: Sequence[str] | None = None) -> int:
             args.out.parent.mkdir(parents=True, exist_ok=True)
             args.out.write_text(text)
         print(text)
+        return 0
+    if args.command == "calibrate":
+        from wildinbox.evaluation.calibration import run
+
+        r = run(args.rule, args.config, args.report_dir)
+        op = r["operating_point"]
+        print(
+            f"temperature {r['calibration']['temperature']:.3f}; empty filter "
+            f"{op['empty_filter'] or 'disabled'}; species acceptance "
+            f"{op['species_accept'] or 'disabled'}"
+        )
+        print(f"report -> {args.report_dir / 'README.md'}")
         return 0
     if args.command == "api":
         import uvicorn
