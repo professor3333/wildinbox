@@ -46,6 +46,14 @@ empty. One suggested species per event; mixed-species events stay in review.
   20260924.
 - Lineage: code `7d4a388`, MLflow run `b57ee7aa105949519561a99c78bca741`,
   preprocessing `6d9a950a6543` (shared by training and inference).
+- Published weights: the release bundle (weights, class map, preprocessing,
+  calibration, v2 policy) is attached to the
+  [v1.5.0 GitHub release](https://github.com/professor3333/wildinbox/releases/tag/v1.5.0),
+  weights SHA-256 `3ab6fec2…9b360`, bundle SHA-256 `dbb53f0d…`. It is a
+  derivative of torchvision's ImageNet-1k EfficientNet-B0 weights and of
+  Caltech Camera Traps images (CDLA-Permissive-1.0). It is shared for
+  reproducing this project's results and triaging captures for human review,
+  with the limits in this card; it is not a general wildlife classifier.
 
 ## Training data and splits
 
