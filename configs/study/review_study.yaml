@@ -1,0 +1,53 @@
+# Timed review study protocol, fixed BEFORE any participant took part.
+# Question (CLAUDE.md): do model suggestions make people finish review faster,
+# compared with an already sequence-grouped workflow, without losing accuracy?
+# Grouping is identical in both conditions, so it is not credited to the model.
+version: 1
+
+conditions:
+  grouped: "events shown one at a time, reviewer picks the label; no suggestion"
+  suggested: "same, plus the model's suggestion, its confidence, the review reasons, and a one-click Accept"
+
+design:
+  # Within-participant crossover. Each participant reviews both event sets,
+  # one per condition. Four arms rotate condition order and set pairing:
+  #   arm 0: grouped/set A, then suggested/set B
+  #   arm 1: suggested/set A, then grouped/set B
+  #   arm 2: grouped/set B, then suggested/set A
+  #   arm 3: suggested/set B, then grouped/set A
+  # Participant n (in order of joining) gets arm n mod 4.
+  events_per_set: 40
+  practice_events_per_condition: 3     # not analysed
+  # Sets are drawn from one study batch, stratified by ground-truth label so
+  # both sets have the same mix; no event appears in both sets or in practice.
+  min_participants: 8
+  seed: 20260925
+
+measures:
+  primary: seconds_per_event           # from the event appearing to the label being saved
+  secondary:
+    - accuracy                         # chosen label vs ground truth (supported species, empty, other, can't tell)
+    - interactions_per_event           # clicks and selections before saving
+    - difficulty                       # 1 (very easy) to 5 (very hard), asked after each block
+
+analysis:
+  # Per participant: median seconds per event in each condition (medians resist
+  # a coffee break mid-block). Effect: suggested minus grouped, per participant.
+  # Report the median paired difference with a 95% bootstrap interval over
+  # participants (10,000 resamples), the share of participants who were faster
+  # with suggestions, and accuracy per condition with its paired difference.
+  # A speed gain counts only if accuracy does not drop by more than 0.05.
+  bootstrap_resamples: 10000
+  max_accuracy_drop: 0.05
+  exclude:
+    # Decided before the study: a trial over 180 s is treated as an
+    # interruption and excluded; a participant with more than 25% of trials
+    # excluded is excluded entirely. Every exclusion is reported.
+    max_seconds_per_event: 180
+    max_excluded_share: 0.25
+
+consent: >-
+  You will label wildlife camera photos in two short blocks (about 15 minutes in
+  total). We record how long each decision takes and what you chose, under a
+  participant code you choose; no names or other personal data. You can stop at
+  any time, and your data will then be deleted on request.
