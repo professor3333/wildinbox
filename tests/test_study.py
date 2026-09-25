@@ -110,9 +110,11 @@ def test_analysis_stays_descriptive_below_the_minimum_and_applies_exclusions() -
     export["trials"] = [
         t for t in export["trials"] if not (t["participant"] == "P1" and t["block"] == 2)
     ]
+    export["participants"] = [{"code": "P99"}]  # joined, never reached a timed block
     s = analyze(export, PROTOCOL)["summary"]
     reasons = {e["participant"]: e["reason"] for e in s["participants_excluded"]}
     assert "over the time limit" in reasons["P0"] and "did not finish" in reasons["P1"]
+    assert "did not finish" in reasons["P99"]
     assert s["participants_analysed"] == 7 and s["verdict"].startswith("descriptive only")
 
 
