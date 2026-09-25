@@ -25,11 +25,11 @@ from wildinbox.class_map import EMPTY_CLASS
 from wildinbox.datasets.spec import Partition
 from wildinbox.evaluation.data import ImageRow, box_areas, load_rows
 from wildinbox.evaluation.metrics import ScoredEvent, event_metrics, image_metrics
+from wildinbox.evaluation.predictors import Predictor, predictor_for
 from wildinbox.policy.conservative import Thresholds
 from wildinbox.settings import Settings
-from wildinbox.training.classifier import LinearClassifier
 from wildinbox.training.embeddings import peak_rss_mb
-from wildinbox.training.run import Context, LazyBackbone, embed, load_context
+from wildinbox.training.run import Context, load_context
 
 log = logging.getLogger(__name__)
 UNSEEN = "unseen_cameras"
@@ -75,15 +75,22 @@ class Scored:
         return None
 
 
-def _score(ctx: Context, clf: LinearClassifier, rows: list[ImageRow], device: str) -> list[Scored]:
-    backbone = LazyBackbone(ctx)
+def _score(
+    predictor: Predictor, rows: list[ImageRow], timings: dict[str, Any] | None = None
+) -> list[Scored]:
     out: list[Scored] = []
     for part in sorted({r.partition for r in rows}, key=lambda p: p.value):
         prows = [r for r in rows if r.partition is part]
-        ext = embed(ctx, part.value, prows, backbone, device=device)
-        probs = clf.predict_proba(ext.embeddings)
+        ext = predictor.score(part.value, prows)
+        if timings is not None:
+            timings[part.value] = {
+                "images": len(prows),
+                "seconds": round(ext.seconds, 2),
+                "images_per_second": round(ext.images_per_second, 2),
+                "peak_rss_mb": round(ext.peak_rss_mb, 1),
+            }
         for i, r in enumerate(prows):
-            p = {c: float(v) for c, v in zip(clf.classes, probs[i], strict=True)}
+            p = {c: float(v) for c, v in zip(predictor.classes, ext.embeddings[i], strict=True)}
             pred = max(p, key=p.__getitem__)
             out.append(Scored(r, p, pred, p[pred], bool(ext.night[i]), float(ext.blur[i])))
     return out
@@ -164,26 +171,25 @@ def _slices(
 
 
 def _benchmark(
-    ctx: Context, clf: LinearClassifier, rows: list[ImageRow], device: str, n: int = 32
+    ctx: Context, predictor: Predictor, rows: list[ImageRow], n: int = 32
 ) -> dict[str, Any]:
-    """End-to-end single-image latency: decode + preprocess + embed + classify."""
+    """End-to-end single-image latency: decode + preprocess + model + probabilities."""
     import torch
 
     from wildinbox.preprocessing import load_image, preprocess
 
-    model = LazyBackbone(ctx).get().to(device)
     paths = [ctx.images_root / r.storage_path for r in rows[: n + 3]]
     times = []
     with torch.inference_mode():
         for i, path in enumerate(paths):
             start = time.perf_counter()
-            x = preprocess(load_image(path), ctx.run.preprocessing).unsqueeze(0).to(device)
-            clf.predict_proba(model(x).float().cpu().numpy())
+            x = preprocess(load_image(path), ctx.run.preprocessing).unsqueeze(0)
+            predictor.forward(x.to(predictor.device))
             if i >= 3:  # warm-up
                 times.append((time.perf_counter() - start) * 1000)
     times.sort()
     return {
-        "device": device,
+        "device": predictor.device,
         "images": len(times),
         "p50_ms": statistics.median(times),
         "p95_ms": times[int(0.95 * (len(times) - 1))],
@@ -197,13 +203,14 @@ def evaluate(
     settings = Settings()
     ctx = load_context(config_path, settings.data_dir)
     meta = json.loads((model_dir / "meta.json").read_text())
-    clf = LinearClassifier.load(model_dir / "classifier.npz")
-    if list(clf.classes) != ctx.classes:
-        raise ValueError(f"model classes {clf.classes} differ from config {ctx.classes}")
+    device = meta["device"]
+    predictor = predictor_for(ctx, model_dir, device)
+    if list(predictor.classes) != ctx.classes:
+        raise ValueError(f"model classes {predictor.classes} differ from config {ctx.classes}")
     ecfg = ctx.cfg.evaluation
     rows, events = load_rows(ctx.split_dir, ecfg.partitions, box_areas(ctx.inventory_db))
-    device = meta["device"]
-    scored = _score(ctx, clf, rows, device)
+    timings: dict[str, Any] = dict(meta.get("extraction") or {})
+    scored = _score(predictor, rows, timings)
     ref = Thresholds(ecfg.reference_empty_threshold, ecfg.reference_species_threshold)
 
     groups: dict[str, list[Partition]] = {UNSEEN: list(ecfg.unseen_camera_partitions)}
@@ -224,8 +231,22 @@ def evaluate(
         "reference_thresholds": {"empty_filter": ref.empty, "species_accept": ref.species},
         "groups": results,
         "hardware": meta["hardware"],
-        "extraction": meta["extraction"],
-        "latency": [_benchmark(ctx, clf, rows, d) for d in dict.fromkeys([device, "cpu"])]
+        "extraction": timings,
+        "lineage": {
+            k: meta.get(k)
+            for k in (
+                "kind",
+                "description",
+                "mlflow_run_id",
+                "train_seconds",
+                "code",
+                "split_version",
+            )
+        },
+        "latency": [
+            _benchmark(ctx, predictor_for(ctx, model_dir, d), rows)
+            for d in dict.fromkeys([device, "cpu"])
+        ]
         if benchmark
         else None,
     }

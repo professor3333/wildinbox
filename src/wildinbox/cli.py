@@ -170,6 +170,17 @@ def main(argv: Sequence[str] | None = None) -> int:
     p_train.add_argument("--device", choices=["cpu", "mps", "cuda"], default=None)
     p_train.add_argument("--no-cache", action="store_true", help="Recompute all embeddings.")
 
+    p_ft = sub.add_parser("finetune", help="Fine-tune EfficientNet-B0.")
+    ft_sub = p_ft.add_subparsers(dest="finetune_command", required=True)
+    p_ft_train = ft_sub.add_parser("train", help="Train a fine-tuning experiment.")
+    p_ft_train.add_argument("--config", type=Path, required=True)
+    p_ft_train.add_argument("--models-dir", type=Path, default=Path("models"))
+    p_ft_aug = ft_sub.add_parser(
+        "inspect-augmentation", help="Render augmented training samples with their boxes."
+    )
+    p_ft_aug.add_argument("--config", type=Path, required=True)
+    p_ft_aug.add_argument("--out", type=Path, default=Path("reports/experiments/augmentation"))
+
     p_eval = sub.add_parser("evaluate", help="Evaluate a model on development partitions.")
     p_eval.add_argument(
         "--model", type=Path, default=Path("models/baseline-frozen-effnetb0-logreg-v1")
@@ -183,6 +194,11 @@ def main(argv: Sequence[str] | None = None) -> int:
         help="Reference metrics.json; fail if results differ beyond tolerance.",
     )
     p_eval.add_argument("--no-benchmark", action="store_true", help="Skip the latency benchmark.")
+
+    p_cmp = sub.add_parser("compare", help="Compare evaluated models; apply the selection rule.")
+    p_cmp.add_argument("reports", type=Path, nargs="+", help="Report directories.")
+    p_cmp.add_argument("--rule", type=Path, default=Path("configs/experiments/selection.yaml"))
+    p_cmp.add_argument("--out", type=Path, default=None, help="Write the comparison here.")
 
     p_api = sub.add_parser("api", help="Serve the HTTP API.")
     p_api.add_argument("--host", default="127.0.0.1")
@@ -202,10 +218,28 @@ def main(argv: Sequence[str] | None = None) -> int:
         )
         print(f"baseline artifact -> {out}")
         return 0
+    if args.command == "finetune":
+        from wildinbox.training import finetune
+
+        if args.finetune_command == "train":
+            out = finetune.train(args.config, Settings().data_dir, args.models_dir)
+            print(f"fine-tuned model -> {out}")
+        else:
+            print(finetune.inspect_augmentation(args.config, Settings().data_dir, args.out))
+        return 0
     if args.command == "evaluate":
         from wildinbox.evaluation.run import evaluate_cli
 
         return evaluate_cli(args)
+    if args.command == "compare":
+        from wildinbox.evaluation.compare import compare
+
+        text, _ = compare(args.reports, args.rule)
+        if args.out:
+            args.out.parent.mkdir(parents=True, exist_ok=True)
+            args.out.write_text(text)
+        print(text)
+        return 0
     if args.command == "api":
         import uvicorn
 

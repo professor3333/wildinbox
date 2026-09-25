@@ -1,0 +1,11 @@
+# Model selection rule, fixed BEFORE any fine-tuning results were seen.
+# Applied by: uv run wildinbox compare
+# All metrics are on the unseen-camera development partitions
+# (calibration + policy validation); the locked final test is never used.
+reference: reports/baseline          # the model every candidate must justify improving on
+min_macro_f1_gain: 0.05              # absolute gain in image-level macro-F1
+# Product decision: animal events wrongly filtered as empty at the reference
+# thresholds may not rise by more than 10% relative to the reference.
+max_false_empty_increase: 0.10
+max_cpu_latency_ratio: 1.5           # CPU p50 end-to-end latency vs the reference
+# Among candidates that pass: highest macro-F1; ties -> fewer false-empty events.
