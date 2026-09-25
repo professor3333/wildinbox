@@ -320,6 +320,11 @@ def main(argv: Sequence[str] | None = None) -> int:
         "--report-dir", type=Path, default=Path("reports/update/finetune-e3-update1")
     )
 
+    p_mon = sub.add_parser("monitoring", help="Monitoring maintenance.")
+    mon_sub = p_mon.add_subparsers(dest="monitoring_command", required=True)
+    mon_sub.add_parser("backfill-quality", help="Record image quality for older images.")
+    mon_sub.add_parser("summary", help="Print the monitoring summary as JSON.")
+
     p_api = sub.add_parser("api", help="Serve the HTTP API.")
     p_api.add_argument("--host", default="127.0.0.1")
     p_api.add_argument("--port", type=int, default=8000)
@@ -432,6 +437,20 @@ def main(argv: Sequence[str] | None = None) -> int:
         decision = "PROMOTE" if verdict["promote"] else "DO NOT PROMOTE"
         print(f"{decision} {verdict['candidate_release']}")
         print(f"report -> {args.report_dir / 'README.md'}")
+        return 0
+    if args.command == "monitoring":
+        from wildinbox.monitoring.metrics import backfill_quality, load_config, summary
+        from wildinbox.storage.db import session_factory
+        from wildinbox.storage.objects import store_from_settings
+
+        settings = Settings()
+        with session_factory(settings.database_url)() as s:
+            if args.monitoring_command == "backfill-quality":
+                n = backfill_quality(s, store_from_settings(settings))
+                print(f"recorded quality for {n} image(s)")
+            else:
+                data = summary(s, settings.lease_seconds, load_config(settings.monitoring_config))
+                print(json.dumps(data, indent=2, default=str))
         return 0
     if args.command == "release":
         return _release(args)

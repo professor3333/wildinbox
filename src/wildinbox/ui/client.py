@@ -35,6 +35,10 @@ class ApiClient:
         out: dict[str, Any] = self._json(self.http.get("/version"))
         return out
 
+    def monitoring(self) -> dict[str, Any]:
+        out: dict[str, Any] = self._json(self.http.get("/monitoring", timeout=120))
+        return out
+
     def batches(self) -> list[dict[str, Any]]:
         out: list[dict[str, Any]] = self._json(self.http.get("/batches"))["batches"]
         return out

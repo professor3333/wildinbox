@@ -3,8 +3,9 @@
 from __future__ import annotations
 
 import logging
+import time
 import uuid
-from collections import Counter
+from collections import Counter, defaultdict, deque
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 from datetime import datetime
@@ -12,7 +13,7 @@ from typing import Any
 
 from fastapi import FastAPI, Header, Request
 from fastapi.concurrency import run_in_threadpool
-from fastapi.responses import HTMLResponse, JSONResponse, Response
+from fastapi.responses import HTMLResponse, JSONResponse, PlainTextResponse, Response
 from pydantic import BaseModel, Field, ValidationError
 from sqlalchemy import func, select
 from sqlalchemy.exc import IntegrityError
@@ -287,6 +288,28 @@ def create_app(
         yield
 
     app = FastAPI(title="WildInbox", version="0.1.0", lifespan=lifespan)
+    latency: dict[str, deque[float]] = defaultdict(lambda: deque(maxlen=2000))
+
+    @app.middleware("http")
+    async def _timing(request: Request, call_next: Any) -> Any:
+        start = time.perf_counter()
+        response = await call_next(request)
+        route = request.scope.get("route")
+        path = getattr(route, "path", None)
+        if path:  # route templates only, so ids do not create unbounded series
+            latency[f"{request.method} {path}"].append(time.perf_counter() - start)
+        return response
+
+    def latency_summary() -> dict[str, dict[str, float]]:
+        out = {}
+        for key, values in sorted(latency.items()):
+            v = sorted(values)
+            out[key] = {
+                "requests": len(v),
+                "p50_ms": round(1000 * v[len(v) // 2], 1),
+                "p95_ms": round(1000 * v[min(len(v) - 1, int(0.95 * len(v)))], 1),
+            }
+        return out
 
     def sessions() -> sessionmaker[Session]:
         factory: sessionmaker[Session] = app.state.sessions
@@ -315,6 +338,26 @@ def create_app(
                 "api_version": app.version,
                 "active_release": _release(release) if release else None,
             }
+
+    @app.get("/monitoring")
+    def monitoring() -> dict[str, Any]:
+        """Operations, label-free signals per camera, and review-based accuracy."""
+        from wildinbox.monitoring.metrics import load_config, summary
+
+        with sessions()() as s:
+            out = summary(s, settings.lease_seconds, load_config(settings.monitoring_config))
+        out["operations"]["api_latency"] = latency_summary()
+        return out
+
+    @app.get("/metrics", response_class=PlainTextResponse)
+    def metrics() -> str:
+        """Prometheus text format for scraping and alerting."""
+        from wildinbox.monitoring.metrics import load_config, summary
+        from wildinbox.monitoring.prometheus import render
+
+        with sessions()() as s:
+            data = summary(s, settings.lease_seconds, load_config(settings.monitoring_config))
+        return render(data, latency_summary())
 
     @app.get("/releases")
     def list_releases() -> dict[str, Any]:

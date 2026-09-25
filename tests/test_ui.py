@@ -218,3 +218,73 @@ def test_last_nights_visitors_show_animal_events_of_that_night_only() -> None:
     assert "coyote" not in text  # daytime
     captions = " ".join(c.value for c in at.caption)
     assert "1 animal event(s) of 2" in captions  # the 02:00 event is empty
+
+
+def test_monitoring_page_separates_signals_from_measured_accuracy() -> None:
+    api = FakeApi()
+    ops = {
+        "window_days": 7,
+        "jobs": {"succeeded": 2},
+        "queued_waiting": 0,
+        "oldest_queued_seconds": 0.0,
+        "retrying": 0,
+        "stale_leases": 1,
+        "failed_jobs_in_window": [],
+        "files_uploaded": 10,
+        "files_unreadable": 1,
+        "unreadable_rate": 0.1,
+        "images_scored": 9,
+        "frames_failed": 0,
+        "processing_error_rate": 0.0,
+        "images_scored_last_24h": 9,
+        "cost_by_release": {"rel": {"jobs": 2, "images": 9, "seconds_per_1000_images": 80.0}},
+        "api_latency": {"GET /events": {"requests": 3, "p50_ms": 10.0, "p95_ms": 20.0}},
+    }
+    api.monitoring = lambda: {  # type: ignore[attr-defined]
+        "operations": ops,
+        "signals": {
+            "north": {
+                "events": 3,
+                "needs_review_share": 1.0,
+                "low_confidence_share": 0.5,
+                "night_share": 0.3,
+                "comparison": None,
+            }
+        },
+        "accuracy": {
+            "by_camera": {
+                "north": {
+                    "events": 3,
+                    "reviewed": 1,
+                    "review_coverage": 0.33,
+                    "correction_rate": None,
+                    "correction_rate_ci95": None,
+                    "unresolved": 0,
+                    "reviewers": {"ranger": 1},
+                }
+            },
+            "by_release": {},
+        },
+        "alerts": [
+            {
+                "level": "critical",
+                "area": "operations",
+                "camera": None,
+                "message": "a worker stopped renewing its lease",
+                "value": 1,
+                "limit": 0,
+            }
+        ],
+        "notes": {},
+    }
+    at = _app(api)
+    at.sidebar.radio(key="page").set_value("Monitoring").run()
+    assert not at.exception
+    assert any("stopped renewing its lease" in e.value for e in at.error)
+    headers = [h.value for h in at.subheader]
+    assert headers == [
+        "Alerts",
+        "Operations",
+        "Signals per camera (no labels needed)",
+        "Accuracy measured from reviews",
+    ]

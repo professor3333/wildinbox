@@ -57,7 +57,9 @@ def sidebar(api: ApiClient) -> tuple[str, str | None, str, list[str]]:
     st.sidebar.title("WildInbox")
     st.sidebar.caption("Find the wildlife. Skip the empty frames.")
     page = st.sidebar.radio(
-        "Page", ["Review queue", "Last night's visitors", "Upload", "Export"], key="page"
+        "Page",
+        ["Review queue", "Last night's visitors", "Upload", "Export", "Monitoring"],
+        key="page",
     )
     reviewer = st.sidebar.text_input("Your name (recorded with reviews)", key="reviewer")
     try:
@@ -312,6 +314,118 @@ def export_page(api: ApiClient, batch_id: str | None) -> None:
         )
 
 
+def _pct(x: float | None) -> str:
+    return "n/a" if x is None else f"{x:.0%}"
+
+
+LEVEL = {"critical": "🔴 Critical", "warning": "🟠 Warning", "info": "🔵 Signal"}
+
+
+def monitoring_page(api: ApiClient) -> None:
+    st.header("Monitoring")
+    try:
+        m = api.monitoring()
+    except ApiError as e:
+        st.error(e.detail)
+        return
+    ops = m["operations"]
+
+    st.subheader("Alerts")
+    if not m["alerts"]:
+        st.success("No alerts.")
+    for a in m["alerts"]:
+        where = f" · camera {a['camera']}" if a.get("camera") else ""
+        text = (
+            f"**{LEVEL[a['level']]}** ({a['area']}{where}): {a['message']} "
+            f"({a['value']} vs limit {a['limit']})"
+        )
+        {"critical": st.error, "warning": st.warning}.get(a["level"], st.info)(text)
+
+    st.subheader("Operations")
+    st.caption(f"Processing health over the last {ops['window_days']} days.")
+    c = st.columns(4)
+    c[0].metric(
+        "Jobs running / waiting", f"{ops['jobs'].get('running', 0)} / {ops['queued_waiting']}"
+    )
+    c[1].metric("Oldest waiting job", f"{ops['oldest_queued_seconds']:.0f} s")
+    c[2].metric("Stale leases", ops["stale_leases"])
+    c[3].metric("Failed jobs", len(ops["failed_jobs_in_window"]))
+    c = st.columns(4)
+    c[0].metric("Images scored (24 h)", ops["images_scored_last_24h"])
+    c[1].metric("Frames failed", f"{ops['frames_failed']} ({_pct(ops['processing_error_rate'])})")
+    c[2].metric("Unusable files", f"{ops['files_unreadable']} ({_pct(ops['unreadable_rate'])})")
+    c[3].metric("Retrying jobs", ops["retrying"])
+    if ops["cost_by_release"]:
+        st.dataframe(
+            [
+                {
+                    "release": k,
+                    "jobs": v["jobs"],
+                    "images": v["images"],
+                    "seconds per 1,000 images": v["seconds_per_1000_images"],
+                }
+                for k, v in ops["cost_by_release"].items()
+            ],
+            hide_index=True,
+        )
+    if ops.get("api_latency"):
+        with st.expander("API latency (since the API started)"):
+            st.dataframe(
+                [{"route": k, **v} for k, v in ops["api_latency"].items()], hide_index=True
+            )
+
+    st.subheader("Signals per camera (no labels needed)")
+    st.caption(
+        "Compares each camera's most recent events with its earlier ones. A shift can flag "
+        "trouble (a moved camera, a new season, a model change) but says nothing about "
+        "whether suggestions got better or worse. That needs reviews, below."
+    )
+    rows = []
+    for cam, s in m["signals"].items():
+        cmp = s["comparison"] or {}
+        rows.append(
+            {
+                "camera": cam,
+                "events": s["events"],
+                "needs review": _pct(s["needs_review_share"]),
+                "low confidence": _pct(s["low_confidence_share"]),
+                "night frames": _pct(s["night_share"]),
+                "label shift (PSI)": None if not cmp else round(cmp["label_psi"], 3),
+                "confidence shift (PSI)": None if not cmp else round(cmp["confidence_psi"], 3),
+                "low-confidence change": None if not cmp else f"{cmp['uncertainty_change']:+.0%}",
+                "release changed": None if not cmp else ("yes" if cmp["release_changed"] else "no"),
+            }
+        )
+    st.dataframe(rows, hide_index=True)
+
+    st.subheader("Accuracy measured from reviews")
+    st.caption(
+        "How often reviewers corrected the suggestion, only for events someone reviewed; "
+        "unreviewed events have unknown accuracy. Rates need at least 30 judged events."
+    )
+    for title, key in (("By camera", "by_camera"), ("By release", "by_release")):
+        st.markdown(f"**{title}**")
+        st.dataframe(
+            [
+                {
+                    title.split()[-1]: k,
+                    "events": v["events"],
+                    "reviewed": f"{v['reviewed']} ({_pct(v['review_coverage'])})",
+                    "correction rate": _pct(v["correction_rate"]),
+                    "95% interval": (
+                        f"{v['correction_rate_ci95'][0]:.0%}-{v['correction_rate_ci95'][1]:.0%}"
+                        if v["correction_rate_ci95"]
+                        else "n/a"
+                    ),
+                    "unresolved": v["unresolved"],
+                    "reviewers": ", ".join(v["reviewers"]),
+                }
+                for k, v in m["accuracy"][key].items()
+            ],
+            hide_index=True,
+        )
+
+
 def main() -> None:
     st.set_page_config(page_title="WildInbox", layout="wide")
     api = client()
@@ -325,6 +439,8 @@ def main() -> None:
         visitors_page(api, batch_id)
     elif page == "Upload":
         upload_page(api)
+    elif page == "Monitoring":
+        monitoring_page(api)
     else:
         export_page(api, batch_id)
 

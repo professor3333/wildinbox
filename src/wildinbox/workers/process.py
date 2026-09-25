@@ -49,6 +49,8 @@ from wildinbox.datasets.grouping import (
 from wildinbox.inference.serving import calibrated, scorer_for
 from wildinbox.policy import review_all
 from wildinbox.policy.conservative import Frame, PolicyConfig, decide
+from wildinbox.preprocessing import load_image
+from wildinbox.quality import quality
 from wildinbox.schemas import Disposition, FrameStatus, ReviewReason
 from wildinbox.settings import Settings
 from wildinbox.storage.models import Batch, Decision, Event, Image, Job, ModelRelease, Prediction
@@ -215,6 +217,7 @@ def _score_images(
             img.width, img.height = found.width, found.height
             if img.captured_at is None and found.captured_at is not None:
                 img.captured_at = found.captured_at
+            img.quality = _quality(data)
             ready.append((img, data))
         for img, raw in _predict(scorer, ready):
             if raw is None:
@@ -235,6 +238,15 @@ def _score_images(
             )
         renew(session, job_id, token)
         session.commit()  # progress survives a worker restart
+
+
+def _quality(data: bytes) -> dict[str, object] | None:
+    """Monitoring statistics; a failure here never fails the image."""
+    try:
+        return quality(load_image(data))
+    except Exception:
+        log.warning("could not compute image quality", exc_info=True)
+        return None
 
 
 def _predict(

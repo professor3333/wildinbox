@@ -144,6 +144,8 @@ class Image(Base):
     validation_error: Mapped[str | None] = mapped_column(Text)
     # A valid image whose inference failed after the job's retries: a failed frame.
     processing_error: Mapped[str | None] = mapped_column(Text)
+    # Night flag, blur, brightness (wildinbox.quality), recorded when scored.
+    quality: Mapped[dict[str, Any] | None]
     duplicate_of: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("images.id"))
     event_id: Mapped[uuid.UUID | None] = mapped_column(
         ForeignKey("events.id", ondelete="SET NULL"), index=True
