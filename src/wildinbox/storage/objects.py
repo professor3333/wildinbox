@@ -82,6 +82,8 @@ class S3Store:
             config=Config(
                 retries={"max_attempts": 5, "mode": "standard"},
                 s3={"addressing_style": addressing},
+                # One pooled connection per parallel upload writer (default 10).
+                max_pool_connections=max(10, settings.store_concurrency),
             ),
         )
 
