@@ -1,9 +1,9 @@
 # Model card: WildInbox species classifier
 
-**Status: selected candidate, calibrated, not yet released.** Automatic
-filtering and automatic acceptance are both **off**: every event goes to review
-with its suggested label. The locked final test has not been opened. Sections
-marked *planned* describe the process a release will follow.
+**Status: released as `finetune-e3-deep-balanced@518a8da39ee0`, automation
+off.** Every event goes to review with its suggested label. The locked final
+test was opened once, under a pre-registered protocol, after everything was
+frozen: [`reports/final_test/README.md`](../reports/final_test/README.md).
 
 | | |
 |---|---|
@@ -53,6 +53,31 @@ empty. One suggested species per event; mixed-species events stay in review.
   near-duplicate images are checked across partitions
   ([split report](../reports/splits/cct20/README.md)).
 
+## Final test (9 unseen cameras, measured once)
+
+23,275 images and 8,982 capture events from cameras never used for training,
+calibration, or thresholds. Full report:
+[`reports/final_test/README.md`](../reports/final_test/README.md).
+
+| Metric | E3 | Baseline |
+|---|---|---|
+| Macro-F1, supported classes (95% CI, event bootstrap) | 0.447 [0.435, 0.458] | 0.285 [0.276, 0.294] |
+| Lowest per-species recall | 0.327 (cat) | 0.157 |
+| Macro-F1 on held-out sequences from training cameras (development) | 0.747 | 0.724 |
+| Events automated as released | 0 (all to review) | |
+| Rule's empty filter (0.65): animal events lost | 75 / 7,154 (1.05% [0.84, 1.31]) | |
+| Rule's empty filter: review reduction vs sequence-grouped workflow | 6.3% | |
+
+Per-class recall: empty 0.47, bobcat 0.40, cat 0.33, coyote 0.37, dog 0.64,
+opossum 0.60, rabbit 0.34, raccoon 0.57. Macro-F1 by camera ranges from 0.24
+to 0.57. Night 0.37 vs day 0.41. Small animals (box < 1% of the frame): species
+recall 36%.
+
+The rule's empty filter, released as disabled after it failed on development
+camera 51, met the 98% retention target on the final test overall (worst case
+98.69%) but lost 5.8% of animal events on camera 0. This measurement does not
+change the release: nothing is chosen on the final test.
+
 ## Metrics on unseen cameras (development partitions)
 
 Calibration + policy-validation cameras; reference thresholds P(empty) >= 0.9,
@@ -70,14 +95,14 @@ species >= 0.9 (not chosen operating points).
 | CPU p50 latency per image (Apple M1) | 132 ms | 131 ms |
 
 Per-class recall: empty 0.69, bobcat 0.49, cat 0.16, coyote 0.42, dog 0.57,
-opossum 0.44, rabbit 0.43, raccoon 0.39. Final-test results will be added once,
-after thresholds are frozen.
+opossum 0.44, rabbit 0.43, raccoon 0.39.
 
 ## Known failure modes
 
 - **New camera locations:** macro-F1 falls from 0.75 on training cameras to
-  0.41 on unseen ones; camera 51 alone accounts for 43 of the 57 missed animal
-  events.
+  0.41-0.45 on unseen ones and varies from 0.24 to 0.57 by camera; single
+  cameras (51 in development, 0 in the final test) lose far more animal events
+  to the empty filter than the rest.
 - **Small animals:** misclassifications concentrate on animals whose box
   covers < 1% of the frame.
 - **Nighttime illumination and blur:** night macro-F1 0.356 vs day 0.394;
@@ -147,6 +172,10 @@ Details: [`reports/unfamiliar/README.md`](../reports/unfamiliar/README.md).
   rodents are small (median box ~1% of the frame) and mostly predicted empty,
   dog, or rabbit. Recognising unknown species likely needs animal-centred
   features (for example crops from an animal detector).
+- **Final test:** on held-out species (skunk, bird, badger, fox) the distance
+  score reaches AUROC 0.68 (confidence: 0.64), better than in development, but
+  at the frozen threshold it flags only 4.1% of their images (confidence: 3.0%)
+  while flagging 3.3% of known animals. Not useful as a gate yet.
 - Tuning species: squirrel, rodent. Held out for the final test: skunk, bird,
   badger, fox, deer (deer has no development or final-test events). All were
   unseen during fine-tuning; **all but deer appear in ImageNet-1k pretraining
@@ -154,8 +183,11 @@ Details: [`reports/unfamiliar/README.md`](../reports/unfamiliar/README.md).
 
 ## Promotion and rollback (*planned*)
 
-1. Freeze the model, calibration, and thresholds, then open the final test once
-   and publish the result, including failures.
-2. A retrained candidate replaces the deployed model only if it passes the same
-   evaluation. The API reports model, preprocessing, and decision-policy
-   versions; rollback redeploys the retained previous version.
+1. A retrained candidate replaces the deployed model only if it passes the same
+   evaluation on data it was not chosen on. The final test above is now spent:
+   a new candidate needs a fresh set of held-out cameras (the full Caltech
+   Camera Traps dataset has about 120 more locations).
+2. Releases are immutable; `GET /version` reports the active release's model,
+   preprocessing, calibration, and policy versions. Rolling back is
+   `wildinbox release activate <previous release>` (new batches only; running
+   jobs keep their release).

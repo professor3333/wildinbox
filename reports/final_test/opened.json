@@ -1,0 +1,16 @@
+{
+  "protocol": "configs/experiments/final_test.yaml",
+  "protocol_sha256": "acb50faccc40cffa0df8994c93c2e81c4a4f4bdb96241931c29789bf5d3d62d0",
+  "artifacts": {
+    "split lock": "704ab2c4f0caf0f6529ec4f396ef0dca338cb0e53ca8aa9bf63bf97bae5e6cff",
+    "E3 weights": "3ab6fec236ce4b418acdda78f94078ec3bd6331983e2186bd52aa11a1fd9b360",
+    "policy artifact": "7ce10d8631f8c37e4944932083f209d345709ec90f2addc5d95fa96d09489df6",
+    "baseline classifier": "2f2cb8b12bce230e276dc63198ecff53c0a5843fba0036b2a2df06787a637167",
+    "unfamiliar rule": "6299a91d6bcdbeb1ddb9f7e1ee7fefd54f92d92e4f74fd9b1570a323658613e0"
+  },
+  "code": {
+    "commit": "4b2351bbd2f0c1fafcda1b4ada9fdb7b8c886989",
+    "dirty": false
+  },
+  "opened_at": "2026-09-25T05:16:10.322050+00:00"
+}

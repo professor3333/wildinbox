@@ -263,6 +263,21 @@ suggested label. Results and error-versus-coverage curves:
 [`reports/calibration/README.md`](reports/calibration/README.md),
 [`reports/unfamiliar/README.md`](reports/unfamiliar/README.md).
 
+## Final test
+
+```bash
+uv run wildinbox final-test     # once, under configs/experiments/final_test.yaml
+```
+
+The locked final test (9 cameras never used for training, calibration, or
+thresholds) was opened once after every artifact was frozen and pinned by hash
+in a protocol committed beforehand. `final-test` is the only code path that
+reads it; a re-run must reproduce the recorded numbers exactly. Results:
+[`reports/final_test/README.md`](reports/final_test/README.md). In short: E3
+macro-F1 0.447 [0.435, 0.458] vs 0.285 for the frozen-embedding baseline (0.747
+on held-out sequences from training cameras); as released, every event goes to
+review; the 50% review-reduction target is not met.
+
 ## Data and weights
 
 Downloaded datasets, uploads, thumbnails, and trained weights are never
