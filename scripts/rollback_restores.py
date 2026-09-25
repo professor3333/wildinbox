@@ -4,6 +4,9 @@
 
 Against the Docker Compose deployment, with the same photos each time:
 
+Each upload re-encodes the photos identically (same pixels) with a per-batch
+JPEG comment, since the deployment skips exact duplicates.
+
 1. Batch 1 on the active release (the "previous" release).
 2. Register (if needed) and activate the update candidate; batch 2 on it.
 3. Roll back: re-activate the previous release; batch 3 on it.
@@ -17,6 +20,7 @@ Writes reports/update/rollback-restore.json.
 from __future__ import annotations
 
 import argparse
+import io
 import json
 import subprocess
 import sys
@@ -25,6 +29,7 @@ from pathlib import Path
 from typing import Any
 
 import httpx
+from PIL import Image
 
 TOLERANCE = 1e-5
 
@@ -41,12 +46,20 @@ def compose(*args: str) -> str:
     ).stdout
 
 
+def tagged(data: bytes, tag: str) -> bytes:
+    """The same pixels every time (quality 95), new bytes per batch (a JPEG
+    comment), because the deployment skips photos it already holds."""
+    buf = io.BytesIO()
+    Image.open(io.BytesIO(data)).convert("RGB").save(buf, "JPEG", quality=95, comment=tag.encode())
+    return buf.getvalue()
+
+
 def upload(api: httpx.Client, batch_dir: Path, key: str) -> dict[str, Any]:
     meta = json.loads((batch_dir / "metadata.json").read_text())["files"]
     files = sorted((batch_dir / "images").iterdir())
     res = api.post(
         "/batches",
-        files=[("files", (p.name, p.read_bytes(), "image/jpeg")) for p in files],
+        files=[("files", (p.name, tagged(p.read_bytes(), key), "image/jpeg")) for p in files],
         data={"metadata": json.dumps({"files": {p.name: meta[p.name] for p in files}})},
         headers={"Idempotency-Key": key},
         timeout=300,
@@ -62,23 +75,23 @@ def upload(api: httpx.Client, batch_dir: Path, key: str) -> dict[str, Any]:
 
 
 def results(api: httpx.Client, batch_id: str) -> tuple[dict[str, Any], dict[str, Any]]:
-    """(frames by sha256, decisions by the event's sorted frame hashes)."""
+    """(frames by file name, decisions by the event's sorted file names)."""
     frames: dict[str, Any] = {}
     decisions: dict[str, Any] = {}
     events = api.get("/events", params={"batch_id": batch_id, "limit": 500}).json()["events"]
     for e in events:
         d = api.get(f"/events/{e['id']}").json()
-        shas = []
+        names = []
         for i in d["images"]:
-            shas.append(i["sha256"])
+            names.append(i["filename"])
             if i["prediction"]:
-                frames[i["sha256"]] = {
+                frames[i["filename"]] = {
                     "label": i["prediction"]["suggested_label"],
                     "probs": i["prediction"]["calibrated_probabilities"],
                     "release": i["prediction"]["model_release_id"],
                 }
         dec = d["decision"]
-        decisions["|".join(sorted(shas))] = {
+        decisions["|".join(sorted(names))] = {
             k: dec[k]
             for k in ("disposition", "suggested_label", "confidence", "reasons", "model_release_id")
         }

@@ -12,7 +12,7 @@
     "reviewer": "simulated-ground-truth"
   },
   "code": {
-    "commit": "37305d7f275a0d46eb221e08fedf6c341c4a2df4",
+    "commit": "e9d0ff7694bba2a18ebaca204db8e5d4c7453b5b",
     "dirty": false
   },
   "results": {
@@ -197,5 +197,16 @@
       "pass": true
     }
   },
-  "promote": true
+  "promote": true,
+  "development_data_only": {
+    "evaluated_on": [
+      "snapshot holdout",
+      "calibration",
+      "seen_camera_diagnostic"
+    ],
+    "final_test_read": false,
+    "protected_frames_in_snapshot": 0,
+    "comparison_number_on_this_holdout": 2,
+    "comparison_budget": null
+  }
 }

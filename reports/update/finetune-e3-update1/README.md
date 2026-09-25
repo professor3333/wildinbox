@@ -42,8 +42,12 @@ Protocol [`configs/experiments/update_cycle.yaml`](../../../configs/experiments/
 | calibration cameras | 0.452 | 0.491 |
 | seen camera diagnostic | 0.747 | 0.752 |
 
+## Development data only
+
+Evaluated on the snapshot holdout, the calibration cameras, and the seen-camera diagnostic; the final test was not read. The snapshot holds no protected evaluation frame (checked before scoring). This was comparison #2 on this holdout; every comparison is logged in `../comparisons.jsonl`.
+
 ## What this shows
 
 Holdout and snapshot share cameras and backgrounds by design: the gain is what reviewing a camera buys that camera's later photos, not evidence of generalization to new cameras; the regression checks cover cameras outside the update. The candidate keeps the deployed policy settings (automation off); only its calibration was refit.
 
-Code `37305d7f275a0d46eb221e08fedf6c341c4a2df4`.
+Code `e9d0ff7694bba2a18ebaca204db8e5d4c7453b5b`.

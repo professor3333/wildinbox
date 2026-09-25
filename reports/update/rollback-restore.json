@@ -1,0 +1,40 @@
+{
+  "run": "20260925T165637",
+  "photos": 62,
+  "previous_release": "finetune-e3-deep-balanced@7a25aea97c76",
+  "candidate_release": "finetune-e3-update1@449138a9c367",
+  "batches": {
+    "1": "4f09f388-d841-4da2-a682-9d6e29ae2bfc",
+    "2": "7dd6db8c-0736-403f-9928-6b41e0f03bc2",
+    "3": "0135b8c1-e26a-48a2-b995-270adbc6b197"
+  },
+  "rollback": {
+    "max_probability_difference": 0.0,
+    "frame_labels_identical": 62,
+    "event_decisions_identical": 22,
+    "events": 22
+  },
+  "candidate_vs_previous": {
+    "max_probability_difference": 0.4789670636971895,
+    "frame_labels_changed": 17,
+    "event_decisions_changed": 22
+  },
+  "tolerance": 1e-05,
+  "activations": [
+    {
+      "release_id": "finetune-e3-deep-balanced@7a25aea97c76",
+      "note": "rollback-restore demonstration: roll back",
+      "activated_at": "2026-09-25T11:12:01.426073+00:00"
+    },
+    {
+      "release_id": "finetune-e3-update1@449138a9c367",
+      "note": "rollback-restore demonstration: candidate",
+      "activated_at": "2026-09-25T11:11:50.171149+00:00"
+    },
+    {
+      "release_id": "finetune-e3-deep-balanced@7a25aea97c76",
+      "note": null,
+      "activated_at": "2026-09-25T09:32:11.128083+00:00"
+    }
+  ]
+}

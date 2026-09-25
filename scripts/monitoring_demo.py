@@ -8,7 +8,8 @@ polls GET /monitoring until the operational alerts fire. Then restarts the
 worker, waits for the batch to finish, and records which alerts cleared.
 
 Part 2, changed inputs. From camera 90's photos (its deployment batch is the
-baseline), uploads a control batch of unchanged photos, then the SAME photos
+baseline), uploads a control batch of unchanged photos (re-encoded at JPEG
+quality 95, since exact duplicates are skipped), then the SAME photos
 degraded (blurred, fogged, darkened, as through a dirty or misted lens), and
 records camera 90's model-behavior indicators and alerts after each.
 
@@ -69,13 +70,21 @@ def alerts(m: dict[str, Any], area: str | None = None) -> list[dict[str, Any]]:
     return [a for a in m["alerts"] if area is None or a["area"] == area]
 
 
-def degrade(data: bytes) -> bytes:
+def reencode(data: bytes, tag: str) -> bytes:
+    """Same picture, new bytes (JPEG quality 95 plus a comment naming the run):
+    the deployment skips exact duplicates of photos it already holds."""
+    buf = io.BytesIO()
+    Image.open(io.BytesIO(data)).convert("RGB").save(buf, "JPEG", quality=95, comment=tag.encode())
+    return buf.getvalue()
+
+
+def degrade(data: bytes, tag: str) -> bytes:
     img = Image.open(io.BytesIO(data)).convert("RGB")
     img = img.filter(ImageFilter.GaussianBlur(6))
     img = ImageEnhance.Contrast(img).enhance(0.45)
     img = ImageEnhance.Brightness(img).enhance(0.6)
     buf = io.BytesIO()
-    img.save(buf, "JPEG", quality=85)
+    img.save(buf, "JPEG", quality=85, comment=tag.encode())
     return buf.getvalue()
 
 
@@ -87,9 +96,10 @@ def worker_failure(api: httpx.Client, args: argparse.Namespace, run: str) -> dic
         "no critical operational alert before the drill",
     )
     live = before["operations"]["workers"]["live"]
+    deaths_before = len(before["operations"]["workers"]["died_in_window"])
     check(bool(live), f"{len(live)} live worker(s) before the drill")
     images = sorted((args.drill_dir / "images").iterdir())
-    files = [(p.name, p.read_bytes()) for p in images]
+    files = [(p.name, reencode(p.read_bytes(), f"drill-{run}")) for p in images]
     bid = post(api, files, {"camera_id": "crash-drill"}, f"crash-drill-{run}")
     while True:
         p = api.get(f"/batches/{bid}").json()["progress"]
@@ -102,7 +112,10 @@ def worker_failure(api: httpx.Client, args: argparse.Namespace, run: str) -> dic
     wanted = {
         "stale lease": lambda a: a["level"] == "critical" and "lease" in a["message"],
         "no live worker": lambda a: a["level"] == "critical" and "no worker" in a["message"],
-        "worker died": lambda a: "died without shutting down" in a["message"],
+        # Earlier deaths stay on record for 24 h: only a NEW death counts.
+        "worker died": lambda a: (
+            "died without shutting down" in a["message"] and a["value"] > deaths_before
+        ),
     }
     seen: dict[str, float] = {}
     fired: list[dict[str, Any]] = []
@@ -140,6 +153,7 @@ def worker_failure(api: httpx.Client, args: argparse.Namespace, run: str) -> dic
         "batch_id": bid,
         "photos": len(files),
         "killed_at_scored": p["images_scored"],
+        "worker_deaths_on_record_before": deaths_before,
         "alerts_fired": fired,
         "seconds_to_alert": seen,
         "recovered_seconds_after_restart": round(time.monotonic() - restarted, 1),
@@ -170,8 +184,8 @@ def changed_inputs(api: httpx.Client, args: argparse.Namespace, run: str) -> dic
 
     out: dict[str, Any] = {"camera": args.camera, "photos": len(files), "sequences": args.sequences}
     for name, payload in (
-        ("control", files),
-        ("degraded", [(n, degrade(d)) for n, d in files]),
+        ("control", [(n, reencode(d, f"control-{run}")) for n, d in files]),
+        ("degraded", [(n, degrade(d, f"degraded-{run}")) for n, d in files]),
     ):
         bid = post(api, payload, file_meta, f"monitoring-{name}-{run}")
         wait(api, bid)

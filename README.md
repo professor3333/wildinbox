@@ -57,8 +57,18 @@ animals when a camera is somewhere new?**
   nothing and duplicates nothing.
 - **Release safely**: immutable model releases pinned per job, a pre-registered
   promotion gate, append-only activation, and one-command rollback.
-- **Monitor** operations, label-free drift signals per camera, and accuracy
-  measured from reviews, kept apart.
+- **Monitor** in two views ([rules](docs/monitoring.md)). Operational health
+  covers queue, failures, latency, API errors, worker memory and deaths,
+  storage, and batch cost. Model behavior covers filtered and review shares,
+  label and confidence mixes, each camera's latest batch against its earlier
+  ones, time periods with the camera-mix effect separated, and audited
+  false-empty and species errors. Signals and measured errors are never
+  mixed: a camera with no audit labels shows unknown quality.
+- **Learn from corrections, under control** ([workflow](docs/retraining.md)).
+  Snapshots use approved reviews only, exclude protected evaluation records
+  (with any corrections made to them), and keep per-label provenance.
+  Candidates are compared on development data only, and every comparison is
+  logged. Rolling back restores the previous release's predictions exactly.
 
 ### Results, honestly
 
@@ -151,7 +161,7 @@ The demo walk-through, with a real run's output: [`docs/demo.md`](docs/demo.md).
 | Automatically filtered | Events automation set aside as empty; label one to recover it. |
 | Audit queue | A random sample (default 5%, `WILDINBOX_AUDIT_RATE`) of automatic decisions, each with the rule that chose it. |
 | Export | The observation CSV ([format](docs/export_format.md)). |
-| Monitoring | Alerts, operations, label-free signals, and review-based accuracy. |
+| Monitoring | Two views: **Operational health** (queue, failures, latency, API errors, workers, storage, batch cost) and **Model behavior** (decision shares, label and confidence mixes, latest batch per camera, time periods with the camera mix separated, audited errors, review-based accuracy). Rules: [docs/monitoring.md](docs/monitoring.md). |
 | Study | The timed review study for participants ([guide](docs/review_study.md)). |
 
 Labels are visibly different by source: ✅ confirmed by a person, ⚙️ decided
@@ -291,7 +301,14 @@ SeaweedFS; training runs on a separate machine.
    release, weights SHA-256, preprocessing, calibration, and policy versions.
 4. **Roll back:** `docker compose exec api wildinbox release activate <previous-release-id>`.
    New batches use it immediately; running jobs keep the release they started
-   with; the activation history is in `GET /releases`.
+   with; the activation history is in `GET /releases`. Reverting restores the
+   previous release's predictions exactly (`scripts/rollback_restores.py`).
+
+Model updates follow [docs/retraining.md](docs/retraining.md): approved
+corrections, then `wildinbox snapshot build`, a candidate trained with the
+unchanged recipe, `wildinbox update gate` (development data only, comparisons
+logged), release, monitoring, and rollback if needed. Alerts and what to do
+about each: [docs/monitoring.md](docs/monitoring.md).
 
 Scale by running more workers (`docker compose up -d --scale worker=3`): jobs
 are claimed under leases, so workers never process the same job at once.
@@ -334,11 +351,11 @@ Training the released model: 70 minutes on the M1's GPU (Metal).
 ```
 src/wildinbox/
   api/          FastAPI app, upload validation, export
-  workers/      job lifecycle: leases, retries, recovery, processing
+  workers/      job lifecycle: leases, retries, recovery, processing, worker liveness
   inference/    releases, serving scorer, calibration, unfamiliar-input score
   policy/       versioned event policies and decision replay
   ui/           Streamlit review interface (talks only to the API)
-  monitoring/   operations, signals, review-based accuracy, Prometheus text
+  monitoring/   operational health, model behavior, audits, alert rules, Prometheus text
   training/     baseline, fine-tuning, snapshots, promotion gate
   evaluation/   evaluation, comparison, calibration, final test, reports
   datasets/     events, labels, splits, leakage checks
@@ -350,8 +367,10 @@ manifests/      pinned dataset and split locks
 migrations/     Alembic migrations
 reports/        every committed evaluation, experiment, serving, and monitoring report
 samples/        the demo sample batch
-scripts/        smoke, demo, crash demo, sample batches, simulated deployment, release/rollback
-docs/           requirements, dataset rules, API, demo, model card, JSON Schemas
+scripts/        smoke, demo, crash demo, sample batches, simulated deployment, release/rollback,
+                monitoring acceptance demo, rollback-restores check
+docs/           requirements, dataset rules, API, export format, monitoring and alert rules,
+                retraining workflow, review study, demo, model card, JSON Schemas
 tests/
 ```
 
