@@ -50,10 +50,17 @@ def main() -> None:
     parser.add_argument("--out", type=Path, default=Path("data/samples/dev-1000"))
     parser.add_argument("--seed", default="wildinbox-sample-v1")
     parser.add_argument("--diverse", action="store_true", help="round-robin over labels")
+    parser.add_argument(
+        "--partition",
+        action="append",
+        choices=["calibration", "policy_validation"],
+        help="development partition(s) to draw from (default: both)",
+    )
     args = parser.parse_args()
 
     ctx = load_context(Path("configs/experiments/baseline.yaml"), Settings().data_dir)
-    rows, _ = load_rows(ctx.split_dir, [Partition.CALIBRATION, Partition.POLICY_VALIDATION])
+    parts = [Partition(p) for p in (args.partition or ["calibration", "policy_validation"])]
+    rows, events = load_rows(ctx.split_dir, parts)
     conn = sqlite3.connect(ctx.inventory_db)
     raw_images = {
         sid: json.loads(raw)
@@ -99,6 +106,7 @@ def main() -> None:
                 "partition",
                 "image_label",
                 "event_role",
+                "event_label",
                 "rights_holder",
             ]
         )
@@ -117,6 +125,7 @@ def main() -> None:
                     r.partition.value,
                     r.image_label,
                     r.event_role,
+                    events[r.event_id].label,
                     holder.get(r.source_id),
                 ]
             )

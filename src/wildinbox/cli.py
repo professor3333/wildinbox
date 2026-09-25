@@ -295,6 +295,17 @@ def main(argv: Sequence[str] | None = None) -> int:
     p_ft.add_argument("--config", type=Path, default=Path("configs/experiments/baseline.yaml"))
     p_ft.add_argument("--report-dir", type=Path, default=Path("reports/final_test"))
 
+    p_snap = sub.add_parser("snapshot", help="Training snapshots from reviewed events.")
+    snap_sub = p_snap.add_subparsers(dest="snapshot_command", required=True)
+    p_sb = snap_sub.add_parser("build", help="Build a versioned snapshot through the API.")
+    p_sb.add_argument(
+        "--protocol", type=Path, default=Path("configs/experiments/update_cycle.yaml")
+    )
+    p_sb.add_argument(
+        "--api-url", default=os.environ.get("WILDINBOX_API_URL", "http://localhost:8000")
+    )
+    p_sb.add_argument("--out", type=Path, default=Path("data/snapshots"))
+
     p_api = sub.add_parser("api", help="Serve the HTTP API.")
     p_api.add_argument("--host", default="127.0.0.1")
     p_api.add_argument("--port", type=int, default=8000)
@@ -388,6 +399,15 @@ def main(argv: Sequence[str] | None = None) -> int:
         print(
             f"final test: E3 macro-F1 {e3['macro_f1']:.3f}; report -> {args.report_dir}/README.md"
         )
+        return 0
+    if args.command == "snapshot":
+        from wildinbox.training.snapshot import build
+
+        out = build(args.protocol, args.api_url, args.out)
+        summary = json.loads((out / "snapshot.json").read_text())
+        print(f"snapshot {summary['version']} -> {out}")
+        print(f"  train: {summary['train']}")
+        print(f"  holdout: {summary['holdout']}; cutoffs {summary['cutoffs']}")
         return 0
     if args.command == "release":
         return _release(args)

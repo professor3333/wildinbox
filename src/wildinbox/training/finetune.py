@@ -24,7 +24,9 @@ from pydantic import BaseModel, ConfigDict, Field, ValidationError
 from torch import nn
 from torch.utils.data import DataLoader, Dataset, WeightedRandomSampler
 
+from wildinbox.class_map import EMPTY_CLASS
 from wildinbox.config import ConfigError, PreprocessingConfig
+from wildinbox.datasets.events import Role
 from wildinbox.datasets.spec import Partition
 from wildinbox.evaluation.data import ImageRow, box_lists, load_rows
 from wildinbox.inference.architecture import build_model
@@ -68,6 +70,9 @@ class FinetuneConfig(_Strict):
     device: Literal["cpu", "mps", "cuda"]
     num_workers: int = Field(ge=0)
     cache_short_side: int = Field(gt=0)
+    # Reviewed deployment data (wildinbox snapshot build) added to the training
+    # partition; None trains on the training partition only.
+    snapshot: Path | None = None
 
 
 def load_finetune_config(path: str | Path) -> FinetuneConfig:
@@ -119,10 +124,22 @@ def _cache_one(args: tuple[str, str, int]) -> None:
 
 
 def build_input_cache(
-    rows: list[ImageRow], images_root: Path, cache_root: Path, size: int, workers: int = 4
+    rows: list[ImageRow],
+    images_root: Path,
+    cache_root: Path,
+    size: int,
+    workers: int = 4,
+    sources: dict[str, Path] | None = None,
 ) -> None:
+    """`sources` maps a row's storage_path to its file when it is not under
+    `images_root` (snapshot images)."""
+    sources = sources or {}
     jobs = [
-        (str(images_root / r.storage_path), str(cache_root / r.storage_path), size)
+        (
+            str(sources.get(r.storage_path, images_root / r.storage_path)),
+            str(cache_root / r.storage_path),
+            size,
+        )
         for r in rows
         if not (cache_root / r.storage_path).exists()
     ]
@@ -192,6 +209,32 @@ def training_rows(split_dir: Path) -> list[ImageRow]:
     return fit_rows
 
 
+def snapshot_rows(snapshot_dir: Path) -> tuple[list[ImageRow], dict[str, Path], dict[str, Any]]:
+    """Fit rows for a snapshot's training frames, their source files, and its summary.
+    Rows are marked as fitting rows (partition `train`); their origin is the
+    snapshot, recorded in the model's metadata and in the `snapshot:` id prefix."""
+    summary = json.loads((snapshot_dir / "snapshot.json").read_text())
+    rows, sources = [], {}
+    for line in (snapshot_dir / "train.jsonl").read_text().splitlines():
+        r = json.loads(line)
+        storage = f"snapshot-{summary['version']}/{r['sha256']}.jpg"
+        sources[storage] = snapshot_dir / "images" / f"{r['sha256']}.jpg"
+        rows.append(
+            ImageRow(
+                source_id=f"snapshot:{r['sha256']}",
+                event_id=r["event_id"],
+                partition=Partition.TRAIN,
+                camera_id=r["camera_id"],
+                storage_path=storage,
+                image_label=r["label"],
+                event_label=r["label"],
+                event_role=Role.EMPTY if r["label"] == EMPTY_CLASS else Role.SUPPORTED,
+                use_for_fit=True,
+            )
+        )
+    return rows, sources, summary
+
+
 def train(config_path: Path, data_dir: Path, models_dir: Path) -> Path:
     cfg = load_finetune_config(config_path)
     code = git_state()  # the code this run starts from, not whatever HEAD is at the end
@@ -202,12 +245,17 @@ def train(config_path: Path, data_dir: Path, models_dir: Path) -> Path:
     seed_everything(run.seed)
 
     fit_rows = training_rows(ctx.split_dir)
+    sources: dict[str, Path] = {}
+    snapshot: dict[str, Any] | None = None
+    if cfg.snapshot is not None:
+        extra, sources, snapshot = snapshot_rows(cfg.snapshot)
+        fit_rows = fit_rows + extra
     classes = ctx.classes
     labels = [r.image_label or "" for r in fit_rows]
     counts = Counter(labels)
 
     cache_root = data_dir / "cache" / f"train-s{cfg.cache_short_side}"
-    build_input_cache(fit_rows, ctx.images_root, cache_root, cfg.cache_short_side)
+    build_input_cache(fit_rows, ctx.images_root, cache_root, cfg.cache_short_side, sources=sources)
     boxes = box_lists(ctx.inventory_db)
     aug = make_augmentation(cfg, run.preprocessing)
     dataset = TrainImages(fit_rows, cache_root, boxes, classes, aug, run.seed)
@@ -348,6 +396,15 @@ def train(config_path: Path, data_dir: Path, models_dir: Path) -> Path:
             "images": len(fit_rows),
             "images_per_class": dict(sorted(counts.items())),
             "source_ids_sha256": ids_digest.hexdigest(),
+            "snapshot": None
+            if snapshot is None
+            else {
+                "version": snapshot["version"],
+                "path": str(cfg.snapshot),
+                "images": snapshot["train"]["images"],
+                "events": snapshot["train"]["events"],
+                "reviewer": snapshot["reviewer"],
+            },
         },
         "device": device,
         "history": history,
