@@ -1,0 +1,45 @@
+# Final-test protocol, fixed BEFORE the locked final test was opened.
+# Applied once by: uv run wildinbox final-test
+#
+# Everything below is frozen. The final test is used to MEASURE, never to
+# choose: no threshold, model, or rule is changed after seeing it. A later run
+# is allowed only with this exact protocol and artifacts, and must reproduce
+# the recorded results exactly.
+split_version: cct20-splits-v1-7de740aba75f
+split_lock_sha256: 704ab2c4f0caf0f6529ec4f396ef0dca338cb0e53ca8aa9bf63bf97bae5e6cff
+
+model:                      # E3, selected by configs/experiments/selection.yaml
+  dir: models/finetune-e3-deep-balanced
+  weights_sha256: 3ab6fec236ce4b418acdda78f94078ec3bd6331983e2186bd52aa11a1fd9b360
+  release_id: finetune-e3-deep-balanced@518a8da39ee0
+policy_artifact:            # calibration + both policy configurations
+  path: reports/calibration/policy.json
+  sha256: 7ce10d8631f8c37e4944932083f209d345709ec90f2addc5d95fa96d09489df6
+  artifact_version: 518a8da39ee0
+  calibration_version: 55cdb7daad08
+  released_policy_version: conservative/v1+fe20c7586555   # automation off
+  rule_policy_version: conservative/v1+1dba9bb7ad2b       # empty filter at 0.65
+baseline:                   # frozen-embedding reference
+  dir: models/baseline-frozen-effnetb0-logreg-v1
+  classifier_sha256: 2f2cb8b12bce230e276dc63198ecff53c0a5843fba0036b2a2df06787a637167
+unfamiliar:                 # evaluated, not adopted; its held-out species are opened here
+  rule: configs/experiments/unfamiliar.yaml
+  rule_sha256: 6299a91d6bcdbeb1ddb9f7e1ee7fefd54f92d92e4f74fd9b1570a323658613e0
+  artifact_version: 66c288910007
+  distance_threshold: 0.5142576098442078
+  confidence_threshold: 0.764595        # max-softmax baseline, fit with the distance one
+
+# Reported, in this order. Intervals: Wilson 95% for proportions; macro-F1 by
+# a 95% bootstrap over capture events (1,000 resamples, fixed seed).
+report:
+  - "image-level macro-F1, per-class precision/recall/F1, lowest per-species recall, confusion (E3 and baseline)"
+  - "event decisions under the RELEASED policy (automation off) and under the RULE's operating point (empty filter 0.65)"
+  - "animal events filtered as empty at the rule's operating point vs the 98% retention target"
+  - "error-versus-coverage sweeps for both automations (reported, nothing chosen)"
+  - "unsupported inputs, tuning and held-out species separately: predicted labels, acceptance as a known species, unfamiliar-score detection (distance and confidence at their frozen thresholds)"
+  - "review reduction against an already sequence-grouped workflow"
+  - "per camera (9 cameras) and day/night, with camera-level spread"
+  - "random-image vs unseen-camera: seen-camera diagnostic vs final test, same models"
+  - "every success target in CLAUDE.md with result and whether it is met"
+bootstrap_resamples: 1000
+bootstrap_seed: 20260925

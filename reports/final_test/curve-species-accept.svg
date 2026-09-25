@@ -1,0 +1,51 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 360" width="640" height="360" role="img" aria-label="Final test: wrong labels vs events accepted">
+<title>Final test: wrong labels vs events accepted</title><style>
+.bg{fill:#fcfcfb}.t1{fill:#0b0b0b}.t2{fill:#52514e}.grid{stroke:#e6e5e1}.axis{stroke:#8a8983}
+.l1{stroke:#2a78d6;fill:none}.l2{stroke:#eb6834;fill:none}.m1{fill:#2a78d6}.m2{fill:#eb6834}
+.band{fill:#2a78d6;opacity:.14}
+.target{stroke:#52514e}.ring{stroke:#fcfcfb}
+@media (prefers-color-scheme: dark){
+.bg{fill:#1a1a19}.t1{fill:#ffffff}.t2{fill:#c3c2b7}.grid{stroke:#333331}.axis{stroke:#6f6e69}
+.l1{stroke:#3987e5;fill:none}.l2{stroke:#d95926;fill:none}.m1{fill:#3987e5}.m2{fill:#d95926}
+.band{fill:#3987e5;opacity:.2}
+.target{stroke:#c3c2b7}.ring{stroke:#1a1a19}}
+text{font-family:-apple-system,Segoe UI,Helvetica,Arial,sans-serif}
+</style>
+<rect class="bg" width="640" height="360"/>
+<text class="t1" x="64" y="24" font-size="15" font-weight="600">Final test: wrong labels vs events accepted</text>
+<line class="grid" x1="64" x2="490" y1="308.0" y2="308.0"/><text class="t2" x="56" y="312.0" font-size="11" text-anchor="end">0%</text>
+<text class="t2" x="64.0" y="326" font-size="11" text-anchor="middle">0%</text>
+<line class="grid" x1="64" x2="490" y1="242.0" y2="242.0"/><text class="t2" x="56" y="246.0" font-size="11" text-anchor="end">10%</text>
+<text class="t2" x="170.5" y="326" font-size="11" text-anchor="middle">10%</text>
+<line class="grid" x1="64" x2="490" y1="176.0" y2="176.0"/><text class="t2" x="56" y="180.0" font-size="11" text-anchor="end">20%</text>
+<text class="t2" x="277.0" y="326" font-size="11" text-anchor="middle">20%</text>
+<line class="grid" x1="64" x2="490" y1="110.0" y2="110.0"/><text class="t2" x="56" y="114.0" font-size="11" text-anchor="end">30%</text>
+<text class="t2" x="383.5" y="326" font-size="11" text-anchor="middle">30%</text>
+<line class="grid" x1="64" x2="490" y1="44.0" y2="44.0"/><text class="t2" x="56" y="48.0" font-size="11" text-anchor="end">40%</text>
+<text class="t2" x="490.0" y="326" font-size="11" text-anchor="middle">40%</text>
+<line class="axis" x1="64" x2="490" y1="308" y2="308"/>
+<text class="t2" x="277.0" y="348" font-size="12" text-anchor="middle">Events accepted automatically (coverage)</text><text class="t2" transform="translate(16 176.0) rotate(-90)" font-size="12" text-anchor="middle">Accepted labels that are wrong</text>
+<line class="target" x1="64" x2="490" y1="275.0" y2="275.0" stroke-width="1.5" stroke-dasharray="5 4"/><text class="t2" x="496" y="279.0" font-size="11">target 5%</text>
+<polygon class="band" points="64.5,44.0 65.9,121.0 69.0,226.7 72.4,258.1 78.2,277.8 85.2,287.6 92.3,292.6 100.6,292.6 109.2,292.9 117.9,291.2 125.1,293.1 133.0,294.8 142.3,293.7 151.9,291.7 161.0,291.2 168.9,292.5 177.6,292.8 185.2,292.9 193.5,293.1 201.3,293.3 206.6,292.5 214.0,292.0 221.0,289.1 228.1,285.5 235.9,282.8 241.7,282.1 248.7,279.8 255.1,279.8 262.0,276.3 268.8,270.2 276.0,265.4 282.4,262.8 288.7,257.6 295.3,253.2 303.6,249.2 311.6,246.0 319.2,241.7 325.8,238.3 333.2,234.0 340.9,229.5 347.0,225.4 355.0,218.9 364.5,213.0 372.3,207.5 380.7,202.2 386.3,198.0 393.9,191.4 404.2,184.5 412.0,178.4 419.8,173.8 419.8,192.3 412.0,196.9 404.2,202.7 393.9,209.5 386.3,215.8 380.7,219.9 372.3,225.0 364.5,230.3 355.0,236.0 347.0,242.1 340.9,246.0 333.2,250.3 325.8,254.3 319.2,257.5 311.6,261.5 303.6,264.5 295.3,268.3 288.7,272.2 282.4,276.8 276.0,279.2 268.8,283.3 262.0,288.5 255.1,291.4 248.7,291.5 241.7,293.5 235.9,294.2 228.1,296.4 221.0,299.1 214.0,301.2 206.6,301.7 201.3,302.4 193.5,302.5 185.2,302.6 177.6,302.8 168.9,302.9 161.0,302.4 151.9,303.2 142.3,304.6 133.0,305.6 125.1,305.3 117.9,304.9 109.2,306.2 100.6,306.8 92.3,307.5 85.2,307.3 78.2,307.0 72.4,306.4 69.0,305.2 65.9,300.7 64.5,277.9"/>
+<polyline class="l1" points="64.5,143.0 65.9,266.8 69.0,292.3 72.4,298.7 78.2,302.5 85.2,304.3 92.3,305.2 100.6,303.7 109.2,302.8 117.9,300.7 125.1,301.6 133.0,302.3 142.3,301.0 151.9,299.1 161.0,298.3 168.9,299.1 177.6,299.0 185.2,299.0 193.5,298.9 201.3,298.9 206.6,298.1 214.0,297.6 221.0,295.0 228.1,291.8 235.9,289.3 241.7,288.6 248.7,286.4 255.1,286.3 262.0,283.1 268.8,277.4 276.0,272.9 282.4,270.4 288.7,265.5 295.3,261.3 303.6,257.4 311.6,254.3 319.2,250.0 325.8,246.7 333.2,242.6 340.9,238.2 347.0,234.2 355.0,227.9 364.5,222.0 372.3,216.6 380.7,211.4 386.3,207.2 393.9,200.8 404.2,193.9 412.0,187.9 419.8,183.3" stroke-width="2"/>
+<circle class="m1 ring" cx="64.5" cy="143.0" r="4" stroke-width="2"><title>final test (9 cameras) · threshold 0.99 · coverage 0.0% · error 25.0%</title></circle>
+<circle class="m1 ring" cx="78.2" cy="302.5" r="4" stroke-width="2"><title>final test (9 cameras) · threshold 0.95 · coverage 1.3% · error 0.8%</title></circle>
+<circle class="m1 ring" cx="117.9" cy="300.7" r="4" stroke-width="2"><title>final test (9 cameras) · threshold 0.9 · coverage 5.1% · error 1.1%</title></circle>
+<circle class="m1 ring" cx="201.3" cy="298.9" r="4" stroke-width="2"><title>final test (9 cameras) · threshold 0.8 · coverage 12.9% · error 1.4%</title></circle>
+<circle class="m1 ring" cx="268.8" cy="277.4" r="4" stroke-width="2"><title>final test (9 cameras) · threshold 0.7 · coverage 19.2% · error 4.6%</title></circle>
+<circle class="m1 ring" cx="303.6" cy="257.4" r="4" stroke-width="2"><title>final test (9 cameras) · threshold 0.65 · coverage 22.5% · error 7.7%</title></circle>
+<circle class="m1 ring" cx="340.9" cy="238.2" r="4" stroke-width="2"><title>final test (9 cameras) · threshold 0.6 · coverage 26.0% · error 10.6%</title></circle>
+<circle class="m1 ring" cx="419.8" cy="183.3" r="4" stroke-width="2"><title>final test (9 cameras) · threshold 0.5 · coverage 33.4% · error 18.9%</title></circle>
+<polyline class="l2" points="65.1,308.0 66.3,308.0 66.3,308.0 67.4,308.0 68.5,308.0 70.8,308.0 70.8,308.0 71.9,308.0 77.6,253.0 78.7,257.2 82.1,266.8 86.7,242.0 86.7,242.0 91.2,198.0 95.8,190.1 98.0,176.0 101.4,168.0 103.7,176.0 111.6,166.6 117.3,181.6 125.2,161.3 134.3,159.0 138.9,148.0 142.3,155.0 146.8,163.3 153.6,174.3 158.1,180.8 160.4,176.0 169.5,180.3 178.6,183.8 184.2,177.2 188.8,176.0 194.4,158.8 204.6,143.0 210.3,144.3 217.1,151.6 223.9,139.5 234.1,140.8 242.1,135.6 244.3,133.7 252.3,133.1 260.2,128.7 270.4,119.4 277.2,114.9 281.8,112.1 289.7,99.1 302.2,103.7 312.4,97.0" stroke-width="2"/>
+<circle class="m2 ring" cx="66.3" cy="308.0" r="4" stroke-width="2"><title>policy validation (dev) · threshold 0.95 · coverage 0.2% · error 0.0%</title></circle>
+<circle class="m2 ring" cx="71.9" cy="308.0" r="4" stroke-width="2"><title>policy validation (dev) · threshold 0.9 · coverage 0.7% · error 0.0%</title></circle>
+<circle class="m2 ring" cx="103.7" cy="176.0" r="4" stroke-width="2"><title>policy validation (dev) · threshold 0.8 · coverage 3.7% · error 20.0%</title></circle>
+<circle class="m2 ring" cx="160.4" cy="176.0" r="4" stroke-width="2"><title>policy validation (dev) · threshold 0.7 · coverage 9.1% · error 20.0%</title></circle>
+<circle class="m2 ring" cx="194.4" cy="158.8" r="4" stroke-width="2"><title>policy validation (dev) · threshold 0.65 · coverage 12.2% · error 22.6%</title></circle>
+<circle class="m2 ring" cx="234.1" cy="140.8" r="4" stroke-width="2"><title>policy validation (dev) · threshold 0.6 · coverage 16.0% · error 25.3%</title></circle>
+<circle class="m2 ring" cx="312.4" cy="97.0" r="4" stroke-width="2"><title>policy validation (dev) · threshold 0.5 · coverage 23.3% · error 32.0%</title></circle>
+<text class="t1" x="496" y="101.0" font-size="11">policy validation (dev)</text>
+<text class="t1" x="496" y="187.3" font-size="11">final test (9 cameras)</text>
+<line class="l1" x1="64" x2="80" y1="36" y2="36" stroke-width="2"/><text class="t2" x="84" y="40" font-size="11">final test (9 cameras)</text>
+<line class="l2" x1="248" x2="264" y1="36" y2="36" stroke-width="2"/><text class="t2" x="268" y="40" font-size="11">policy validation (dev)</text>
+</svg>
