@@ -89,8 +89,9 @@ thresholds. A database trigger rejects any change to a release row.
 # Inside the deployment (weights and policy from the training machine):
 docker compose run --rm \
   -v "$PWD/models/finetune-e3-deep-balanced:/app/models/finetune-e3-deep-balanced:ro" \
-  -v "$PWD/reports/calibration:/app/reports/calibration:ro" \
-  worker wildinbox release register --activate --note "E3, automation off"
+  -v "$PWD/reports/policy:/app/reports/policy:ro" \
+  worker wildinbox release register --activate --note "E3, automation off" \
+    --policy reports/policy/finetune-e3-deep-balanced-v2/policy.json
 docker compose exec api wildinbox release list
 docker compose exec api wildinbox release activate <release-id>   # also how to roll back
 curl http://localhost:8000/version

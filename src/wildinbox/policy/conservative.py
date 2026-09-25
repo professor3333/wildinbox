@@ -10,6 +10,13 @@
 
 Separate thresholds, because a wrongly filtered animal is worse than an extra
 review. Scores are calibrated before they reach this module.
+
+Versions (decisions are identical; only the listed reasons differ):
+- conservative/v1: a disabled species threshold counts as unreachable, so every
+  animal event also gets `low_confidence`, even for a confident suggestion.
+- conservative/v2: `low_confidence` only when a species threshold exists and
+  the suggestion falls below it; with acceptance disabled the reason is
+  `automation_disabled`, and the confidence itself is shown to reviewers.
 """
 
 from __future__ import annotations
@@ -24,6 +31,8 @@ from wildinbox.class_map import EMPTY_CLASS
 from wildinbox.schemas import Disposition, FrameStatus, ReviewReason
 
 POLICY_NAME = "conservative/v1"
+POLICY_V2 = "conservative/v2"
+POLICIES = (POLICY_NAME, POLICY_V2)
 
 
 @dataclass(frozen=True)
@@ -51,9 +60,12 @@ class PolicyConfig:
     # Species with enough validation evidence to be accepted; None = no gate.
     accept_species: tuple[str, ...] | None = None
 
-    def fingerprint(self) -> str:
-        payload = json.dumps({"policy": POLICY_NAME, **asdict(self)}, sort_keys=True)
+    def fingerprint(self, policy: str = POLICY_NAME) -> str:
+        payload = json.dumps({"policy": policy, **asdict(self)}, sort_keys=True)
         return hashlib.sha256(payload.encode()).hexdigest()[:12]
+
+    def version(self, policy: str = POLICY_NAME) -> str:
+        return f"{policy}+{self.fingerprint(policy)}"
 
 
 @dataclass(frozen=True)
@@ -74,7 +86,9 @@ def _t(x: float | None) -> float:
     return math.inf if x is None else x
 
 
-def decide(frames: Sequence[Frame], cfg: PolicyConfig) -> EventOutcome:
+def decide(frames: Sequence[Frame], cfg: PolicyConfig, policy: str = POLICY_NAME) -> EventOutcome:
+    if policy not in POLICIES:
+        raise ValueError(f"unknown policy {policy!r}")
     if not frames:
         raise ValueError("an event needs at least one frame")
     reasons: list[ReviewReason] = []
@@ -107,7 +121,11 @@ def decide(frames: Sequence[Frame], cfg: PolicyConfig) -> EventOutcome:
         reasons.append(ReviewReason.CONFLICTING_FRAMES)
     if any(frames[i].unfamiliar for i, _ in animal):
         reasons.append(ReviewReason.POSSIBLE_UNKNOWN)
-    if means[best] < t_species:
+    species_unsure = means[best] < t_species
+    if policy == POLICY_V2:
+        # A disabled threshold says nothing about the model's confidence.
+        species_unsure = cfg.species_threshold is not None and means[best] < cfg.species_threshold
+    if species_unsure:
         reasons.append(ReviewReason.LOW_CONFIDENCE)
     if cfg.accept_species is not None and best not in cfg.accept_species:
         reasons.append(ReviewReason.SPECIES_NOT_VALIDATED)

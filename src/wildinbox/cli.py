@@ -341,6 +341,18 @@ def main(argv: Sequence[str] | None = None) -> int:
         "--api-url", default=os.environ.get("WILDINBOX_API_URL", "http://localhost:8000")
     )
 
+    p_pol = sub.add_parser("policy", help="Decision-policy artifacts.")
+    pol_sub = p_pol.add_subparsers(dest="policy_command", required=True)
+    p_up = pol_sub.add_parser("upgrade", help="Same calibration and thresholds, newer policy.")
+    p_up.add_argument(
+        "--from", dest="source", type=Path, default=Path("reports/calibration/policy.json")
+    )
+    p_up.add_argument(
+        "--decisions", type=Path, default=Path("reports/calibration/decisions.jsonl.gz")
+    )
+    p_up.add_argument("--to", dest="policy_name", default="conservative/v2")
+    p_up.add_argument("--out", type=Path, required=True)
+
     p_api = sub.add_parser("api", help="Serve the HTTP API.")
     p_api.add_argument("--host", default="127.0.0.1")
     p_api.add_argument("--port", type=int, default=8000)
@@ -467,6 +479,13 @@ def main(argv: Sequence[str] | None = None) -> int:
             else:
                 data = summary(s, settings.lease_seconds, load_config(settings.monitoring_config))
                 print(json.dumps(data, indent=2, default=str))
+        return 0
+    if args.command == "policy":
+        from wildinbox.policy.upgrade import upgrade
+
+        up = upgrade(args.source, args.decisions, args.policy_name, args.out)
+        print(f"{args.policy_name} artifact {up['artifact_version']} -> {args.out / 'policy.json'}")
+        print(f"  decisions whose outcome or reasons changed: {up['decisions_changed']}")
         return 0
     if args.command == "study":
         from wildinbox.study.cli import create_plan, write_analysis

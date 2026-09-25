@@ -127,3 +127,15 @@ def test_frame_helper_is_the_policy_input() -> None:
     )
     assert isinstance(f, Frame) and f.unfamiliar is False
     assert f.probs == pytest.approx({"empty": 0.2, "cat": 0.8})
+
+
+def test_committed_v2_policy_replays_with_the_same_dispositions_as_v1() -> None:
+    v2_dir = REPO_ROOT / "reports/policy/finetune-e3-deep-balanced-v2"
+    v2 = json.loads((v2_dir / "policy.json").read_text())
+    out = replay(v2_dir / "decisions.jsonl.gz", v2)
+    assert out["problems"] == [] and v2["policy"] == "conservative/v2"
+    assert out["dispositions"] == replay(DECISIONS, json.loads(POLICY.read_text()))["dispositions"]
+    assert (
+        v2["derived_from"]["artifact_version"] == json.loads(POLICY.read_text())["artifact_version"]
+    )
+    assert v2["calibration"] == json.loads(POLICY.read_text())["calibration"]

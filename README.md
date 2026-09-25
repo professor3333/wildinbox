@@ -127,8 +127,9 @@ and policy artifact come from the training machine, see Reproduce below):
 ```bash
 docker compose run --rm \
   -v "$PWD/models/finetune-e3-deep-balanced:/app/models/finetune-e3-deep-balanced:ro" \
-  -v "$PWD/reports/calibration:/app/reports/calibration:ro" \
-  worker wildinbox release register --activate
+  -v "$PWD/reports/policy:/app/reports/policy:ro" \
+  worker wildinbox release register --activate \
+    --policy reports/policy/finetune-e3-deep-balanced-v2/policy.json
 curl localhost:8000/version            # deploy check: release, weights, preprocessing, calibration, policy
 ```
 

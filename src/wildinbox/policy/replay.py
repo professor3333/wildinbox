@@ -17,7 +17,7 @@ from typing import Any
 import numpy as np
 
 from wildinbox.inference.calibration import apply_temperature
-from wildinbox.policy.conservative import POLICY_NAME, Frame, PolicyConfig, decide
+from wildinbox.policy.conservative import POLICIES, Frame, PolicyConfig, decide
 from wildinbox.schemas import FrameStatus
 
 CONFIG_NAMES = ("released", "rule")
@@ -53,13 +53,14 @@ def frames_from_saved(row: dict[str, Any], policy: dict[str, Any]) -> list[Frame
 
 
 def replay(decisions_path: Path, policy: dict[str, Any]) -> dict[str, Any]:
-    if policy["policy"] != POLICY_NAME:
-        raise ValueError(f"artifact is for {policy['policy']}, this code is {POLICY_NAME}")
+    policy_name = policy["policy"]
+    if policy_name not in POLICIES:
+        raise ValueError(f"artifact is for {policy_name}; this code knows {POLICIES}")
     configs = {name: policy_config(policy[name]) for name in CONFIG_NAMES}
     problems = [
         f"{name}: policy_version {policy[name]['policy_version']} does not match its settings"
         for name, cfg in configs.items()
-        if policy[name]["policy_version"] != f"{POLICY_NAME}+{cfg.fingerprint()}"
+        if policy[name]["policy_version"] != cfg.version(policy_name)
     ]
     counts: dict[str, Counter[str]] = {name: Counter() for name in CONFIG_NAMES}
     n = 0
@@ -69,7 +70,7 @@ def replay(decisions_path: Path, policy: dict[str, Any]) -> dict[str, Any]:
             n += 1
             frames = frames_from_saved(row, policy)
             for name, cfg in configs.items():
-                o = decide(frames, cfg)
+                o = decide(frames, cfg, policy_name)
                 saved = row[name]
                 got = (o.disposition.value, o.label, [r.value for r in o.reasons])
                 want = (saved["disposition"], saved["label"], saved["reasons"])

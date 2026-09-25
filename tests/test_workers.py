@@ -230,7 +230,9 @@ def test_inference_failure_on_one_image_becomes_a_failed_frame(
 # ------------------------------------------------------------------ releases
 
 
-def _fake_model_dir(tmp_path: Path, seed: int = 0) -> tuple[Path, Path]:
+def _fake_model_dir(
+    tmp_path: Path, seed: int = 0, policy_name: str = POLICY_NAME
+) -> tuple[Path, Path]:
     cfg = load_config(REPO_ROOT / "configs/example.yaml")
     d = tmp_path / f"model-{seed}"
     d.mkdir(parents=True)
@@ -252,7 +254,7 @@ def _fake_model_dir(tmp_path: Path, seed: int = 0) -> tuple[Path, Path]:
     )
     released = PolicyConfig(0.65, None, False, False, ())
     policy = {
-        "policy": POLICY_NAME,
+        "policy": policy_name,
         "model": "tiny-test-model",
         "classes": cfg.classes,
         "calibration": {
@@ -268,7 +270,7 @@ def _fake_model_dir(tmp_path: Path, seed: int = 0) -> tuple[Path, Path]:
             "auto_filter_enabled": False,
             "auto_accept_enabled": False,
             "accept_species": [],
-            "policy_version": f"{POLICY_NAME}+{released.fingerprint()}",
+            "policy_version": released.version(policy_name),
         },
         "artifact_version": f"art{seed}",
     }
@@ -483,3 +485,32 @@ def test_activation_history_shows_release_and_rollback(
         history = [(a["release_id"], a["note"]) for a in body["activations"]]
         assert history[:2] == [(real_release.id, "roll back"), (newer.id, "release candidate")]
         assert c.get("/version").json()["active_release"]["id"] == real_release.id
+
+
+def test_workers_decide_with_the_policy_their_release_names(
+    worker_settings: Settings, tmp_path: Path
+) -> None:
+    from wildinbox.policy.conservative import POLICY_V2
+
+    serving._LOADED.clear()
+    model_dir, policy = _fake_model_dir(tmp_path, seed=4, policy_name=POLICY_V2)
+    with TestClient(create_app(worker_settings, dispatcher=NoopDispatcher())):
+        pass
+    with session_factory(worker_settings.database_url)() as s:
+        release, _ = register_release(
+            s, LocalStore(worker_settings.local_store_dir), model_dir, policy, None
+        )
+        activate(s, release.id)
+        s.commit()
+    batch = _upload(worker_settings, 3)
+    process_batch(
+        session_factory(worker_settings.database_url),
+        LocalStore(worker_settings.local_store_dir),
+        uuid.UUID(batch["job"]["id"]),
+        worker_settings,
+    )
+    with session_factory(worker_settings.database_url)() as s:
+        (decision,) = s.scalars(select(Decision)).all()
+        assert decision.policy_version.startswith("conservative/v2+")
+        assert "low_confidence" not in decision.reasons or decision.suggested_label == "empty"
+    serving._LOADED.clear()

@@ -141,10 +141,15 @@ Details: [`reports/calibration/README.md`](../reports/calibration/README.md).
 
 ## Decision policy
 
-- **Policy `conservative/v1`** ([source](../src/wildinbox/policy/conservative.py)),
-  released as `conservative/v1+fe20c7586555` in the versioned artifact
-  [`policy.json`](../reports/calibration/policy.json), which also carries the
-  calibration and unfamiliar-input versions.
+- **Released policy `conservative/v2`** ([source](../src/wildinbox/policy/conservative.py)),
+  release `finetune-e3-deep-balanced@7a25aea97c76`, artifact
+  [`reports/policy/finetune-e3-deep-balanced-v2/policy.json`](../reports/policy/finetune-e3-deep-balanced-v2/policy.json)
+  (same weights, calibration, and thresholds as the v1 release
+  `@518a8da39ee0`, whose artifact [`policy.json`](../reports/calibration/policy.json)
+  the final test measured). v2 changes only the listed reasons: v1 counted the
+  disabled species threshold as unreachable, so every animal event said "model
+  is unsure"; v2 says so only against a real threshold. Every decision is
+  identical (1,847 of 1,847 development events).
 - An event is filtered only when every frame has completed processing and looks
   empty; any pending or failed frame sends it to review (`processing_failure`).
   Any animal-looking frame keeps the event; conflicting frames, low confidence,
