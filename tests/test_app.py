@@ -6,6 +6,7 @@ is created by running the Alembic migrations, so these tests also check them.
 
 from __future__ import annotations
 
+import io
 import json
 import os
 import uuid
@@ -316,3 +317,47 @@ def test_status_page_labels_test_output_and_escapes_input(client: TestClient) ->
     assert "unsupported_type" in page
     assert "Upload a batch" in client.get("/").text
     assert client.get(f"/batches/{uuid.uuid4()}").status_code == 404
+
+
+def test_batch_list_time_window_and_thumbnails(client: TestClient, settings: Settings) -> None:
+    res = client.post(
+        "/batches",
+        files=_files(*_small_batch()),
+        data={"metadata": json.dumps({"camera_id": "north-trail"})},
+    )
+    batch = res.json()
+    listed = client.get("/batches").json()["batches"]
+    assert listed[0]["id"] == batch["id"] and listed[0]["events"] == 2
+
+    night = client.get(
+        "/events",
+        params={"start_after": "2024-05-01T21:00:00", "start_before": "2024-05-01T22:00:00"},
+    ).json()
+    assert night["total"] == 1 and len(night["events"][0]["image_ids"]) == 2
+    before = client.get("/events", params={"start_before": "2024-05-01T00:00:00"}).json()
+    assert before["total"] == 0
+
+    image_id = night["events"][0]["image_ids"][0]
+    thumb = client.get(f"/images/{image_id}/thumbnail", params={"size": 64})
+    assert thumb.status_code == 200 and thumb.headers["content-type"] == "image/jpeg"
+    from PIL import Image as PILImage
+
+    img = PILImage.open(io.BytesIO(thumb.content))
+    assert max(img.size) <= 64
+    stored = list((settings.local_store_dir / "thumbnails").rglob("*.jpg"))
+    assert len(stored) == 1  # generated once, kept in object storage
+    assert client.get(f"/images/{image_id}/thumbnail", params={"size": 64}).content == thumb.content
+    assert client.get(f"/images/{uuid.uuid4()}/thumbnail").status_code == 404
+
+
+def test_thumbnail_shrinks_and_applies_exif_orientation() -> None:
+    from PIL import Image as PILImage
+
+    from wildinbox.api.app import _thumbnail
+
+    buf = io.BytesIO()
+    exif = PILImage.Exif()
+    exif[0x0112] = 6  # displayed rotated 90 degrees
+    PILImage.new("RGB", (400, 300)).save(buf, "JPEG", exif=exif)
+    out = PILImage.open(io.BytesIO(_thumbnail(buf.getvalue(), 100)))
+    assert out.size == (75, 100)  # portrait after rotation, long side 100

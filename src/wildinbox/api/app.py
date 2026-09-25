@@ -7,6 +7,7 @@ import uuid
 from collections import Counter
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
+from datetime import datetime
 from typing import Any
 
 from fastapi import FastAPI, Header, Request
@@ -499,6 +500,33 @@ def create_app(
             raise ApiError(404, "not_found", f"batch {batch_id} not found")
         return batch
 
+    @app.get("/batches")
+    def list_batches(limit: int = 50) -> dict[str, Any]:
+        """Most recent batches first."""
+        limit = max(1, min(limit, 200))
+        with sessions()() as s:
+            batches = s.scalars(
+                select(Batch)
+                .where(Batch.workspace == settings.workspace)
+                .order_by(Batch.created_at.desc())
+                .limit(limit)
+            ).all()
+            return {
+                "batches": [
+                    {
+                        "id": str(b.id),
+                        "status": b.status,
+                        "created_at": b.created_at.isoformat(),
+                        "images": len(b.images),
+                        "events": s.scalar(
+                            select(func.count()).select_from(Event).where(Event.batch_id == b.id)
+                        ),
+                        "cameras": sorted({i.camera_id for i in b.images if i.camera_id}),
+                    }
+                    for b in batches
+                ]
+            }
+
     @app.get("/batches/{batch_id}")
     def get_batch(batch_id: uuid.UUID) -> dict[str, Any]:
         with sessions()() as s:
@@ -582,11 +610,14 @@ def create_app(
         label: str | None = None,
         reason: str | None = None,
         reviewed: bool | None = None,
+        start_after: datetime | None = None,
+        start_before: datetime | None = None,
         limit: int = 100,
         offset: int = 0,
     ) -> dict[str, Any]:
         """Events in time order. `label` matches the suggested label; `reason`
-        a review reason; `reviewed` whether any human review exists."""
+        a review reason; `reviewed` whether any human review exists;
+        `start_after`/`start_before` bound the event's start (camera local time)."""
         limit, offset = max(1, min(limit, 500)), max(0, offset)
         with sessions()() as s:
             q = select(Event).join(Batch).where(Batch.workspace == settings.workspace)
@@ -602,6 +633,10 @@ def create_app(
                 q = q.where(Event.decisions.any(Decision.reasons.contains([reason])))
             if reviewed is not None:
                 q = q.where(Event.reviews.any() if reviewed else ~Event.reviews.any())
+            if start_after is not None:
+                q = q.where(Event.start_at >= _naive(start_after))
+            if start_before is not None:
+                q = q.where(Event.start_at < _naive(start_before))
             total = s.scalar(select(func.count()).select_from(q.subquery())) or 0
             events = s.scalars(q.order_by(Event.start_at, Event.id).limit(limit).offset(offset))
             nxt = offset + limit if offset + limit < total else None
@@ -671,6 +706,36 @@ def create_app(
 
     # ------------------------------------------------------------------ images
 
+    @app.get("/images/{image_id}/thumbnail")
+    def get_thumbnail(image_id: uuid.UUID, size: int = 320) -> Response:
+        """A JPEG no larger than `size` px on its long side, generated once per
+        original and size, then kept in object storage. Originals are untouched."""
+        size = max(64, min(size, 1024))
+        with sessions()() as s:
+            img = s.get(Image, image_id)
+            if img is None or img.batch.workspace != settings.workspace or not img.storage_key:
+                raise ApiError(404, "not_found", f"image {image_id} has no stored original")
+            key = f"thumbnails/{img.sha256}-{size}.jpg"
+            store = app.state.store
+            if not store.exists(key):
+                try:
+                    data = store.get(img.storage_key)
+                except ObjectNotFoundError:
+                    raise ApiError(
+                        404, "not_found", "original missing from object storage"
+                    ) from None
+                try:
+                    store.put(key, _thumbnail(data, size), "image/jpeg")
+                except Exception:
+                    raise ApiError(
+                        422, "unreadable_image", "this file cannot be decoded as an image"
+                    ) from None
+            return Response(
+                store.get(key),
+                media_type="image/jpeg",
+                headers={"Cache-Control": "public, max-age=31536000, immutable"},
+            )
+
     @app.get("/images/{image_id}/original")
     def get_original(image_id: uuid.UUID) -> Response:
         with sessions()() as s:
@@ -684,6 +749,18 @@ def create_app(
             return Response(data, media_type=img.content_type or "application/octet-stream")
 
     return app
+
+
+def _thumbnail(data: bytes, size: int) -> bytes:
+    from io import BytesIO
+
+    from wildinbox.preprocessing import load_image
+
+    img = load_image(data)  # EXIF orientation applied, RGB
+    img.thumbnail((size, size))
+    out = BytesIO()
+    img.save(out, "JPEG", quality=85)
+    return out.getvalue()
 
 
 def _naive(ts: Any) -> Any:
