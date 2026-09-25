@@ -18,6 +18,7 @@ from __future__ import annotations
 import argparse
 import csv
 import json
+import os
 import sys
 import time
 from collections import Counter
@@ -26,6 +27,13 @@ from pathlib import Path
 import httpx
 
 from wildinbox.ui.logic import review_for
+
+
+def auth_headers() -> dict[str, str]:
+    """Bearer token from WILDINBOX_TOKEN, for deployments that require one."""
+    token = os.environ.get("WILDINBOX_TOKEN")
+    return {"Authorization": f"Bearer {token}"} if token else {}
+
 
 NOTE = "simulated review from Caltech Camera Traps ground truth (update-cycle protocol)"
 
@@ -81,7 +89,7 @@ def main() -> None:
         "--upload-only", action="store_true", help="upload and process; post no reviews"
     )
     args = parser.parse_args()
-    api = httpx.Client(base_url=args.url, timeout=120)
+    api = httpx.Client(base_url=args.url, timeout=120, headers=auth_headers())
     truth = {r["filename"]: r for r in csv.DictReader((args.batch_dir / "truth.csv").open())}
 
     meta = json.loads((args.batch_dir / "metadata.json").read_text())["files"]

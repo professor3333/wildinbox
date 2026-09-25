@@ -15,6 +15,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import subprocess
 import sys
 import time
@@ -22,6 +23,13 @@ from pathlib import Path
 from typing import Any
 
 import httpx
+
+
+def auth_headers() -> dict[str, str]:
+    """Bearer token from WILDINBOX_TOKEN, for deployments that require one."""
+    token = os.environ.get("WILDINBOX_TOKEN")
+    return {"Authorization": f"Bearer {token}"} if token else {}
+
 
 CORRUPT = ("corrupt.jpg", b"\xff\xd8\xff\xe0" + b"this is not image data" * 50)
 
@@ -77,7 +85,7 @@ def main() -> None:
     parser.add_argument("--report", type=Path, default=None, help="write results as JSON")
     args = parser.parse_args()
 
-    client = httpx.Client(base_url=args.url, timeout=30)
+    client = httpx.Client(base_url=args.url, timeout=30, headers=auth_headers())
     version = client.get("/version").json()["active_release"]
     check(
         version is not None and not version["is_test"],

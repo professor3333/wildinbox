@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import argparse
 import io
+import os
 import sys
 import time
 import uuid
@@ -16,6 +17,12 @@ import uuid
 import httpx
 import numpy as np
 from PIL import Image
+
+
+def auth_headers() -> dict[str, str]:
+    """Bearer token from WILDINBOX_TOKEN, for deployments that require one."""
+    token = os.environ.get("WILDINBOX_TOKEN")
+    return {"Authorization": f"Bearer {token}"} if token else {}
 
 
 def jpeg(seed: int, when: str) -> bytes:
@@ -53,7 +60,7 @@ def main() -> None:
     files.append(("files", (f"{run}-notes.gif", b"GIF89a" + bytes(16), "image/gif")))
     meta = {"metadata": f'{{"camera_id": "smoke-{run}"}}'}
 
-    with httpx.Client(base_url=args.url, timeout=30) as c:
+    with httpx.Client(base_url=args.url, timeout=30, headers=auth_headers()) as c:
         check(c.get("/health").status_code == 200, "API healthy")
         res = c.post("/batches", files=files, data=meta)
         check(res.status_code == 202, f"batch accepted ({res.status_code})")

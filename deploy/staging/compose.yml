@@ -1,0 +1,114 @@
+# Staging deployment: one VM, Docker Compose. See docs/deployment.md.
+#
+#   docker compose -f deploy/staging/compose.yml --env-file /etc/wildinbox/staging.env up -d --wait
+#
+# Differences from the local stack (../../docker-compose.yml):
+# - originals and model weights live in AWS S3 (credentials from the VM's
+#   instance role, never in this file or the env file);
+# - every API call needs a bearer token (WILDINBOX_API_TOKENS);
+# - the API's health check is readiness: the expected release must be active
+#   and its weights must load, or `up --wait` fails;
+# - JSON logs with rotation; ports bound to localhost only (reach them over an
+#   SSH tunnel; nothing is exposed to the internet).
+# Every required value fails loudly when missing (`:?`).
+
+name: wildinbox-staging
+
+x-logging: &logging
+  driver: json-file
+  options: {max-size: "20m", max-file: "5"}
+
+x-app-env: &app-env
+  WILDINBOX_DATABASE_URL: postgresql+psycopg://wildinbox:${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD}@postgres:5432/wildinbox
+  WILDINBOX_REDIS_URL: redis://redis:6379/0
+  WILDINBOX_OBJECT_STORE_BACKEND: s3
+  WILDINBOX_OBJECT_STORE_URL: ""      # AWS S3 itself
+  WILDINBOX_OBJECT_STORE_BUCKET: ${WILDINBOX_BUCKET:?set WILDINBOX_BUCKET}
+  WILDINBOX_OBJECT_STORE_REGION: ${AWS_REGION:?set AWS_REGION}
+  AWS_REGION: ${AWS_REGION}
+  WILDINBOX_DISPATCH: rq
+  WILDINBOX_AUTH: tokens
+  WILDINBOX_API_TOKENS: ${WILDINBOX_API_TOKENS:?set WILDINBOX_API_TOKENS}
+  WILDINBOX_EXPECTED_RELEASE: ${WILDINBOX_EXPECTED_RELEASE:?set WILDINBOX_EXPECTED_RELEASE}
+  WILDINBOX_LOG_FORMAT: json
+  WILDINBOX_TORCH_THREADS: ${WILDINBOX_TORCH_THREADS:-}
+  WILDINBOX_MAX_FILES_PER_BATCH: ${WILDINBOX_MAX_FILES_PER_BATCH:-2000}
+  WILDINBOX_MAX_FILE_BYTES: ${WILDINBOX_MAX_FILE_BYTES:-20971520}
+  WILDINBOX_MAX_BATCH_BYTES: ${WILDINBOX_MAX_BATCH_BYTES:-1073741824}
+
+x-app: &app
+  image: wildinbox:${WILDINBOX_GIT_REF:-local}
+  build: {context: ../..}
+  environment: *app-env
+  logging: *logging
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: wildinbox
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD}
+      POSTGRES_DB: wildinbox
+    volumes: [postgres:/var/lib/postgresql/data]
+    logging: *logging
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U wildinbox"]
+      interval: 2s
+      retries: 30
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    logging: *logging
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 2s
+      retries: 30
+
+  migrate:
+    <<: *app
+    command: ["alembic", "upgrade", "head"]
+    depends_on:
+      postgres: {condition: service_healthy}
+
+  api:
+    <<: *app
+    restart: unless-stopped
+    ports: ["127.0.0.1:8000:8000"]
+    depends_on:
+      migrate: {condition: service_completed_successfully}
+      redis: {condition: service_healthy}
+    healthcheck:
+      # Readiness, not liveness: database, queue, S3, and the expected model.
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/ready', timeout=60)"]
+      interval: 10s
+      timeout: 65s
+      start_period: 60s
+      retries: 6
+
+  worker:
+    <<: *app
+    command: ["wildinbox", "worker"]
+    restart: unless-stopped
+    stop_grace_period: 30s
+    deploy:
+      replicas: ${WILDINBOX_WORKERS:-1}
+    depends_on:
+      migrate: {condition: service_completed_successfully}
+      redis: {condition: service_healthy}
+
+  ui:
+    <<: *app
+    command: ["wildinbox", "ui", "--host", "0.0.0.0", "--port", "8501", "--api-url", "http://api:8000"]
+    restart: unless-stopped
+    ports: ["127.0.0.1:8501:8501"]
+    depends_on:
+      api: {condition: service_healthy}
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8501/_stcore/health')"]
+      interval: 5s
+      retries: 40
+
+volumes:
+  postgres:

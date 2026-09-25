@@ -16,6 +16,7 @@ from __future__ import annotations
 
 import argparse
 import csv
+import os
 import sys
 import time
 from collections import Counter
@@ -23,6 +24,13 @@ from pathlib import Path
 from typing import Any
 
 import httpx
+
+
+def auth_headers() -> dict[str, str]:
+    """Bearer token from WILDINBOX_TOKEN, for deployments that require one."""
+    token = os.environ.get("WILDINBOX_TOKEN")
+    return {"Authorization": f"Bearer {token}"} if token else {}
+
 
 REASONS = {
     "low_confidence": "model is unsure",
@@ -58,7 +66,7 @@ def main() -> None:
     parser.add_argument("--out", type=Path, default=Path("demo-observations.csv"))
     parser.add_argument("--reviewer", default="demo-reviewer")
     args = parser.parse_args()
-    api = httpx.Client(base_url=args.url, timeout=60)
+    api = httpx.Client(base_url=args.url, timeout=60, headers=auth_headers())
 
     release = api.get("/version").json()["active_release"]
     print(f"WildInbox at {args.url}, release {release['id']}")
