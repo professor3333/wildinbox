@@ -108,6 +108,9 @@ camera.
 - `wildinbox_camera_filtered_share` and `wildinbox_camera_audit_labels`.
 
 An external Prometheus can alert on `wildinbox_alerts{level="critical"} > 0`.
+`/metrics` needs a token like every data endpoint; give the scraper its own
+(`wildinbox token new prometheus`) and set it as the scrape job's
+`authorization: {credentials: <token>}`.
 The rules themselves stay in one place, `monitoring.yaml`.
 
 ## Acceptance evidence
