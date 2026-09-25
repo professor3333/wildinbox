@@ -1,0 +1,35 @@
+{
+  "gate": "reports/update/finetune-e3-update1/README.md",
+  "candidate_release": "finetune-e3-update1@449138a9c367",
+  "previous_release": "finetune-e3-deep-balanced@518a8da39ee0",
+  "active_release_now": "finetune-e3-deep-balanced@518a8da39ee0",
+  "batch_a": {
+    "id": "268b5d2a-461b-44bc-8298-dfe5246bb7ac",
+    "release": "finetune-e3-update1@449138a9c367",
+    "photos": 29,
+    "events": 11
+  },
+  "batch_b": {
+    "id": "5142f8e0-efe4-4394-a8e2-9f55464c6c39",
+    "release": "finetune-e3-deep-balanced@518a8da39ee0",
+    "photos": 33,
+    "events": 11
+  },
+  "activations": [
+    {
+      "release_id": "finetune-e3-deep-balanced@518a8da39ee0",
+      "note": "rollback demonstration",
+      "activated_at": "2026-09-25T06:43:08.162559+00:00"
+    },
+    {
+      "release_id": "finetune-e3-update1@449138a9c367",
+      "note": "promoted: passed the update gate",
+      "activated_at": "2026-09-25T06:43:02.216987+00:00"
+    },
+    {
+      "release_id": "finetune-e3-deep-balanced@518a8da39ee0",
+      "note": "E3 fine-tune; calibrated; automation off",
+      "activated_at": "2026-09-25T06:01:44.807601+00:00"
+    }
+  ]
+}

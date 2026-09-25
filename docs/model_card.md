@@ -181,7 +181,18 @@ Details: [`reports/unfamiliar/README.md`](../reports/unfamiliar/README.md).
   unseen during fine-tuning; **all but deer appear in ImageNet-1k pretraining
   classes**, so no evaluated unknown species is new to the backbone.
 
-## Promotion and rollback (*planned*)
+## Update cycle
+
+One complete cycle was run on the deployment
+([`reports/update/README.md`](../reports/update/README.md)), with reviews
+simulated from ground truth: corrections on cameras 90 and 125 became snapshot
+`0837a1422904`; candidate `finetune-e3-update1` (E3 recipe + snapshot) passed
+the pre-registered gate (later events on those cameras: event macro-F1 0.486 ->
+0.548; cameras 51 and 108: 0.452 -> 0.491; no regression on training cameras),
+was released, and was rolled back to E3 to demonstrate rollback. The gain
+applies to cameras that were reviewed; it is not a new-camera result.
+
+## Promotion and rollback
 
 1. A retrained candidate replaces the deployed model only if it passes the same
    evaluation on data it was not chosen on. The final test above is now spent:

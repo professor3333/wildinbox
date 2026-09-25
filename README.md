@@ -293,6 +293,24 @@ macro-F1 0.447 [0.435, 0.458] vs 0.285 for the frozen-embedding baseline (0.747
 on held-out sequences from training cameras); as released, every event goes to
 review; the 50% review-reduction target is not met.
 
+## Update cycle
+
+```bash
+uv run wildinbox snapshot build          # reviewed events -> versioned training snapshot
+uv run wildinbox finetune train --config configs/experiments/finetune-e3-update1.yaml
+uv run wildinbox update gate             # candidate vs deployed, pre-registered checks
+uv run python scripts/release_rollback.py
+```
+
+Reviewed corrections become a versioned snapshot (originals checked by
+SHA-256; each camera split at its median time into training data and a
+holdout). A candidate trained with the deployed recipe is released only if it
+passes the gate in
+[`configs/experiments/update_cycle.yaml`](configs/experiments/update_cycle.yaml);
+releases are immutable, activation is append-only, and rollback is
+`wildinbox release activate <previous>`. One full cycle, with simulated
+reviews: [`reports/update/README.md`](reports/update/README.md).
+
 ## Data and weights
 
 Downloaded datasets, uploads, thumbnails, and trained weights are never
