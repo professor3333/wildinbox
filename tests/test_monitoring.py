@@ -21,7 +21,7 @@ from .test_app import NoopDispatcher, _files, _small_batch, database_url, settin
 from .test_uploads import jpeg
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
-CFG = load_config(REPO_ROOT / "configs/monitoring.yaml")
+CFG = load_config(REPO_ROOT / "configs/monitoring/monitoring.yaml")
 
 
 def _view(

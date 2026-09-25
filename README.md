@@ -296,7 +296,7 @@ review; the 50% review-reduction target is not met.
 ## Monitoring
 
 `GET /monitoring` (JSON), `GET /metrics` (Prometheus text), and the UI's
-Monitoring page, with thresholds in [`configs/monitoring.yaml`](configs/monitoring.yaml).
+Monitoring page, with thresholds in [`configs/monitoring/monitoring.yaml`](configs/monitoring/monitoring.yaml).
 Three separate views, because they answer different questions:
 
 | View | Needs labels? | Shows |
