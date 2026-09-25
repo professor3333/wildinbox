@@ -83,3 +83,30 @@ def test_any_setting_change_changes_the_policy_fingerprint() -> None:
         PolicyConfig(0.9, 0.9, True, True, accept_species=("raccoon",)),
     ]
     assert len({v.fingerprint() for v in variants}) == len(variants)
+
+
+def test_v2_only_calls_a_suggestion_unsure_against_a_real_threshold() -> None:
+    from wildinbox.policy.conservative import POLICY_V2
+
+    confident = [_f({"empty": 0.02, "raccoon": 0.95, "coyote": 0.03})]
+    off = PolicyConfig(0.65, None, False, False, ())
+    assert ReviewReason.LOW_CONFIDENCE in decide(confident, off).reasons  # v1 behaviour kept
+    v2 = decide(confident, off, POLICY_V2)
+    assert ReviewReason.LOW_CONFIDENCE not in v2.reasons
+    assert ReviewReason.AUTOMATION_DISABLED in v2.reasons
+    assert v2.disposition == decide(confident, off).disposition
+    strict = PolicyConfig(0.65, 0.99, True, True)
+    assert ReviewReason.LOW_CONFIDENCE in decide(confident, strict, POLICY_V2).reasons
+    with pytest.raises(ValueError):
+        decide(confident, off, "conservative/v9")
+
+
+def test_v1_fingerprints_are_unchanged_and_versions_differ_by_policy() -> None:
+    from wildinbox.policy.conservative import POLICY_V2
+
+    cfg = PolicyConfig(0.65, None, False, False, ())
+    assert cfg.version() == "conservative/v1+fe20c7586555"  # the released v1 policy
+    assert (
+        cfg.version(POLICY_V2).startswith("conservative/v2+")
+        and cfg.version(POLICY_V2) != cfg.version()
+    )

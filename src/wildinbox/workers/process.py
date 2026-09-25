@@ -396,7 +396,7 @@ def _decision(
         c["auto_accept_enabled"],
         tuple(c["accept_species"]) if c.get("accept_species") is not None else None,
     )
-    o = decide(frames, cfg)
+    o = decide(frames, cfg, release.policy["name"])
     return _values(o.disposition, o.label, o.confidence, o.reasons), release.policy_version
 
 
