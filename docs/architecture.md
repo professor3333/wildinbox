@@ -70,8 +70,9 @@ sequenceDiagram
     C->>A: GET /events, POST /events/{id}/reviews, GET /batches/{id}/export
 ```
 
-- **Grouping:** supplied sequence ids, otherwise the camera plus capture-time
-  gaps (an editable rule). Events are written only when the whole batch is
+- **Grouping:** supplied sequence ids scoped to their camera (the same id on
+  two cameras, or a counter reused hours later, is a different event),
+  otherwise the camera plus capture-time gaps (an editable rule). Events are written only when the whole batch is
   scored, never from a partial one.
 - **Every file keeps its place in its event.** A frame that fails to decode,
   is rejected at upload, or duplicates an earlier file remains a member of the

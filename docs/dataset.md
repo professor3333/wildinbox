@@ -17,6 +17,7 @@ several times produces several events.
 | Rule | Used for | Definition |
 |---|---|---|
 | `sequence_id/v1` | Public data (CCT20) | Images sharing a sequence id form one event. |
+| `sequence_id/v2` | Uploads with sequence ids | Images sharing the camera **and** the sequence id form one event, split where consecutive capture times are more than 5 minutes apart (camera counters restart and overlap). Frames without a time stay with the sequence. Per batch. |
 | `time_gap/v1(gap_s=5)` | Uploads without sequence ids | Same camera, ordered by timestamp; a new event starts when the gap to the previous image exceeds 5 s. No timestamp or no camera means a single-image event. Different cameras are never grouped. |
 
 The 5 s default comes from CCT20: every within-sequence gap is at most 3 s, so
