@@ -16,7 +16,10 @@ primary measure is seconds per event; accuracy against ground truth,
 interactions, and a 1-5 difficulty rating per block are secondary. The
 analysis (per-participant medians, paired difference, bootstrap interval,
 exclusion rules) is fixed in the protocol; it reports only descriptive numbers
-until at least 8 participants finished.
+until at least 8 participants finished. Amendment 1 (protocol version 2, made
+before any participant) adds the time saved **including audit effort**:
+projected reviewer minutes per 1,000 events for a grouped workflow versus
+WildInbox (events needing review plus the audit share of automatic ones).
 
 Study choices are stored in the study log only; they never become reviews, so
 participants cannot overwrite each other's labels or the production queue.

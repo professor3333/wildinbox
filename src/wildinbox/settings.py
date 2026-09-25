@@ -52,6 +52,11 @@ class Settings(BaseSettings):
     retry_backoff_max_seconds: int = Field(default=900, ge=0)
     recovery_interval_seconds: int = Field(default=30, gt=0)
 
+    # Share of automatically handled events (filtered or auto-labeled) sent to
+    # the audit queue anyway, so confident mistakes are measured.
+    audit_rate: float = Field(default=0.05, ge=0, le=1)
+    audit_seed: str = "wildinbox-audit-v1"
+
     # Input limits. Oversized batches are rejected whole; oversized or unsupported
     # files get individual error records.
     max_files_per_batch: int = Field(default=2000, gt=0)

@@ -215,6 +215,8 @@ def event_row(session: Session, event: Event, detail: bool = False) -> dict[str,
             "reasons": decision.reasons,
             "policy_version": decision.policy_version,
             "model_release_id": decision.model_release_id,
+            "audit_selected": decision.audit_selected,
+            "audit_rule": decision.audit_rule,
         },
         "release": _release(release) if release else None,
         "latest_review": _review(latest) if latest else None,
@@ -673,6 +675,7 @@ def create_app(
         label: str | None = None,
         reason: str | None = None,
         reviewed: bool | None = None,
+        audit: bool | None = None,
         start_after: datetime | None = None,
         start_before: datetime | None = None,
         limit: int = 100,
@@ -696,6 +699,8 @@ def create_app(
                 q = q.where(Event.decisions.any(Decision.reasons.contains([reason])))
             if reviewed is not None:
                 q = q.where(Event.reviews.any() if reviewed else ~Event.reviews.any())
+            if audit is not None:
+                q = q.where(Event.decisions.any(Decision.audit_selected.is_(audit)))
             if start_after is not None:
                 q = q.where(Event.start_at >= _naive(start_after))
             if start_before is not None:
@@ -771,7 +776,7 @@ def create_app(
 
     from wildinbox.api.study import add_study_routes
 
-    add_study_routes(app, sessions, list(cfg.classes), ApiError)
+    add_study_routes(app, sessions, list(cfg.classes), ApiError, settings.audit_rate)
 
     @app.get("/images/{image_id}/thumbnail")
     def get_thumbnail(image_id: uuid.UUID, size: int = 320) -> Response:

@@ -142,12 +142,21 @@ The demo walk-through, with a real run's output: [`docs/demo.md`](docs/demo.md).
 
 | Page | What it does |
 |---|---|
-| Review queue | Frames, suggestion, confidence, and why the event needs review. Accept, pick another label, type an unsupported species, or "can't tell"; the outcome (confirmed / corrected / unresolved) follows from the choice. |
-| Last night's visitors | The best frame of every animal event in one night, opening on the newest night with activity. |
+| Getting started | A one-screen guide for first-time users (no other documentation needed). |
 | Upload | Upload photos with a camera name; follow processing; see unusable files and why. |
-| Export | The observation CSV with provenance. |
+| Batches | Progress, counts, and failed files for every upload. |
+| Review queue | Events that need a person: frames, suggestion, confidence, and why. Accept, pick another species, choose empty, type an unsupported species, or "can't tell"; every event opens to all frames, per-frame predictions, and its full review history. |
+| Timeline | Events by day and camera. |
+| Last night's visitors | The best frame of every animal event in one night. |
+| Automatically filtered | Events automation set aside as empty; label one to recover it. |
+| Audit queue | A random sample (default 5%, `WILDINBOX_AUDIT_RATE`) of automatic decisions, each with the rule that chose it. |
+| Export | The observation CSV ([format](docs/export_format.md)). |
 | Monitoring | Alerts, operations, label-free signals, and review-based accuracy. |
 | Study | The timed review study for participants ([guide](docs/review_study.md)). |
+
+Labels are visibly different by source: ✅ confirmed by a person, ⚙️ decided
+automatically, 🤖 a suggestion nobody has reviewed, ❔ unresolved. Reviews are
+appended; the model's suggestion is never overwritten.
 
 ### API (`http://localhost:8000`, schema at `/docs`)
 
@@ -155,7 +164,7 @@ The demo walk-through, with a real run's output: [`docs/demo.md`](docs/demo.md).
 |---|---|
 | `POST /batches` | Upload `files` plus optional `metadata`; returns `202` with the batch and job. `Idempotency-Key` makes retries safe. |
 | `GET /batches`, `GET /batches/{id}` | Recent batches; progress, counts, every failed file, job lifecycle, pinned release |
-| `GET /batches/{id}/export` | Observations with provenance (`?format=csv` or `json`) |
+| `GET /batches/{id}/export` | Observations with provenance (`?format=csv` or `json`); columns in [`docs/export_format.md`](docs/export_format.md) |
 | `GET /events`, `GET /events/{id}` | Paginated, filterable events; frames, predictions, decision, reviews |
 | `POST /events/{id}/reviews` | Append a review |
 | `GET /version`, `GET /releases` | Active release; all releases and the activation history |

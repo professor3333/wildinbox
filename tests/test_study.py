@@ -272,3 +272,22 @@ def test_study_page_hides_suggestions_in_the_grouped_condition_and_logs_timing()
     assert all(t["seconds"] >= 0 and t["participant"] == "P7" for t in api.trials)
     assert [(r["block"], r["difficulty"]) for r in api.ratings] == [(1, 2), (2, 4)]
     assert any("Thank you" in s.value for s in at.success)
+
+
+def test_projected_workload_counts_audits_of_automatic_events() -> None:
+    export = _export(8, speedup=2.0)
+    export["workload"] = {
+        "dispositions": {"needs_review": 90, "likely_empty": 10},
+        "audit_rate": 0.1,
+    }
+    s = analyze(export, PROTOCOL)["summary"]
+    w = s["workload"]
+    t_g, t_s = s["median_seconds"]["grouped"], s["median_seconds"]["suggested"]
+    assert w["grouped_minutes"] == pytest.approx(1000 * t_g / 60)
+    assert w["system_minutes"] == pytest.approx(1000 * (0.9 + 0.1 * 0.1) * t_s / 60)
+    assert w["audit_minutes"] == pytest.approx(1000 * 0.1 * 0.1 * t_s / 60)
+    assert w["time_saved_share"] == pytest.approx(1 - w["system_minutes"] / w["grouped_minutes"])
+    # As released (automation off) the only saving is speed per event.
+    export["workload"] = {"dispositions": {"needs_review": 100}, "audit_rate": 0.05}
+    w = analyze(export, PROTOCOL)["summary"]["workload"]
+    assert w["audit_minutes"] == 0 and w["time_saved_share"] == pytest.approx(1 - t_s / t_g)

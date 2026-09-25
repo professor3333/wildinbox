@@ -135,5 +135,20 @@ def report(export: dict[str, Any], result: dict[str, Any]) -> str:
             f"{_p(g['accuracy'])} | {_p(sg['accuracy'])} | "
             f"{g['difficulty'] or '-'} / {sg['difficulty'] or '-'} |"
         )
+    w = s.get("workload")
+    if w:
+        lines += [
+            "",
+            f"**Projected reviewer time per {w['events']:,} events, audits included** "
+            f"(active release: {w['needs_review_share']:.0%} of events need review, "
+            f"{w['automatic_share']:.0%} handled automatically, audit rate {w['audit_rate']:.0%}):",
+            "",
+            "| Workflow | Minutes | Of which audits |",
+            "|---|---|---|",
+            f"| Grouped, no suggestions | {w['grouped_minutes']:.0f} | - |",
+            f"| WildInbox | {w['system_minutes']:.0f} | {w['audit_minutes']:.0f} |",
+            "",
+            f"Time saved: {_p(w['time_saved_share'])}.",
+        ]
     lines += ["", "Intervals: 95% bootstrap over participants.", ""]
     return "\n".join(lines)

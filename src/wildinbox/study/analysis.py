@@ -125,4 +125,34 @@ def analyze(export: dict[str, Any], protocol: dict[str, Any]) -> dict[str, Any]:
                 "(the interval includes zero or favours grouped review)"
             )
     summary["verdict"] = verdict
+    summary["workload"] = project_workload(summary, export.get("workload"), protocol)
     return {"summary": summary, "participants": rows}
+
+
+def project_workload(
+    summary: dict[str, Any], workload: dict[str, Any] | None, protocol: dict[str, Any]
+) -> dict[str, Any] | None:
+    """Amendment 1: reviewer minutes per N events, audits included."""
+    t = summary["median_seconds"]
+    if not workload or t["grouped"] is None or t["suggested"] is None:
+        return None
+    counts = workload["dispositions"]
+    total = sum(counts.values())
+    if not total:
+        return None
+    n = protocol["analysis"]["project_workload_per_events"]
+    review_share = counts.get("needs_review", 0) / total
+    automatic_share = 1 - review_share
+    rate = workload["audit_rate"]
+    grouped = n * t["grouped"] / 60
+    system = n * (review_share + automatic_share * rate) * t["suggested"] / 60
+    return {
+        "events": n,
+        "needs_review_share": review_share,
+        "automatic_share": automatic_share,
+        "audit_rate": rate,
+        "grouped_minutes": grouped,
+        "system_minutes": system,
+        "audit_minutes": n * automatic_share * rate * t["suggested"] / 60,
+        "time_saved_share": 1 - system / grouped if grouped else None,
+    }

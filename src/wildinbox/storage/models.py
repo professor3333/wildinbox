@@ -234,6 +234,9 @@ class Decision(Base):
     suggested_label: Mapped[str | None] = mapped_column(String(100))
     confidence: Mapped[float | None] = mapped_column(Float)
     reasons: Mapped[list[Any]]
+    # Automatic decisions sampled for a human audit, and the rule that chose them.
+    audit_selected: Mapped[bool] = mapped_column(Boolean, server_default=text("false"))
+    audit_rule: Mapped[str | None] = mapped_column(Text)
     created_at: Mapped[datetime] = _now()
 
     event: Mapped[Event] = relationship(back_populates="decisions")

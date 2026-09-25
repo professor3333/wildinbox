@@ -147,6 +147,10 @@ class FakeApi:
 
     def events(self, **params: Any) -> dict[str, Any]:
         items = list(self.items)
+        if params.get("disposition"):
+            items = [e for e in items if e["decision"]["disposition"] == params["disposition"]]
+        if params.get("audit") is not None:
+            items = [e for e in items if e["decision"].get("audit_selected") == params["audit"]]
         if params.get("reviewed") is False:
             items = [e for e in items if not e["latest_review"]]
         if params.get("start_after"):
@@ -165,7 +169,42 @@ class FakeApi:
 
     def event(self, eid: str) -> dict[str, Any]:
         e = next(e for e in self.items if e["id"] == eid)
-        return {**e, "images": [{"id": i, "prediction": None} for i in e["image_ids"]]}
+        images = [
+            {
+                "id": i,
+                "filename": f"{i}.jpg",
+                "frame_status": "completed",
+                "prediction": {
+                    "calibrated_probabilities": {"raccoon": 0.7, "empty": 0.3},
+                    "class_probabilities": {},
+                },
+            }
+            for i in e["image_ids"]
+        ]
+        reviews = (
+            [
+                {
+                    **e["latest_review"],
+                    "created_at": "2024-05-02T09:00:00",
+                    "suggested_label": e["decision"]["suggested_label"],
+                    "note": None,
+                }
+            ]
+            if e["latest_review"]
+            else []
+        )
+        return {**e, "images": images, "reviews": reviews}
+
+    def batch(self, batch_id: str) -> dict[str, Any]:
+        return {
+            "created_at": "2024-05-02T08:00:00",
+            "status": "completed_with_errors",
+            "counts": {"images": 7, "events": 3},
+            "progress": {"images_scored": 6, "images_to_score": 6, "finished": True},
+            "failures": [
+                {"filename": "broken.jpg", "stage": "validation", "error": "unreadable image"}
+            ],
+        }
 
     def thumbnail(self, image_id: str, size: int = 320) -> bytes:
         return _png()
@@ -288,3 +327,57 @@ def test_monitoring_page_separates_signals_from_measured_accuracy() -> None:
         "Signals per camera (no labels needed)",
         "Accuracy measured from reviews",
     ]
+
+
+def _auto_api() -> FakeApi:
+    api = FakeApi()
+    api.items.append(
+        {
+            **_event("f1", "empty", disposition="likely_empty"),
+            "decision": {
+                "disposition": "likely_empty",
+                "suggested_label": "empty",
+                "confidence": 0.97,
+                "reasons": [],
+                "audit_selected": True,
+                "audit_rule": "sha256-uniform(rate=0.05, seed=s)",
+            },
+        }
+    )
+    return api
+
+
+def test_filtered_view_finds_and_recovers_a_filtered_event() -> None:
+    api = _auto_api()
+    at = _app(api)
+    at.sidebar.text_input(key="reviewer").input("ranger").run()
+    at.sidebar.radio(key="page").set_value("Automatically filtered").run()
+    assert not at.exception
+    assert any("⚙️ empty" in m.value and "audit sample" in m.value for m in at.markdown)
+    at.selectbox(key="pick-f1").set_value("bobcat").run()
+    at.button(key="save-f1").click().run()
+    assert api.reviews[-1] == ("f1", "ranger", "corrected", "bobcat")
+
+
+def test_audit_queue_timeline_batches_details_and_guide_render() -> None:
+    api = _auto_api()
+    api.items[0]["latest_review"] = {
+        "outcome": "confirmed",
+        "confirmed_label": "raccoon",
+        "reviewer": "ann",
+    }
+    at = _app(api)
+    at.sidebar.radio(key="page").set_value("Audit queue").run()
+    assert not at.exception and any("f1" in (b.key or "") for b in at.button)
+    at.sidebar.radio(key="page").set_value("Timeline").run()
+    text = " ".join(m.value for m in at.markdown)
+    assert "✅ **raccoon**" in text and "🤖 suggested: empty" in text and "⚙️ empty" in text
+    at.sidebar.radio(key="page").set_value("Batches").run()
+    assert not at.exception and at.dataframe
+    at.sidebar.radio(key="page").set_value("Review queue").run()
+    at.radio(key="status").set_value("Reviewed").run()
+    at.toggle(key="detail-e1").set_value(True).run()
+    assert not at.exception
+    assert any("Review history" in m.value for m in at.markdown) and at.dataframe
+    at.sidebar.radio(key="page").set_value("Getting started").run()
+    assert any("Accept" in m.value and "other species" in m.value for m in at.markdown)

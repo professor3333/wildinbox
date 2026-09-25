@@ -231,7 +231,11 @@ def test_inference_failure_on_one_image_becomes_a_failed_frame(
 
 
 def _fake_model_dir(
-    tmp_path: Path, seed: int = 0, policy_name: str = POLICY_NAME
+    tmp_path: Path,
+    seed: int = 0,
+    policy_name: str = POLICY_NAME,
+    empty_threshold: float = 0.65,
+    auto_filter: bool = False,
 ) -> tuple[Path, Path]:
     cfg = load_config(REPO_ROOT / "configs/example.yaml")
     d = tmp_path / f"model-{seed}"
@@ -252,7 +256,7 @@ def _fake_model_dir(
             }
         )
     )
-    released = PolicyConfig(0.65, None, False, False, ())
+    released = PolicyConfig(empty_threshold, None, auto_filter, False, ())
     policy = {
         "policy": policy_name,
         "model": "tiny-test-model",
@@ -265,9 +269,9 @@ def _fake_model_dir(
         },
         "unfamiliar": None,
         "released": {
-            "empty_threshold": 0.65,
+            "empty_threshold": empty_threshold,
             "species_threshold": None,
-            "auto_filter_enabled": False,
+            "auto_filter_enabled": auto_filter,
             "auto_accept_enabled": False,
             "accept_species": [],
             "policy_version": released.version(policy_name),
@@ -513,4 +517,55 @@ def test_workers_decide_with_the_policy_their_release_names(
         (decision,) = s.scalars(select(Decision)).all()
         assert decision.policy_version.startswith("conservative/v2+")
         assert "low_confidence" not in decision.reasons or decision.suggested_label == "empty"
+    serving._LOADED.clear()
+
+
+def test_filtering_release_fills_the_filtered_view_and_samples_audits(
+    worker_settings: Settings, tmp_path: Path
+) -> None:
+    """A release WITH automatic filtering (a test release; the released model
+    filters nothing): filtered events stay findable, audits are sampled with a
+    recorded rule, and a reviewer can recover a filtered event."""
+    serving._LOADED.clear()
+    settings_all = worker_settings.model_copy(update={"audit_rate": 1.0})
+    model_dir, policy = _fake_model_dir(tmp_path, seed=5, empty_threshold=0.0001, auto_filter=True)
+    with TestClient(create_app(settings_all, dispatcher=NoopDispatcher())):
+        pass
+    with session_factory(settings_all.database_url)() as s:
+        release, _ = register_release(
+            s, LocalStore(settings_all.local_store_dir), model_dir, policy, None
+        )
+        activate(s, release.id)
+        s.commit()
+    batch = _upload(settings_all, 3)
+    process_batch(
+        session_factory(settings_all.database_url),
+        LocalStore(settings_all.local_store_dir),
+        uuid.UUID(batch["job"]["id"]),
+        settings_all,
+    )
+    with TestClient(create_app(settings_all, dispatcher=NoopDispatcher())) as c:
+        filtered = c.get("/events", params={"disposition": "likely_empty"}).json()
+        assert filtered["total"] == 1
+        (event,) = filtered["events"]
+        d = event["decision"]
+        assert d["audit_selected"] is True
+        assert d["audit_rule"] == "sha256-uniform(rate=1, seed=wildinbox-audit-v1)"
+        assert c.get("/events", params={"audit": True, "reviewed": False}).json()["total"] == 1
+        # Recover it: the reviewer saw an animal.
+        r = c.post(
+            f"/events/{event['id']}/reviews",
+            json={"reviewer": "auditor", "outcome": "corrected", "confirmed_label": "bobcat"},
+        )
+        assert r.status_code == 201
+        (row,) = c.get(f"/batches/{batch['id']}/export", params={"format": "json"}).json()[
+            "observations"
+        ]
+        assert (row["observation"], row["label_source"], row["disposition"]) == (
+            "bobcat",
+            "review",
+            "likely_empty",
+        )
+        assert row["audit_selected"] is True and row["audit_rule"].startswith("sha256-uniform")
+        assert c.get("/events", params={"audit": True, "reviewed": False}).json()["total"] == 0
     serving._LOADED.clear()
