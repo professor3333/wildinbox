@@ -15,11 +15,13 @@ W, H = 640, 360
 L, R, T, B = 64, 150, 44, 52  # plot margins; right margin holds direct labels
 STYLE = """
 .bg{fill:#fcfcfb}.t1{fill:#0b0b0b}.t2{fill:#52514e}.grid{stroke:#e6e5e1}.axis{stroke:#8a8983}
-.s1{stroke:#2a78d6;fill:#2a78d6}.s2{stroke:#eb6834;fill:#eb6834}.band{fill:#2a78d6;opacity:.14}
+.l1{stroke:#2a78d6;fill:none}.l2{stroke:#eb6834;fill:none}.m1{fill:#2a78d6}.m2{fill:#eb6834}
+.band{fill:#2a78d6;opacity:.14}
 .target{stroke:#52514e}.ring{stroke:#fcfcfb}
 @media (prefers-color-scheme: dark){
 .bg{fill:#1a1a19}.t1{fill:#ffffff}.t2{fill:#c3c2b7}.grid{stroke:#333331}.axis{stroke:#6f6e69}
-.s1{stroke:#3987e5;fill:#3987e5}.s2{stroke:#d95926;fill:#d95926}.band{fill:#3987e5;opacity:.2}
+.l1{stroke:#3987e5;fill:none}.l2{stroke:#d95926;fill:none}.m1{fill:#3987e5}.m2{fill:#d95926}
+.band{fill:#3987e5;opacity:.2}
 .target{stroke:#c3c2b7}.ring{stroke:#1a1a19}}
 text{font-family:-apple-system,Segoe UI,Helvetica,Arial,sans-serif}
 """
@@ -32,6 +34,7 @@ class Point:
     lo: float | None = None
     hi: float | None = None
     label: str = ""  # threshold, for the tooltip
+    mark: bool = True  # draw a marker (tables list the marked thresholds)
 
 
 @dataclass(frozen=True)
@@ -60,8 +63,8 @@ def render(
 ) -> str:
     pts = [p for s in series for p in s.points]
     x_max = _nice_max(max([p.x for p in pts] + [0.01]))
-    y_top = max([p.hi if p.hi is not None else p.y for p in pts] + [target * 1.5])
-    y_max = _nice_max(y_top)
+    # The axis follows the plotted values; wide intervals on tiny counts are clipped.
+    y_max = _nice_max(max([p.y for p in pts] + [target * 1.5]) * 1.1)
     pw, ph = W - L - R, H - T - B
 
     def sx(x: float) -> float:
@@ -109,33 +112,41 @@ def render(
             lower = " ".join(f"{sx(p.x):.1f},{sy(p.lo or 0):.1f}" for p in reversed(ordered))
             out.append(f'<polygon class="band" points="{upper} {lower}"/>')
         path = " ".join(f"{sx(p.x):.1f},{sy(p.y):.1f}" for p in ordered)
-        out.append(f'<polyline class="s{k}" points="{path}" fill="none" stroke-width="2"/>')
-        for p in ordered:
+        out.append(f'<polyline class="l{k}" points="{path}" stroke-width="2"/>')
+        for p in (p for p in ordered if p.mark):
             tip = (
                 f"{s.name} · threshold {p.label} · coverage {100 * p.x:.1f}% · "
                 f"error {100 * p.y:.1f}%"
             )
             out.append(
-                f'<circle class="s{k}" cx="{sx(p.x):.1f}" cy="{sy(p.y):.1f}" r="3">'
+                f'<circle class="m{k} ring" cx="{sx(p.x):.1f}" cy="{sy(p.y):.1f}" r="4" '
+                'stroke-width="2">'
                 f"<title>{escape(tip)}</title></circle>"
             )
-        last = ordered[-1]
+    # Direct labels at each line's right end, pushed apart so they never overlap.
+    ends = sorted(
+        ((sy(max(s.points, key=lambda p: p.x).y), s.name) for s in series), key=lambda e: e[0]
+    )
+    last_y = -1e9
+    for y, name in ends:
+        y = max(y, last_y + 14)
+        last_y = y
         out.append(
-            f'<text class="t1" x="{L + pw + 6}" y="{sy(last.y) + 4 + 13 * (k - 1):.1f}" '
-            f'font-size="11">{escape(s.name)}</text>'
+            f'<text class="t1" x="{L + pw + 6}" y="{y + 4:.1f}" font-size="11">'
+            f"{escape(name)}</text>"
         )
     if chosen is not None:
         out.append(
-            f'<circle class="s1 ring" cx="{sx(chosen.x):.1f}" cy="{sy(chosen.y):.1f}" r="6" '
+            f'<circle class="m1 ring" cx="{sx(chosen.x):.1f}" cy="{sy(chosen.y):.1f}" r="7" '
             'stroke-width="2"/>'
-            f'<text class="t1" x="{sx(chosen.x) + 9:.1f}" y="{sy(chosen.y) - 9:.1f}" '
+            f'<text class="t1" x="{sx(chosen.x) + 10:.1f}" y="{sy(chosen.y) + 20:.1f}" '
             f'font-size="11">{escape(chosen_label)}</text>'
         )
     # Legend (identity is never color-alone: names are also direct labels).
     lx = L
     for k, s in enumerate(series, start=1):
         out.append(
-            f'<line class="s{k}" x1="{lx}" x2="{lx + 16}" y1="36" y2="36" stroke-width="2"/>'
+            f'<line class="l{k}" x1="{lx}" x2="{lx + 16}" y1="36" y2="36" stroke-width="2"/>'
             f'<text class="t2" x="{lx + 20}" y="40" font-size="11">{escape(s.name)}</text>'
         )
         lx += 30 + 7 * len(s.name)

@@ -170,6 +170,7 @@ def _curves_section(report_dir: Path, r: dict[str, Any]) -> list[str]:
                 m["false_empty_rate_ci95"][0],
                 m["false_empty_rate_ci95"][1],
                 label=f"{m['thresholds']['empty_filter']:g}",
+                mark=m["thresholds"]["empty_filter"] in SHOWN,
             )
             for m in sweep
         ]
@@ -187,6 +188,7 @@ def _curves_section(report_dir: Path, r: dict[str, Any]) -> list[str]:
                     1 - hi,
                     1 - lo,
                     label=f"{m['thresholds']['species_accept']:g}",
+                    mark=m["thresholds"]["species_accept"] in SHOWN,
                 )
             )
         return out
