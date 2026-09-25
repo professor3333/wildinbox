@@ -1,0 +1,345 @@
+{
+  "label": "workers-2",
+  "run_tag": "workers-2-6c007d4a",
+  "started_at": "2026-09-25T14:01:10.296293+00:00",
+  "api": "http://localhost:8000",
+  "release": {
+    "id": "finetune-e3-deep-balanced@7a25aea97c76",
+    "weights_sha256": "3ab6fec236ce4b418acdda78f94078ec3bd6331983e2186bd52aa11a1fd9b360",
+    "preprocessing_version": "6d9a950a6543",
+    "policy_version": "conservative/v2+378312635a29",
+    "is_test": false
+  },
+  "machine": {
+    "instance_type": "m7i-flex.large",
+    "region": "us-east-1",
+    "vcpus": "2",
+    "memory_bytes": "8153993216",
+    "cpu": "Intel(R) Xeon(R) Platinum 8488C",
+    "kernel": "7.0.0-1013-aws",
+    "os": "Ubuntu 24.04.5 LTS",
+    "docker": "29.1.3",
+    "disk": "38G total, 27G free",
+    "containers": [
+      {
+        "Names": "wildinbox-staging-worker-2",
+        "Image": "wildinbox-staging:latest",
+        "Status": "Up 1 second"
+      },
+      {
+        "Names": "wildinbox-staging-ui-1",
+        "Image": "wildinbox-staging:latest",
+        "Status": "Up 39 minutes (healthy)"
+      },
+      {
+        "Names": "wildinbox-staging-api-1",
+        "Image": "wildinbox-staging:latest",
+        "Status": "Up 39 minutes (healthy)"
+      },
+      {
+        "Names": "wildinbox-staging-worker-1",
+        "Image": "wildinbox-staging:latest",
+        "Status": "Up 13 minutes"
+      },
+      {
+        "Names": "wildinbox-staging-postgres-1",
+        "Image": "postgres:16-alpine",
+        "Status": "Up About an hour (healthy)"
+      },
+      {
+        "Names": "wildinbox-staging-redis-1",
+        "Image": "redis:7-alpine",
+        "Status": "Up About an hour (healthy)"
+      }
+    ]
+  },
+  "image_bytes": {
+    "batch_dir": "data/samples/dev-1000",
+    "files": 1000,
+    "total": 109826774,
+    "mean": 109827
+  },
+  "scenarios": {
+    "thousand": {
+      "batches": [
+        {
+          "batch_id": "053553f6-cbdd-481e-94eb-5e60fc376acd",
+          "status": "completed",
+          "counts": {
+            "images": 1000,
+            "pending": 0,
+            "valid": 1000,
+            "invalid": 0,
+            "duplicate": 0,
+            "events": 348,
+            "processing_failed": 0
+          },
+          "upload": {
+            "files": 1000,
+            "bytes": 109876774,
+            "seconds": 7.01,
+            "server_phases_seconds": {
+              "receive": 0.48,
+              "validate": 0.11,
+              "store": 5.77,
+              "db": 0.52
+            },
+            "server_after_receive_seconds": 6.41,
+            "transfer_seconds": 0.61,
+            "transfer_mbit_per_s": 1441.0
+          },
+          "processing": {
+            "attempts": 1,
+            "worker": "193286b87eac:1:4c43b8c6",
+            "queued_seconds": 0.5,
+            "processing_seconds": 116.8,
+            "images_per_second": 8.56,
+            "run_seconds": 116.3
+          },
+          "integrity": {
+            "images": 1000,
+            "valid": 1000,
+            "predictions": 1000,
+            "duplicate_predictions": 0,
+            "valid_without_prediction": 0,
+            "events": 348,
+            "decisions": 348,
+            "events_without_one_decision": 0,
+            "ok": true
+          },
+          "failures": []
+        }
+      ],
+      "wall_seconds": 124.0,
+      "memory_peak_mib": {
+        "wildinbox-staging-api-1": 676,
+        "wildinbox-staging-postgres-1": 76,
+        "wildinbox-staging-redis-1": 4,
+        "wildinbox-staging-ui-1": 81,
+        "wildinbox-staging-worker-1": 502,
+        "wildinbox-staging-worker-2": 326
+      }
+    },
+    "concurrent": {
+      "batches": [
+        {
+          "batch_id": "080ca96c-142a-4fb3-b615-9caf2a883dbe",
+          "status": "completed",
+          "counts": {
+            "images": 1000,
+            "pending": 0,
+            "valid": 1000,
+            "invalid": 0,
+            "duplicate": 0,
+            "events": 348,
+            "processing_failed": 0
+          },
+          "upload": {
+            "files": 1000,
+            "bytes": 109880774,
+            "seconds": 9.28,
+            "server_phases_seconds": {
+              "receive": 0.63,
+              "validate": 0.14,
+              "store": 7.73,
+              "db": 0.64
+            },
+            "server_after_receive_seconds": 8.5,
+            "transfer_seconds": 0.77,
+            "transfer_mbit_per_s": 1141.6
+          },
+          "processing": {
+            "attempts": 1,
+            "worker": "645de8b3607d:1:8a6f1bdc",
+            "queued_seconds": 0.6,
+            "processing_seconds": 161.3,
+            "images_per_second": 6.2,
+            "run_seconds": 160.7
+          },
+          "integrity": {
+            "images": 1000,
+            "valid": 1000,
+            "predictions": 1000,
+            "duplicate_predictions": 0,
+            "valid_without_prediction": 0,
+            "events": 348,
+            "decisions": 348,
+            "events_without_one_decision": 0,
+            "ok": true
+          },
+          "failures": []
+        },
+        {
+          "batch_id": "4280f431-2056-453b-a47b-c94708001091",
+          "status": "completed",
+          "counts": {
+            "images": 1000,
+            "pending": 0,
+            "valid": 1000,
+            "invalid": 0,
+            "duplicate": 0,
+            "events": 348,
+            "processing_failed": 0
+          },
+          "upload": {
+            "files": 1000,
+            "bytes": 109880774,
+            "seconds": 10.01,
+            "server_phases_seconds": {
+              "receive": 0.78,
+              "validate": 0.42,
+              "store": 8.17,
+              "db": 0.58
+            },
+            "server_after_receive_seconds": 9.17,
+            "transfer_seconds": 0.85,
+            "transfer_mbit_per_s": 1034.2
+          },
+          "processing": {
+            "attempts": 1,
+            "worker": "193286b87eac:1:4c43b8c6",
+            "queued_seconds": 0.6,
+            "processing_seconds": 161.4,
+            "images_per_second": 6.19,
+            "run_seconds": 160.9
+          },
+          "integrity": {
+            "images": 1000,
+            "valid": 1000,
+            "predictions": 1000,
+            "duplicate_predictions": 0,
+            "valid_without_prediction": 0,
+            "events": 348,
+            "decisions": 348,
+            "events_without_one_decision": 0,
+            "ok": true
+          },
+          "failures": []
+        }
+      ],
+      "started_at": "2026-09-25T14:03:15.033961+00:00",
+      "makespan_seconds": 162.3,
+      "images_per_second": 12.32,
+      "distinct_workers": 2,
+      "wall_seconds": 171.8,
+      "memory_peak_mib": {
+        "wildinbox-staging-api-1": 778,
+        "wildinbox-staging-postgres-1": 82,
+        "wildinbox-staging-redis-1": 5,
+        "wildinbox-staging-ui-1": 94,
+        "wildinbox-staging-worker-1": 524,
+        "wildinbox-staging-worker-2": 496
+      }
+    }
+  },
+  "latency_client": {
+    "GET /version": {
+      "requests": 200,
+      "p50_ms": 3.3,
+      "p95_ms": 4.8,
+      "max_ms": 10.4
+    },
+    "GET /batches/{id}": {
+      "requests": 200,
+      "p50_ms": 42.5,
+      "p95_ms": 255.5,
+      "max_ms": 360.3
+    },
+    "GET /jobs/{id}": {
+      "requests": 200,
+      "p50_ms": 10.2,
+      "p95_ms": 23.5,
+      "max_ms": 40.8
+    },
+    "GET /events (100 per page)": {
+      "requests": 200,
+      "p50_ms": 243.4,
+      "p95_ms": 428.9,
+      "max_ms": 503.9
+    },
+    "GET /events/{id}": {
+      "requests": 200,
+      "p50_ms": 14.1,
+      "p95_ms": 25.6,
+      "max_ms": 53.2
+    }
+  },
+  "latency_server": {
+    "GET /batches/{batch_id}": {
+      "requests": 1700,
+      "p50_ms": 59.4,
+      "p95_ms": 322.1,
+      "responses": 1700,
+      "client_errors": 0,
+      "server_errors": 0
+    },
+    "GET /events": {
+      "requests": 412,
+      "p50_ms": 241.7,
+      "p95_ms": 373.6,
+      "responses": 412,
+      "client_errors": 0,
+      "server_errors": 0
+    },
+    "GET /events/{event_id}": {
+      "requests": 410,
+      "p50_ms": 12.5,
+      "p95_ms": 22.2,
+      "responses": 410,
+      "client_errors": 0,
+      "server_errors": 0
+    },
+    "GET /jobs/{job_id}": {
+      "requests": 410,
+      "p50_ms": 8.6,
+      "p95_ms": 17.0,
+      "responses": 410,
+      "client_errors": 0,
+      "server_errors": 0
+    },
+    "GET /monitoring": {
+      "requests": 1,
+      "p50_ms": 1589.1,
+      "p95_ms": 1589.1,
+      "responses": 1,
+      "client_errors": 0,
+      "server_errors": 0
+    },
+    "GET /ready": {
+      "requests": 275,
+      "p50_ms": 44.4,
+      "p95_ms": 104.3,
+      "responses": 275,
+      "client_errors": 0,
+      "server_errors": 0
+    },
+    "GET /version": {
+      "requests": 413,
+      "p50_ms": 2.2,
+      "p95_ms": 4.1,
+      "responses": 413,
+      "client_errors": 0,
+      "server_errors": 0
+    },
+    "POST /batches": {
+      "requests": 14,
+      "p50_ms": 8161.9,
+      "p95_ms": 39614.9,
+      "responses": 14,
+      "client_errors": 0,
+      "server_errors": 0
+    }
+  },
+  "memory": {
+    "peak_mib": {
+      "wildinbox-staging-api-1": 778,
+      "wildinbox-staging-postgres-1": 100,
+      "wildinbox-staging-redis-1": 5,
+      "wildinbox-staging-ui-1": 94,
+      "wildinbox-staging-worker-1": 524,
+      "wildinbox-staging-worker-2": 496
+    },
+    "samples": 732
+  },
+  "finished_at": "2026-09-25T14:07:23.904126+00:00"
+}
