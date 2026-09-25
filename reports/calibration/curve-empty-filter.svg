@@ -1,0 +1,61 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 360" width="640" height="360" role="img" aria-label="Empty filter: animals lost vs events filtered">
+<title>Empty filter: animals lost vs events filtered</title><style>
+.bg{fill:#fcfcfb}.t1{fill:#0b0b0b}.t2{fill:#52514e}.grid{stroke:#e6e5e1}.axis{stroke:#8a8983}
+.l1{stroke:#2a78d6;fill:none}.l2{stroke:#eb6834;fill:none}.m1{fill:#2a78d6}.m2{fill:#eb6834}
+.band{fill:#2a78d6;opacity:.14}
+.target{stroke:#52514e}.ring{stroke:#fcfcfb}
+@media (prefers-color-scheme: dark){
+.bg{fill:#1a1a19}.t1{fill:#ffffff}.t2{fill:#c3c2b7}.grid{stroke:#333331}.axis{stroke:#6f6e69}
+.l1{stroke:#3987e5;fill:none}.l2{stroke:#d95926;fill:none}.m1{fill:#3987e5}.m2{fill:#d95926}
+.band{fill:#3987e5;opacity:.2}
+.target{stroke:#c3c2b7}.ring{stroke:#1a1a19}}
+text{font-family:-apple-system,Segoe UI,Helvetica,Arial,sans-serif}
+</style>
+<rect class="bg" width="640" height="360"/>
+<text class="t1" x="64" y="24" font-size="15" font-weight="600">Empty filter: animals lost vs events filtered</text>
+<line class="grid" x1="64" x2="490" y1="308.0" y2="308.0"/><text class="t2" x="56" y="312.0" font-size="11" text-anchor="end">0%</text>
+<text class="t2" x="64.0" y="326" font-size="11" text-anchor="middle">0%</text>
+<line class="grid" x1="64" x2="490" y1="242.0" y2="242.0"/><text class="t2" x="56" y="246.0" font-size="11" text-anchor="end">2.5%</text>
+<text class="t2" x="170.5" y="326" font-size="11" text-anchor="middle">5%</text>
+<line class="grid" x1="64" x2="490" y1="176.0" y2="176.0"/><text class="t2" x="56" y="180.0" font-size="11" text-anchor="end">5%</text>
+<text class="t2" x="277.0" y="326" font-size="11" text-anchor="middle">10%</text>
+<line class="grid" x1="64" x2="490" y1="110.0" y2="110.0"/><text class="t2" x="56" y="114.0" font-size="11" text-anchor="end">7.5%</text>
+<text class="t2" x="383.5" y="326" font-size="11" text-anchor="middle">15%</text>
+<line class="grid" x1="64" x2="490" y1="44.0" y2="44.0"/><text class="t2" x="56" y="48.0" font-size="11" text-anchor="end">10%</text>
+<text class="t2" x="490.0" y="326" font-size="11" text-anchor="middle">20%</text>
+<line class="axis" x1="64" x2="490" y1="308" y2="308"/>
+<text class="t2" x="277.0" y="348" font-size="12" text-anchor="middle">Events filtered automatically (coverage)</text><text class="t2" transform="translate(16 176.0) rotate(-90)" font-size="12" text-anchor="middle">Animal events filtered as empty</text>
+<line class="target" x1="64" x2="490" y1="255.2" y2="255.2" stroke-width="1.5" stroke-dasharray="5 4"/><text class="t2" x="496" y="259.2" font-size="11">target 2%</text>
+<polygon class="band" points="64.0,296.2 64.0,296.2 64.0,296.2 64.0,296.2 64.0,296.2 68.5,296.2 75.3,296.2 77.6,296.2 82.1,296.2 82.1,296.2 84.4,296.2 84.4,296.2 93.5,290.5 93.5,290.5 95.8,290.5 95.8,290.5 95.8,290.5 100.3,290.5 100.3,290.5 104.8,290.5 107.1,290.5 109.4,285.5 113.9,285.5 116.2,285.5 116.2,285.5 118.4,280.8 118.4,280.8 120.7,280.8 120.7,280.8 127.5,276.3 129.8,276.3 138.9,263.5 145.7,255.4 150.2,255.4 150.2,255.4 150.2,255.4 150.2,255.4 161.5,247.4 166.1,247.4 172.9,239.6 175.2,239.6 177.4,239.6 177.4,239.6 179.7,239.6 184.2,235.8 195.6,220.6 202.4,209.4 211.4,198.4 225.1,180.2 234.1,169.5 240.9,158.8 243.2,155.2 243.2,227.1 240.9,229.7 234.1,237.5 225.1,245.2 211.4,257.9 202.4,265.3 195.6,272.7 184.2,282.1 179.7,284.4 177.4,284.4 177.4,284.4 175.2,284.4 172.9,284.4 166.1,289.0 161.5,289.0 150.2,293.3 150.2,293.3 150.2,293.3 150.2,293.3 145.7,293.3 138.9,297.5 129.8,303.2 127.5,303.2 120.7,304.8 120.7,304.8 118.4,304.8 118.4,304.8 116.2,306.3 116.2,306.3 113.9,306.3 109.4,306.3 107.1,307.5 104.8,307.5 100.3,307.5 100.3,307.5 95.8,307.5 95.8,307.5 95.8,307.5 93.5,307.5 93.5,307.5 84.4,308.0 84.4,308.0 82.1,308.0 82.1,308.0 77.6,308.0 75.3,308.0 68.5,308.0 64.0,308.0 64.0,308.0 64.0,308.0 64.0,308.0 64.0,308.0"/>
+<polyline class="l1" points="64.0,308.0 64.0,308.0 64.0,308.0 64.0,308.0 64.0,308.0 68.5,308.0 75.3,308.0 77.6,308.0 82.1,308.0 82.1,308.0 84.4,308.0 84.4,308.0 93.5,304.9 93.5,304.9 95.8,304.9 95.8,304.9 95.8,304.9 100.3,304.9 100.3,304.9 104.8,304.9 107.1,304.9 109.4,301.8 113.9,301.8 116.2,301.8 116.2,301.8 118.4,298.7 118.4,298.7 120.7,298.7 120.7,298.7 127.5,295.6 129.8,295.6 138.9,286.3 145.7,280.1 150.2,280.1 150.2,280.1 150.2,280.1 150.2,280.1 161.5,274.0 166.1,274.0 172.9,267.8 175.2,267.8 177.4,267.8 177.4,267.8 179.7,267.8 184.2,264.7 195.6,252.3 202.4,243.0 211.4,233.7 225.1,218.2 234.1,209.0 240.9,199.7 243.2,196.6" stroke-width="2"/>
+<circle class="m1 ring" cx="64.0" cy="308.0" r="4" stroke-width="2"><title>policy validation cameras · threshold 0.97 · coverage 0.0% · error 0.0%</title></circle>
+<circle class="m1 ring" cx="64.0" cy="308.0" r="4" stroke-width="2"><title>policy validation cameras · threshold 0.98 · coverage 0.0% · error 0.0%</title></circle>
+<circle class="m1 ring" cx="64.0" cy="308.0" r="4" stroke-width="2"><title>policy validation cameras · threshold 0.99 · coverage 0.0% · error 0.0%</title></circle>
+<circle class="m1 ring" cx="64.0" cy="308.0" r="4" stroke-width="2"><title>policy validation cameras · threshold 0.995 · coverage 0.0% · error 0.0%</title></circle>
+<circle class="m1 ring" cx="64.0" cy="308.0" r="4" stroke-width="2"><title>policy validation cameras · threshold 0.999 · coverage 0.0% · error 0.0%</title></circle>
+<circle class="m1 ring" cx="75.3" cy="308.0" r="4" stroke-width="2"><title>policy validation cameras · threshold 0.95 · coverage 0.5% · error 0.0%</title></circle>
+<circle class="m1 ring" cx="84.4" cy="308.0" r="4" stroke-width="2"><title>policy validation cameras · threshold 0.9 · coverage 1.0% · error 0.0%</title></circle>
+<circle class="m1 ring" cx="95.8" cy="304.9" r="4" stroke-width="2"><title>policy validation cameras · threshold 0.85 · coverage 1.5% · error 0.1%</title></circle>
+<circle class="m1 ring" cx="109.4" cy="301.8" r="4" stroke-width="2"><title>policy validation cameras · threshold 0.8 · coverage 2.1% · error 0.2%</title></circle>
+<circle class="m1 ring" cx="138.9" cy="286.3" r="4" stroke-width="2"><title>policy validation cameras · threshold 0.7 · coverage 3.5% · error 0.8%</title></circle>
+<circle class="m1 ring" cx="177.4" cy="267.8" r="4" stroke-width="2"><title>policy validation cameras · threshold 0.6 · coverage 5.3% · error 1.5%</title></circle>
+<circle class="m1 ring" cx="243.2" cy="196.6" r="4" stroke-width="2"><title>policy validation cameras · threshold 0.5 · coverage 8.4% · error 4.2%</title></circle>
+<polyline class="l2" points="64.0,308.0 64.0,308.0 64.0,308.0 66.3,308.0 66.3,308.0 68.7,308.0 68.7,308.0 71.0,308.0 75.7,308.0 82.8,304.4 87.5,304.4 99.2,300.7 99.2,300.7 110.9,293.4 122.6,293.4 132.0,293.4 143.8,282.5 157.8,267.9 169.6,253.3 176.6,246.0 190.7,242.4 202.4,238.7 216.5,235.1 230.6,231.4 239.9,227.8 251.7,224.1 261.0,220.5 270.4,220.5 277.5,213.2 279.8,213.2 296.2,198.6 305.6,191.3 312.7,187.7 322.0,176.7 329.1,173.1 333.8,165.8 340.8,162.1 345.5,158.5 350.2,158.5 357.2,154.9 364.3,154.9 366.6,154.9 366.6,154.9 371.3,151.2 373.6,151.2 376.0,151.2 383.0,143.9 385.4,140.3 385.4,140.3 385.4,140.3 385.4,140.3 390.1,140.3" stroke-width="2"/>
+<circle class="m2 ring" cx="64.0" cy="308.0" r="4" stroke-width="2"><title>calibration cameras · threshold 0.99 · coverage 0.0% · error 0.0%</title></circle>
+<circle class="m2 ring" cx="64.0" cy="308.0" r="4" stroke-width="2"><title>calibration cameras · threshold 0.995 · coverage 0.0% · error 0.0%</title></circle>
+<circle class="m2 ring" cx="64.0" cy="308.0" r="4" stroke-width="2"><title>calibration cameras · threshold 0.999 · coverage 0.0% · error 0.0%</title></circle>
+<circle class="m2 ring" cx="66.3" cy="308.0" r="4" stroke-width="2"><title>calibration cameras · threshold 0.97 · coverage 0.1% · error 0.0%</title></circle>
+<circle class="m2 ring" cx="66.3" cy="308.0" r="4" stroke-width="2"><title>calibration cameras · threshold 0.98 · coverage 0.1% · error 0.0%</title></circle>
+<circle class="m2 ring" cx="68.7" cy="308.0" r="4" stroke-width="2"><title>calibration cameras · threshold 0.95 · coverage 0.2% · error 0.0%</title></circle>
+<circle class="m2 ring" cx="99.2" cy="300.7" r="4" stroke-width="2"><title>calibration cameras · threshold 0.9 · coverage 1.7% · error 0.3%</title></circle>
+<circle class="m2 ring" cx="143.8" cy="282.5" r="4" stroke-width="2"><title>calibration cameras · threshold 0.85 · coverage 3.7% · error 1.0%</title></circle>
+<circle class="m2 ring" cx="202.4" cy="238.7" r="4" stroke-width="2"><title>calibration cameras · threshold 0.8 · coverage 6.5% · error 2.6%</title></circle>
+<circle class="m2 ring" cx="305.6" cy="191.3" r="4" stroke-width="2"><title>calibration cameras · threshold 0.7 · coverage 11.3% · error 4.4%</title></circle>
+<circle class="m2 ring" cx="366.6" cy="154.9" r="4" stroke-width="2"><title>calibration cameras · threshold 0.6 · coverage 14.2% · error 5.8%</title></circle>
+<circle class="m2 ring" cx="390.1" cy="140.3" r="4" stroke-width="2"><title>calibration cameras · threshold 0.5 · coverage 15.3% · error 6.4%</title></circle>
+<text class="t1" x="496" y="144.3" font-size="11">calibration cameras</text>
+<text class="t1" x="496" y="200.6" font-size="11">policy validation cameras</text>
+<circle class="m1 ring" cx="150.2" cy="280.1" r="7" stroke-width="2"/><text class="t1" x="160.2" y="300.1" font-size="11">rule: 0.65</text>
+<line class="l1" x1="64" x2="80" y1="36" y2="36" stroke-width="2"/><text class="t2" x="84" y="40" font-size="11">policy validation cameras</text>
+<line class="l2" x1="269" x2="285" y1="36" y2="36" stroke-width="2"/><text class="t2" x="289" y="40" font-size="11">calibration cameras</text>
+</svg>

@@ -1,0 +1,224 @@
+{
+  "model": "finetune-e3-deep-balanced",
+  "rule": "configs/experiments/unfamiliar.yaml",
+  "code": {
+    "commit": "88efc6bf2821880eaa1fe0cf459e67618097758f",
+    "dirty": false
+  },
+  "split_version": "cct20-splits-v1-7de740aba75f",
+  "temperature": 2.008255,
+  "species": {
+    "tuning": [
+      "squirrel",
+      "rodent"
+    ],
+    "held_out": [
+      "skunk",
+      "bird",
+      "badger",
+      "fox",
+      "deer"
+    ]
+  },
+  "max_false_flag_rate": 0.1,
+  "adopt_if_detection_gain": 0.05,
+  "detection_gain_on_fit": -0.015453,
+  "adopted": false,
+  "artifact": {
+    "method": "knn_cosine",
+    "k": 10,
+    "features": "penultimate",
+    "threshold": 0.514258,
+    "adopted": false,
+    "reference": {
+      "images": 20287,
+      "ids_digest": "feb80b9a059fce5f"
+    },
+    "weights_digest": "3ab6fec236ce",
+    "version": "66c288910007"
+  },
+  "partitions": {
+    "calibration": {
+      "images": 2641,
+      "known_images": 1557,
+      "tuning_species_images": 453,
+      "methods": {
+        "knn_cosine": {
+          "threshold": 0.514258,
+          "false_flags": {
+            "flagged": 155,
+            "n": 1557,
+            "rate": 0.09955,
+            "ci95": [
+              0.08565,
+              0.115422
+            ]
+          },
+          "detection": {
+            "flagged": 2,
+            "n": 453,
+            "rate": 0.004415,
+            "ci95": [
+              0.001212,
+              0.015953
+            ]
+          },
+          "auroc": 0.422494,
+          "detection_by_species": {
+            "rodent": {
+              "flagged": 2,
+              "n": 51,
+              "rate": 0.039216,
+              "ci95": [
+                0.010821,
+                0.132165
+              ]
+            },
+            "squirrel": {
+              "flagged": 0,
+              "n": 402,
+              "rate": 0.0,
+              "ci95": [
+                0.0,
+                0.009466
+              ]
+            }
+          }
+        },
+        "max_softmax": {
+          "threshold": 0.764595,
+          "false_flags": {
+            "flagged": 155,
+            "n": 1557,
+            "rate": 0.09955,
+            "ci95": [
+              0.08565,
+              0.115422
+            ]
+          },
+          "detection": {
+            "flagged": 9,
+            "n": 453,
+            "rate": 0.019868,
+            "ci95": [
+              0.010487,
+              0.037323
+            ]
+          },
+          "auroc": 0.424395,
+          "detection_by_species": {
+            "rodent": {
+              "flagged": 4,
+              "n": 51,
+              "rate": 0.078431,
+              "ci95": [
+                0.030922,
+                0.185002
+              ]
+            },
+            "squirrel": {
+              "flagged": 5,
+              "n": 402,
+              "rate": 0.012438,
+              "ci95": [
+                0.005324,
+                0.028782
+              ]
+            }
+          }
+        }
+      }
+    },
+    "policy_validation": {
+      "images": 2732,
+      "known_images": 2127,
+      "tuning_species_images": 297,
+      "methods": {
+        "knn_cosine": {
+          "threshold": 0.514258,
+          "false_flags": {
+            "flagged": 126,
+            "n": 2127,
+            "rate": 0.059238,
+            "ci95": [
+              0.049978,
+              0.070088
+            ]
+          },
+          "detection": {
+            "flagged": 0,
+            "n": 297,
+            "rate": 0.0,
+            "ci95": [
+              0.0,
+              0.01277
+            ]
+          },
+          "auroc": 0.401854,
+          "detection_by_species": {
+            "rodent": {
+              "flagged": 0,
+              "n": 0,
+              "rate": null,
+              "ci95": [
+                0.0,
+                1.0
+              ]
+            },
+            "squirrel": {
+              "flagged": 0,
+              "n": 297,
+              "rate": 0.0,
+              "ci95": [
+                0.0,
+                0.01277
+              ]
+            }
+          }
+        },
+        "max_softmax": {
+          "threshold": 0.764595,
+          "false_flags": {
+            "flagged": 97,
+            "n": 2127,
+            "rate": 0.045604,
+            "ci95": [
+              0.037527,
+              0.055319
+            ]
+          },
+          "detection": {
+            "flagged": 1,
+            "n": 297,
+            "rate": 0.003367,
+            "ci95": [
+              0.000595,
+              0.018823
+            ]
+          },
+          "auroc": 0.485642,
+          "detection_by_species": {
+            "rodent": {
+              "flagged": 0,
+              "n": 0,
+              "rate": null,
+              "ci95": [
+                0.0,
+                1.0
+              ]
+            },
+            "squirrel": {
+              "flagged": 1,
+              "n": 297,
+              "rate": 0.003367,
+              "ci95": [
+                0.000595,
+                0.018823
+              ]
+            }
+          }
+        }
+      }
+    }
+  }
+}
