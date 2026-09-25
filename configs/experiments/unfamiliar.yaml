@@ -1,0 +1,37 @@
+# Unfamiliar-input score rule, fixed BEFORE any unfamiliar score was computed.
+# Applied by: uv run wildinbox unfamiliar
+model: models/finetune-e3-deep-balanced
+
+score:
+  features: penultimate        # E3's pooled 1280-d features, L2-normalised
+  reference: train_fit         # training-partition fit images (supported classes + empty)
+  method: knn_cosine           # mean cosine distance to the k nearest reference features
+  k: 10
+  baseline: max_softmax        # 1 - max calibrated probability: "ordinary confidence"
+
+# Unsupported species (never fit by the classifier) split before any score exists.
+# Tuning species fit the threshold and decide whether the score is adopted.
+# Held-out species are never used during development, not even for reporting;
+# they are evaluated once, on the final test.
+species:
+  tuning: [squirrel, rodent]
+  held_out: [skunk, bird, badger, fox, deer]
+# Pretraining exposure (ImageNet-1k class list of the torchvision weights):
+#   squirrel: "fox squirrel"; rodent: related classes (hamster, marmot, beaver,
+#   porcupine, guinea pig); skunk: "skunk"; badger: "badger"; fox: red, kit,
+#   Arctic, grey fox; bird: many bird classes; deer: no deer class.
+#   So every unfamiliar species here was unseen during fine-tuning, and all but
+#   deer were present in pretraining. Deer has no development or final-test events.
+
+fit_on: calibration            # threshold and adoption decision
+check_on: policy_validation    # reported, not used to choose anything
+
+# Frames are flagged when the score exceeds the threshold. The threshold flags
+# at most this fraction of supported-species animal images on fit_on.
+max_false_flag_rate: 0.10
+
+# Adopt the distance score in the policy only if, at that false-flag rate, it
+# flags tuning-species images at least this much more often (absolute) than
+# the max-softmax baseline at the same false-flag rate, on fit_on.
+# Otherwise the policy uses confidence only and the score is reported.
+adopt_if_detection_gain: 0.05

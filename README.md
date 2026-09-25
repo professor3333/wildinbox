@@ -212,20 +212,33 @@ model card: [`docs/model_card.md`](docs/model_card.md).
 ## Calibration and operating point
 
 ```bash
-uv run wildinbox calibrate      # temperature scaling + threshold rule -> reports/calibration/
+uv run wildinbox unfamiliar     # unfamiliar-input score vs confidence -> reports/unfamiliar/
+uv run wildinbox calibrate      # calibration, decision policy, operating point -> reports/calibration/
+uv run wildinbox replay         # recompute every saved event decision (no data download needed)
 ```
 
-Fits temperature scaling on the calibration cameras, then applies the rule in
-[`configs/experiments/operating_point.yaml`](configs/experiments/operating_point.yaml)
-(committed before any calibrated result existed) on the policy-validation
-cameras: a threshold is enabled only if the worst case of its 95% interval
+`unfamiliar` evaluates a distance-from-training-images score against ordinary
+confidence under
+[`configs/experiments/unfamiliar.yaml`](configs/experiments/unfamiliar.yaml):
+squirrel and rodent tune it; skunk, bird, badger, fox, and deer are held out
+for the final test. `calibrate` fits temperature scaling on the calibration
+cameras, then applies the rule in
+[`configs/experiments/operating_point_v2.yaml`](configs/experiments/operating_point_v2.yaml)
+(committed before any v2 result existed) with the versioned `conservative/v1`
+policy on the policy-validation cameras: a threshold is enabled only if the worst case of its 95% interval
 meets the target (at most 2% of animal events filtered as empty; at least 95%
 of accepted labels correct). A recorded deviation
 ([`configs/experiments/operating_point_deviation.yaml`](configs/experiments/operating_point_deviation.yaml))
-can only switch automation off. Current release: **automatic filtering and
+can only switch automation off. Species also need their own precision
+evidence before they can be accepted. It writes the versioned policy artifact
+([`reports/calibration/policy.json`](reports/calibration/policy.json)) and every
+development event's saved predictions and decisions, which `replay` (and CI)
+reproduces exactly. Events with a pending or failed frame are never filtered;
+review reasons are machine-readable. Current release: **automatic filtering and
 automatic acceptance are both off**; every event goes to review with its
-suggested label. Results and trade-off curves:
-[`reports/calibration/README.md`](reports/calibration/README.md).
+suggested label. Results and error-versus-coverage curves:
+[`reports/calibration/README.md`](reports/calibration/README.md),
+[`reports/unfamiliar/README.md`](reports/unfamiliar/README.md).
 
 ## Data and weights
 

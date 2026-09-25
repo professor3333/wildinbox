@@ -50,14 +50,14 @@ def test_conflicting_species_go_to_review() -> None:
     ]
     o = decide_event(frames, T)
     assert o.disposition is Disposition.NEEDS_REVIEW
-    assert o.reasons == [ReviewReason.CONFLICTING_SPECIES]
+    assert o.reasons == [ReviewReason.CONFLICTING_FRAMES, ReviewReason.LOW_CONFIDENCE]
 
 
 def test_low_confidence_and_unfamiliar_go_to_review() -> None:
     low = decide_event([{"empty": 0.3, "raccoon": 0.7}], T)
     assert low.reasons == [ReviewReason.LOW_CONFIDENCE]
     odd = decide_event([{"empty": 0.0, "raccoon": 1.0}], T, unfamiliar=[True])
-    assert odd.reasons == [ReviewReason.POSSIBLE_UNSUPPORTED_INPUT]
+    assert odd.reasons == [ReviewReason.POSSIBLE_UNKNOWN]
 
 
 # ----------------------------------------------------------------- metrics

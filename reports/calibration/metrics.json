@@ -1,11 +1,57 @@
 {
   "model": "finetune-e3-deep-balanced",
-  "rule": "configs/experiments/operating_point.yaml",
+  "rule": "configs/experiments/operating_point_v2.yaml",
+  "rule_version": 2,
   "code": {
-    "commit": "14f02bbc658d28cbc1565fb84f545dcaee00357d",
+    "commit": "1e6aa3af2b6f2abe608fbb6917cf5dde0edb9786",
     "dirty": false
   },
   "split_version": "cct20-splits-v1-7de740aba75f",
+  "policy": {
+    "policy": "conservative/v1",
+    "model": "finetune-e3-deep-balanced",
+    "classes": [
+      "empty",
+      "bobcat",
+      "cat",
+      "coyote",
+      "dog",
+      "opossum",
+      "rabbit",
+      "raccoon"
+    ],
+    "calibration": {
+      "method": "temperature",
+      "temperature": 2.008255,
+      "fit_partition": "calibration",
+      "weights_digest": "3ab6fec236ce",
+      "version": "55cdb7daad08"
+    },
+    "unfamiliar": {
+      "version": "66c288910007",
+      "method": "knn_cosine",
+      "k": 10,
+      "threshold": 0.514258,
+      "adopted": false
+    },
+    "released": {
+      "empty_threshold": 0.65,
+      "species_threshold": null,
+      "auto_filter_enabled": false,
+      "auto_accept_enabled": false,
+      "accept_species": [],
+      "policy_version": "conservative/v1+fe20c7586555"
+    },
+    "rule": {
+      "empty_threshold": 0.65,
+      "species_threshold": null,
+      "auto_filter_enabled": true,
+      "auto_accept_enabled": false,
+      "accept_species": [],
+      "policy_version": "conservative/v1+1dba9bb7ad2b"
+    },
+    "artifact_version": "518a8da39ee0"
+  },
   "calibration": {
     "method": "temperature",
     "temperature": 2.008255,
@@ -416,6 +462,8 @@
     "rule_auto_accept_enabled": false,
     "auto_filter_enabled": false,
     "auto_accept_enabled": false,
+    "accept_species": [],
+    "species_gate": {},
     "deviation": {
       "disable_auto_filter": true,
       "disable_auto_accept": false,
@@ -452,6 +500,7 @@
       "accepted_wrong_by_true_role": {},
       "unsupported_events": 123,
       "unsupported_accepted_as_known": 0,
+      "accepted_by_species": {},
       "needs_review": 901,
       "review_fraction": 0.959531
     },
@@ -480,6 +529,7 @@
       "accepted_wrong_by_true_role": {},
       "unsupported_events": 203,
       "unsupported_accepted_as_known": 0,
+      "accepted_by_species": {},
       "needs_review": 790,
       "review_fraction": 0.870044
     },
@@ -510,6 +560,7 @@
         "accepted_wrong_by_true_role": {},
         "unsupported_events": 81,
         "unsupported_accepted_as_known": 0,
+        "accepted_by_species": {},
         "needs_review": 410,
         "review_fraction": 0.785441
       },
@@ -539,6 +590,7 @@
         "accepted_wrong_by_true_role": {},
         "unsupported_events": 122,
         "unsupported_accepted_as_known": 0,
+        "accepted_by_species": {},
         "needs_review": 380,
         "review_fraction": 0.984456
       },
@@ -568,6 +620,7 @@
         "accepted_wrong_by_true_role": {},
         "unsupported_events": 99,
         "unsupported_accepted_as_known": 0,
+        "accepted_by_species": {},
         "needs_review": 330,
         "review_fraction": 0.942857
       },
@@ -597,6 +650,7 @@
         "accepted_wrong_by_true_role": {},
         "unsupported_events": 24,
         "unsupported_accepted_as_known": 0,
+        "accepted_by_species": {},
         "needs_review": 571,
         "review_fraction": 0.96944
       }
@@ -629,6 +683,7 @@
         "accepted_wrong_by_true_role": {},
         "unsupported_events": 123,
         "unsupported_accepted_as_known": 0,
+        "accepted_by_species": {},
         "needs_review": 860,
         "review_fraction": 0.915868,
         "passes": false
@@ -658,6 +713,7 @@
         "accepted_wrong_by_true_role": {},
         "unsupported_events": 123,
         "unsupported_accepted_as_known": 0,
+        "accepted_by_species": {},
         "needs_review": 861,
         "review_fraction": 0.916933,
         "passes": false
@@ -687,6 +743,7 @@
         "accepted_wrong_by_true_role": {},
         "unsupported_events": 123,
         "unsupported_accepted_as_known": 0,
+        "accepted_by_species": {},
         "needs_review": 864,
         "review_fraction": 0.920128,
         "passes": false
@@ -716,6 +773,7 @@
         "accepted_wrong_by_true_role": {},
         "unsupported_events": 123,
         "unsupported_accepted_as_known": 0,
+        "accepted_by_species": {},
         "needs_review": 868,
         "review_fraction": 0.924388,
         "passes": false
@@ -745,6 +803,7 @@
         "accepted_wrong_by_true_role": {},
         "unsupported_events": 123,
         "unsupported_accepted_as_known": 0,
+        "accepted_by_species": {},
         "needs_review": 874,
         "review_fraction": 0.930777,
         "passes": false
@@ -774,6 +833,7 @@
         "accepted_wrong_by_true_role": {},
         "unsupported_events": 123,
         "unsupported_accepted_as_known": 0,
+        "accepted_by_species": {},
         "needs_review": 878,
         "review_fraction": 0.935037,
         "passes": false
@@ -803,6 +863,7 @@
         "accepted_wrong_by_true_role": {},
         "unsupported_events": 123,
         "unsupported_accepted_as_known": 0,
+        "accepted_by_species": {},
         "needs_review": 881,
         "review_fraction": 0.938232,
         "passes": false
@@ -832,6 +893,7 @@
         "accepted_wrong_by_true_role": {},
         "unsupported_events": 123,
         "unsupported_accepted_as_known": 0,
+        "accepted_by_species": {},
         "needs_review": 886,
         "review_fraction": 0.943557,
         "passes": false
@@ -861,6 +923,7 @@
         "accepted_wrong_by_true_role": {},
         "unsupported_events": 123,
         "unsupported_accepted_as_known": 0,
+        "accepted_by_species": {},
         "needs_review": 888,
         "review_fraction": 0.945687,
         "passes": false
@@ -890,6 +953,7 @@
         "accepted_wrong_by_true_role": {},
         "unsupported_events": 123,
         "unsupported_accepted_as_known": 0,
+        "accepted_by_species": {},
         "needs_review": 889,
         "review_fraction": 0.946752,
         "passes": false
@@ -919,6 +983,7 @@
         "accepted_wrong_by_true_role": {},
         "unsupported_events": 123,
         "unsupported_accepted_as_known": 0,
+        "accepted_by_species": {},
         "needs_review": 889,
         "review_fraction": 0.946752,
         "passes": false
@@ -948,6 +1013,7 @@
         "accepted_wrong_by_true_role": {},
         "unsupported_events": 123,
         "unsupported_accepted_as_known": 0,
+        "accepted_by_species": {},
         "needs_review": 890,
         "review_fraction": 0.947817,
         "passes": false
@@ -977,6 +1043,7 @@
         "accepted_wrong_by_true_role": {},
         "unsupported_events": 123,
         "unsupported_accepted_as_known": 0,
+        "accepted_by_species": {},
         "needs_review": 891,
         "review_fraction": 0.948882,
         "passes": false
@@ -1006,6 +1073,7 @@
         "accepted_wrong_by_true_role": {},
         "unsupported_events": 123,
         "unsupported_accepted_as_known": 0,
+        "accepted_by_species": {},
         "needs_review": 894,
         "review_fraction": 0.952077,
         "passes": false
@@ -1035,6 +1103,7 @@
         "accepted_wrong_by_true_role": {},
         "unsupported_events": 123,
         "unsupported_accepted_as_known": 0,
+        "accepted_by_species": {},
         "needs_review": 896,
         "review_fraction": 0.954207,
         "passes": false
@@ -1064,6 +1133,7 @@
         "accepted_wrong_by_true_role": {},
         "unsupported_events": 123,
         "unsupported_accepted_as_known": 0,
+        "accepted_by_species": {},
         "needs_review": 901,
         "review_fraction": 0.959531,
         "passes": true
@@ -1093,6 +1163,7 @@
         "accepted_wrong_by_true_role": {},
         "unsupported_events": 123,
         "unsupported_accepted_as_known": 0,
+        "accepted_by_species": {},
         "needs_review": 901,
         "review_fraction": 0.959531,
         "passes": true
@@ -1122,6 +1193,7 @@
         "accepted_wrong_by_true_role": {},
         "unsupported_events": 123,
         "unsupported_accepted_as_known": 0,
+        "accepted_by_species": {},
         "needs_review": 901,
         "review_fraction": 0.959531,
         "passes": true
@@ -1151,6 +1223,7 @@
         "accepted_wrong_by_true_role": {},
         "unsupported_events": 123,
         "unsupported_accepted_as_known": 0,
+        "accepted_by_species": {},
         "needs_review": 901,
         "review_fraction": 0.959531,
         "passes": true
@@ -1180,6 +1253,7 @@
         "accepted_wrong_by_true_role": {},
         "unsupported_events": 123,
         "unsupported_accepted_as_known": 0,
+        "accepted_by_species": {},
         "needs_review": 903,
         "review_fraction": 0.961661,
         "passes": true
@@ -1209,6 +1283,7 @@
         "accepted_wrong_by_true_role": {},
         "unsupported_events": 123,
         "unsupported_accepted_as_known": 0,
+        "accepted_by_species": {},
         "needs_review": 906,
         "review_fraction": 0.964856,
         "passes": true
@@ -1238,6 +1313,7 @@
         "accepted_wrong_by_true_role": {},
         "unsupported_events": 123,
         "unsupported_accepted_as_known": 0,
+        "accepted_by_species": {},
         "needs_review": 910,
         "review_fraction": 0.969116,
         "passes": true
@@ -1267,6 +1343,7 @@
         "accepted_wrong_by_true_role": {},
         "unsupported_events": 123,
         "unsupported_accepted_as_known": 0,
+        "accepted_by_species": {},
         "needs_review": 911,
         "review_fraction": 0.970181,
         "passes": true
@@ -1296,6 +1373,7 @@
         "accepted_wrong_by_true_role": {},
         "unsupported_events": 123,
         "unsupported_accepted_as_known": 0,
+        "accepted_by_species": {},
         "needs_review": 914,
         "review_fraction": 0.973376,
         "passes": true
@@ -1325,6 +1403,7 @@
         "accepted_wrong_by_true_role": {},
         "unsupported_events": 123,
         "unsupported_accepted_as_known": 0,
+        "accepted_by_species": {},
         "needs_review": 914,
         "review_fraction": 0.973376,
         "passes": true
@@ -1354,6 +1433,7 @@
         "accepted_wrong_by_true_role": {},
         "unsupported_events": 123,
         "unsupported_accepted_as_known": 0,
+        "accepted_by_species": {},
         "needs_review": 915,
         "review_fraction": 0.974441,
         "passes": true
@@ -1383,6 +1463,7 @@
         "accepted_wrong_by_true_role": {},
         "unsupported_events": 123,
         "unsupported_accepted_as_known": 0,
+        "accepted_by_species": {},
         "needs_review": 915,
         "review_fraction": 0.974441,
         "passes": true
@@ -1412,6 +1493,7 @@
         "accepted_wrong_by_true_role": {},
         "unsupported_events": 123,
         "unsupported_accepted_as_known": 0,
+        "accepted_by_species": {},
         "needs_review": 916,
         "review_fraction": 0.975506,
         "passes": true
@@ -1441,6 +1523,7 @@
         "accepted_wrong_by_true_role": {},
         "unsupported_events": 123,
         "unsupported_accepted_as_known": 0,
+        "accepted_by_species": {},
         "needs_review": 916,
         "review_fraction": 0.975506,
         "passes": true
@@ -1470,6 +1553,7 @@
         "accepted_wrong_by_true_role": {},
         "unsupported_events": 123,
         "unsupported_accepted_as_known": 0,
+        "accepted_by_species": {},
         "needs_review": 917,
         "review_fraction": 0.976571,
         "passes": true
@@ -1499,6 +1583,7 @@
         "accepted_wrong_by_true_role": {},
         "unsupported_events": 123,
         "unsupported_accepted_as_known": 0,
+        "accepted_by_species": {},
         "needs_review": 919,
         "review_fraction": 0.978701,
         "passes": true
@@ -1528,6 +1613,7 @@
         "accepted_wrong_by_true_role": {},
         "unsupported_events": 123,
         "unsupported_accepted_as_known": 0,
+        "accepted_by_species": {},
         "needs_review": 920,
         "review_fraction": 0.979766,
         "passes": true
@@ -1557,6 +1643,7 @@
         "accepted_wrong_by_true_role": {},
         "unsupported_events": 123,
         "unsupported_accepted_as_known": 0,
+        "accepted_by_species": {},
         "needs_review": 921,
         "review_fraction": 0.980831,
         "passes": true
@@ -1586,6 +1673,7 @@
         "accepted_wrong_by_true_role": {},
         "unsupported_events": 123,
         "unsupported_accepted_as_known": 0,
+        "accepted_by_species": {},
         "needs_review": 923,
         "review_fraction": 0.982961,
         "passes": true
@@ -1615,6 +1703,7 @@
         "accepted_wrong_by_true_role": {},
         "unsupported_events": 123,
         "unsupported_accepted_as_known": 0,
+        "accepted_by_species": {},
         "needs_review": 923,
         "review_fraction": 0.982961,
         "passes": true
@@ -1644,6 +1733,7 @@
         "accepted_wrong_by_true_role": {},
         "unsupported_events": 123,
         "unsupported_accepted_as_known": 0,
+        "accepted_by_species": {},
         "needs_review": 925,
         "review_fraction": 0.985091,
         "passes": true
@@ -1673,6 +1763,7 @@
         "accepted_wrong_by_true_role": {},
         "unsupported_events": 123,
         "unsupported_accepted_as_known": 0,
+        "accepted_by_species": {},
         "needs_review": 925,
         "review_fraction": 0.985091,
         "passes": true
@@ -1702,6 +1793,7 @@
         "accepted_wrong_by_true_role": {},
         "unsupported_events": 123,
         "unsupported_accepted_as_known": 0,
+        "accepted_by_species": {},
         "needs_review": 925,
         "review_fraction": 0.985091,
         "passes": true
@@ -1731,6 +1823,7 @@
         "accepted_wrong_by_true_role": {},
         "unsupported_events": 123,
         "unsupported_accepted_as_known": 0,
+        "accepted_by_species": {},
         "needs_review": 926,
         "review_fraction": 0.986155,
         "passes": true
@@ -1760,6 +1853,7 @@
         "accepted_wrong_by_true_role": {},
         "unsupported_events": 123,
         "unsupported_accepted_as_known": 0,
+        "accepted_by_species": {},
         "needs_review": 926,
         "review_fraction": 0.986155,
         "passes": true
@@ -1789,6 +1883,7 @@
         "accepted_wrong_by_true_role": {},
         "unsupported_events": 123,
         "unsupported_accepted_as_known": 0,
+        "accepted_by_species": {},
         "needs_review": 930,
         "review_fraction": 0.990415,
         "passes": true
@@ -1818,6 +1913,7 @@
         "accepted_wrong_by_true_role": {},
         "unsupported_events": 123,
         "unsupported_accepted_as_known": 0,
+        "accepted_by_species": {},
         "needs_review": 930,
         "review_fraction": 0.990415,
         "passes": true
@@ -1847,6 +1943,7 @@
         "accepted_wrong_by_true_role": {},
         "unsupported_events": 123,
         "unsupported_accepted_as_known": 0,
+        "accepted_by_species": {},
         "needs_review": 931,
         "review_fraction": 0.99148,
         "passes": true
@@ -1876,6 +1973,7 @@
         "accepted_wrong_by_true_role": {},
         "unsupported_events": 123,
         "unsupported_accepted_as_known": 0,
+        "accepted_by_species": {},
         "needs_review": 931,
         "review_fraction": 0.99148,
         "passes": true
@@ -1905,6 +2003,7 @@
         "accepted_wrong_by_true_role": {},
         "unsupported_events": 123,
         "unsupported_accepted_as_known": 0,
+        "accepted_by_species": {},
         "needs_review": 933,
         "review_fraction": 0.99361,
         "passes": true
@@ -1934,6 +2033,7 @@
         "accepted_wrong_by_true_role": {},
         "unsupported_events": 123,
         "unsupported_accepted_as_known": 0,
+        "accepted_by_species": {},
         "needs_review": 934,
         "review_fraction": 0.994675,
         "passes": true
@@ -1963,6 +2063,7 @@
         "accepted_wrong_by_true_role": {},
         "unsupported_events": 123,
         "unsupported_accepted_as_known": 0,
+        "accepted_by_species": {},
         "needs_review": 937,
         "review_fraction": 0.99787,
         "passes": true
@@ -1992,6 +2093,7 @@
         "accepted_wrong_by_true_role": {},
         "unsupported_events": 123,
         "unsupported_accepted_as_known": 0,
+        "accepted_by_species": {},
         "needs_review": 939,
         "review_fraction": 1.0,
         "passes": true
@@ -2021,6 +2123,7 @@
         "accepted_wrong_by_true_role": {},
         "unsupported_events": 123,
         "unsupported_accepted_as_known": 0,
+        "accepted_by_species": {},
         "needs_review": 939,
         "review_fraction": 1.0,
         "passes": true
@@ -2050,6 +2153,7 @@
         "accepted_wrong_by_true_role": {},
         "unsupported_events": 123,
         "unsupported_accepted_as_known": 0,
+        "accepted_by_species": {},
         "needs_review": 939,
         "review_fraction": 1.0,
         "passes": true
@@ -2079,6 +2183,7 @@
         "accepted_wrong_by_true_role": {},
         "unsupported_events": 123,
         "unsupported_accepted_as_known": 0,
+        "accepted_by_species": {},
         "needs_review": 939,
         "review_fraction": 1.0,
         "passes": true
@@ -2108,6 +2213,7 @@
         "accepted_wrong_by_true_role": {},
         "unsupported_events": 123,
         "unsupported_accepted_as_known": 0,
+        "accepted_by_species": {},
         "needs_review": 939,
         "review_fraction": 1.0,
         "passes": true
@@ -2147,6 +2253,36 @@
         },
         "unsupported_events": 123,
         "unsupported_accepted_as_known": 21,
+        "accepted_by_species": {
+          "bobcat": {
+            "accepted": 67,
+            "correct": 56
+          },
+          "cat": {
+            "accepted": 11,
+            "correct": 3
+          },
+          "coyote": {
+            "accepted": 46,
+            "correct": 12
+          },
+          "dog": {
+            "accepted": 17,
+            "correct": 8
+          },
+          "opossum": {
+            "accepted": 56,
+            "correct": 53
+          },
+          "rabbit": {
+            "accepted": 1,
+            "correct": 0
+          },
+          "raccoon": {
+            "accepted": 21,
+            "correct": 17
+          }
+        },
         "needs_review": 682,
         "review_fraction": 0.726305,
         "passes": false
@@ -2184,6 +2320,36 @@
         },
         "unsupported_events": 123,
         "unsupported_accepted_as_known": 20,
+        "accepted_by_species": {
+          "bobcat": {
+            "accepted": 62,
+            "correct": 53
+          },
+          "cat": {
+            "accepted": 10,
+            "correct": 3
+          },
+          "coyote": {
+            "accepted": 44,
+            "correct": 11
+          },
+          "dog": {
+            "accepted": 17,
+            "correct": 8
+          },
+          "opossum": {
+            "accepted": 56,
+            "correct": 53
+          },
+          "rabbit": {
+            "accepted": 1,
+            "correct": 0
+          },
+          "raccoon": {
+            "accepted": 20,
+            "correct": 17
+          }
+        },
         "needs_review": 691,
         "review_fraction": 0.735889,
         "passes": false
@@ -2221,6 +2387,36 @@
         },
         "unsupported_events": 123,
         "unsupported_accepted_as_known": 20,
+        "accepted_by_species": {
+          "bobcat": {
+            "accepted": 56,
+            "correct": 47
+          },
+          "cat": {
+            "accepted": 9,
+            "correct": 3
+          },
+          "coyote": {
+            "accepted": 43,
+            "correct": 11
+          },
+          "dog": {
+            "accepted": 16,
+            "correct": 7
+          },
+          "opossum": {
+            "accepted": 54,
+            "correct": 51
+          },
+          "rabbit": {
+            "accepted": 1,
+            "correct": 0
+          },
+          "raccoon": {
+            "accepted": 20,
+            "correct": 17
+          }
+        },
         "needs_review": 702,
         "review_fraction": 0.747604,
         "passes": false
@@ -2258,6 +2454,36 @@
         },
         "unsupported_events": 123,
         "unsupported_accepted_as_known": 18,
+        "accepted_by_species": {
+          "bobcat": {
+            "accepted": 55,
+            "correct": 46
+          },
+          "cat": {
+            "accepted": 6,
+            "correct": 3
+          },
+          "coyote": {
+            "accepted": 40,
+            "correct": 11
+          },
+          "dog": {
+            "accepted": 16,
+            "correct": 7
+          },
+          "opossum": {
+            "accepted": 54,
+            "correct": 51
+          },
+          "rabbit": {
+            "accepted": 1,
+            "correct": 0
+          },
+          "raccoon": {
+            "accepted": 20,
+            "correct": 17
+          }
+        },
         "needs_review": 709,
         "review_fraction": 0.755059,
         "passes": false
@@ -2295,6 +2521,36 @@
         },
         "unsupported_events": 123,
         "unsupported_accepted_as_known": 18,
+        "accepted_by_species": {
+          "bobcat": {
+            "accepted": 52,
+            "correct": 44
+          },
+          "cat": {
+            "accepted": 6,
+            "correct": 3
+          },
+          "coyote": {
+            "accepted": 40,
+            "correct": 11
+          },
+          "dog": {
+            "accepted": 15,
+            "correct": 7
+          },
+          "opossum": {
+            "accepted": 54,
+            "correct": 51
+          },
+          "rabbit": {
+            "accepted": 1,
+            "correct": 0
+          },
+          "raccoon": {
+            "accepted": 20,
+            "correct": 17
+          }
+        },
         "needs_review": 713,
         "review_fraction": 0.759318,
         "passes": false
@@ -2332,6 +2588,36 @@
         },
         "unsupported_events": 123,
         "unsupported_accepted_as_known": 18,
+        "accepted_by_species": {
+          "bobcat": {
+            "accepted": 52,
+            "correct": 44
+          },
+          "cat": {
+            "accepted": 6,
+            "correct": 3
+          },
+          "coyote": {
+            "accepted": 38,
+            "correct": 11
+          },
+          "dog": {
+            "accepted": 14,
+            "correct": 7
+          },
+          "opossum": {
+            "accepted": 52,
+            "correct": 49
+          },
+          "rabbit": {
+            "accepted": 1,
+            "correct": 0
+          },
+          "raccoon": {
+            "accepted": 19,
+            "correct": 16
+          }
+        },
         "needs_review": 719,
         "review_fraction": 0.765708,
         "passes": false
@@ -2369,6 +2655,36 @@
         },
         "unsupported_events": 123,
         "unsupported_accepted_as_known": 15,
+        "accepted_by_species": {
+          "bobcat": {
+            "accepted": 49,
+            "correct": 42
+          },
+          "cat": {
+            "accepted": 6,
+            "correct": 3
+          },
+          "coyote": {
+            "accepted": 35,
+            "correct": 11
+          },
+          "dog": {
+            "accepted": 14,
+            "correct": 7
+          },
+          "opossum": {
+            "accepted": 51,
+            "correct": 48
+          },
+          "rabbit": {
+            "accepted": 1,
+            "correct": 0
+          },
+          "raccoon": {
+            "accepted": 17,
+            "correct": 15
+          }
+        },
         "needs_review": 728,
         "review_fraction": 0.775293,
         "passes": false
@@ -2405,6 +2721,36 @@
         },
         "unsupported_events": 123,
         "unsupported_accepted_as_known": 14,
+        "accepted_by_species": {
+          "bobcat": {
+            "accepted": 47,
+            "correct": 40
+          },
+          "cat": {
+            "accepted": 6,
+            "correct": 3
+          },
+          "coyote": {
+            "accepted": 31,
+            "correct": 10
+          },
+          "dog": {
+            "accepted": 13,
+            "correct": 6
+          },
+          "opossum": {
+            "accepted": 51,
+            "correct": 48
+          },
+          "rabbit": {
+            "accepted": 1,
+            "correct": 0
+          },
+          "raccoon": {
+            "accepted": 17,
+            "correct": 15
+          }
+        },
         "needs_review": 735,
         "review_fraction": 0.782748,
         "passes": false
@@ -2441,6 +2787,36 @@
         },
         "unsupported_events": 123,
         "unsupported_accepted_as_known": 13,
+        "accepted_by_species": {
+          "bobcat": {
+            "accepted": 45,
+            "correct": 38
+          },
+          "cat": {
+            "accepted": 6,
+            "correct": 3
+          },
+          "coyote": {
+            "accepted": 30,
+            "correct": 10
+          },
+          "dog": {
+            "accepted": 13,
+            "correct": 6
+          },
+          "opossum": {
+            "accepted": 47,
+            "correct": 45
+          },
+          "rabbit": {
+            "accepted": 1,
+            "correct": 0
+          },
+          "raccoon": {
+            "accepted": 17,
+            "correct": 15
+          }
+        },
         "needs_review": 742,
         "review_fraction": 0.790202,
         "passes": false
@@ -2477,6 +2853,36 @@
         },
         "unsupported_events": 123,
         "unsupported_accepted_as_known": 13,
+        "accepted_by_species": {
+          "bobcat": {
+            "accepted": 45,
+            "correct": 38
+          },
+          "cat": {
+            "accepted": 6,
+            "correct": 3
+          },
+          "coyote": {
+            "accepted": 28,
+            "correct": 9
+          },
+          "dog": {
+            "accepted": 13,
+            "correct": 6
+          },
+          "opossum": {
+            "accepted": 47,
+            "correct": 45
+          },
+          "rabbit": {
+            "accepted": 1,
+            "correct": 0
+          },
+          "raccoon": {
+            "accepted": 17,
+            "correct": 15
+          }
+        },
         "needs_review": 744,
         "review_fraction": 0.792332,
         "passes": false
@@ -2513,6 +2919,36 @@
         },
         "unsupported_events": 123,
         "unsupported_accepted_as_known": 10,
+        "accepted_by_species": {
+          "bobcat": {
+            "accepted": 42,
+            "correct": 35
+          },
+          "cat": {
+            "accepted": 6,
+            "correct": 3
+          },
+          "coyote": {
+            "accepted": 26,
+            "correct": 9
+          },
+          "dog": {
+            "accepted": 13,
+            "correct": 6
+          },
+          "opossum": {
+            "accepted": 46,
+            "correct": 44
+          },
+          "rabbit": {
+            "accepted": 1,
+            "correct": 0
+          },
+          "raccoon": {
+            "accepted": 16,
+            "correct": 15
+          }
+        },
         "needs_review": 751,
         "review_fraction": 0.799787,
         "passes": false
@@ -2549,6 +2985,36 @@
         },
         "unsupported_events": 123,
         "unsupported_accepted_as_known": 10,
+        "accepted_by_species": {
+          "bobcat": {
+            "accepted": 40,
+            "correct": 33
+          },
+          "cat": {
+            "accepted": 6,
+            "correct": 3
+          },
+          "coyote": {
+            "accepted": 24,
+            "correct": 9
+          },
+          "dog": {
+            "accepted": 13,
+            "correct": 6
+          },
+          "opossum": {
+            "accepted": 42,
+            "correct": 40
+          },
+          "rabbit": {
+            "accepted": 1,
+            "correct": 0
+          },
+          "raccoon": {
+            "accepted": 15,
+            "correct": 14
+          }
+        },
         "needs_review": 760,
         "review_fraction": 0.809372,
         "passes": false
@@ -2585,6 +3051,36 @@
         },
         "unsupported_events": 123,
         "unsupported_accepted_as_known": 9,
+        "accepted_by_species": {
+          "bobcat": {
+            "accepted": 38,
+            "correct": 32
+          },
+          "cat": {
+            "accepted": 5,
+            "correct": 3
+          },
+          "coyote": {
+            "accepted": 23,
+            "correct": 9
+          },
+          "dog": {
+            "accepted": 13,
+            "correct": 6
+          },
+          "opossum": {
+            "accepted": 40,
+            "correct": 39
+          },
+          "rabbit": {
+            "accepted": 1,
+            "correct": 0
+          },
+          "raccoon": {
+            "accepted": 15,
+            "correct": 14
+          }
+        },
         "needs_review": 766,
         "review_fraction": 0.815761,
         "passes": false
@@ -2621,6 +3117,36 @@
         },
         "unsupported_events": 123,
         "unsupported_accepted_as_known": 9,
+        "accepted_by_species": {
+          "bobcat": {
+            "accepted": 33,
+            "correct": 27
+          },
+          "cat": {
+            "accepted": 5,
+            "correct": 3
+          },
+          "coyote": {
+            "accepted": 23,
+            "correct": 9
+          },
+          "dog": {
+            "accepted": 13,
+            "correct": 6
+          },
+          "opossum": {
+            "accepted": 40,
+            "correct": 39
+          },
+          "rabbit": {
+            "accepted": 1,
+            "correct": 0
+          },
+          "raccoon": {
+            "accepted": 14,
+            "correct": 13
+          }
+        },
         "needs_review": 772,
         "review_fraction": 0.822151,
         "passes": false
@@ -2657,6 +3183,36 @@
         },
         "unsupported_events": 123,
         "unsupported_accepted_as_known": 9,
+        "accepted_by_species": {
+          "bobcat": {
+            "accepted": 32,
+            "correct": 26
+          },
+          "cat": {
+            "accepted": 5,
+            "correct": 3
+          },
+          "coyote": {
+            "accepted": 22,
+            "correct": 9
+          },
+          "dog": {
+            "accepted": 13,
+            "correct": 6
+          },
+          "opossum": {
+            "accepted": 37,
+            "correct": 36
+          },
+          "rabbit": {
+            "accepted": 1,
+            "correct": 0
+          },
+          "raccoon": {
+            "accepted": 14,
+            "correct": 13
+          }
+        },
         "needs_review": 777,
         "review_fraction": 0.827476,
         "passes": false
@@ -2693,6 +3249,36 @@
         },
         "unsupported_events": 123,
         "unsupported_accepted_as_known": 6,
+        "accepted_by_species": {
+          "bobcat": {
+            "accepted": 32,
+            "correct": 26
+          },
+          "cat": {
+            "accepted": 4,
+            "correct": 2
+          },
+          "coyote": {
+            "accepted": 17,
+            "correct": 8
+          },
+          "dog": {
+            "accepted": 13,
+            "correct": 6
+          },
+          "opossum": {
+            "accepted": 34,
+            "correct": 34
+          },
+          "rabbit": {
+            "accepted": 1,
+            "correct": 0
+          },
+          "raccoon": {
+            "accepted": 14,
+            "correct": 13
+          }
+        },
         "needs_review": 786,
         "review_fraction": 0.837061,
         "passes": false
@@ -2729,6 +3315,36 @@
         },
         "unsupported_events": 123,
         "unsupported_accepted_as_known": 4,
+        "accepted_by_species": {
+          "bobcat": {
+            "accepted": 32,
+            "correct": 26
+          },
+          "cat": {
+            "accepted": 3,
+            "correct": 2
+          },
+          "coyote": {
+            "accepted": 14,
+            "correct": 8
+          },
+          "dog": {
+            "accepted": 13,
+            "correct": 6
+          },
+          "opossum": {
+            "accepted": 34,
+            "correct": 34
+          },
+          "rabbit": {
+            "accepted": 1,
+            "correct": 0
+          },
+          "raccoon": {
+            "accepted": 13,
+            "correct": 12
+          }
+        },
         "needs_review": 791,
         "review_fraction": 0.842386,
         "passes": false
@@ -2765,6 +3381,32 @@
         },
         "unsupported_events": 123,
         "unsupported_accepted_as_known": 4,
+        "accepted_by_species": {
+          "bobcat": {
+            "accepted": 30,
+            "correct": 24
+          },
+          "cat": {
+            "accepted": 3,
+            "correct": 2
+          },
+          "coyote": {
+            "accepted": 14,
+            "correct": 8
+          },
+          "dog": {
+            "accepted": 13,
+            "correct": 6
+          },
+          "opossum": {
+            "accepted": 33,
+            "correct": 33
+          },
+          "raccoon": {
+            "accepted": 13,
+            "correct": 12
+          }
+        },
         "needs_review": 795,
         "review_fraction": 0.846645,
         "passes": false
@@ -2801,6 +3443,32 @@
         },
         "unsupported_events": 123,
         "unsupported_accepted_as_known": 4,
+        "accepted_by_species": {
+          "bobcat": {
+            "accepted": 29,
+            "correct": 24
+          },
+          "cat": {
+            "accepted": 2,
+            "correct": 2
+          },
+          "coyote": {
+            "accepted": 14,
+            "correct": 8
+          },
+          "dog": {
+            "accepted": 11,
+            "correct": 4
+          },
+          "opossum": {
+            "accepted": 32,
+            "correct": 32
+          },
+          "raccoon": {
+            "accepted": 13,
+            "correct": 12
+          }
+        },
         "needs_review": 800,
         "review_fraction": 0.85197,
         "passes": false
@@ -2837,6 +3505,32 @@
         },
         "unsupported_events": 123,
         "unsupported_accepted_as_known": 4,
+        "accepted_by_species": {
+          "bobcat": {
+            "accepted": 27,
+            "correct": 22
+          },
+          "cat": {
+            "accepted": 2,
+            "correct": 2
+          },
+          "coyote": {
+            "accepted": 13,
+            "correct": 8
+          },
+          "dog": {
+            "accepted": 11,
+            "correct": 4
+          },
+          "opossum": {
+            "accepted": 27,
+            "correct": 27
+          },
+          "raccoon": {
+            "accepted": 13,
+            "correct": 12
+          }
+        },
         "needs_review": 808,
         "review_fraction": 0.86049,
         "passes": false
@@ -2873,6 +3567,32 @@
         },
         "unsupported_events": 123,
         "unsupported_accepted_as_known": 4,
+        "accepted_by_species": {
+          "bobcat": {
+            "accepted": 21,
+            "correct": 17
+          },
+          "cat": {
+            "accepted": 1,
+            "correct": 1
+          },
+          "coyote": {
+            "accepted": 13,
+            "correct": 8
+          },
+          "dog": {
+            "accepted": 11,
+            "correct": 4
+          },
+          "opossum": {
+            "accepted": 26,
+            "correct": 26
+          },
+          "raccoon": {
+            "accepted": 13,
+            "correct": 12
+          }
+        },
         "needs_review": 816,
         "review_fraction": 0.86901,
         "passes": false
@@ -2909,6 +3629,32 @@
         },
         "unsupported_events": 123,
         "unsupported_accepted_as_known": 4,
+        "accepted_by_species": {
+          "bobcat": {
+            "accepted": 20,
+            "correct": 17
+          },
+          "cat": {
+            "accepted": 1,
+            "correct": 1
+          },
+          "coyote": {
+            "accepted": 13,
+            "correct": 8
+          },
+          "dog": {
+            "accepted": 10,
+            "correct": 3
+          },
+          "opossum": {
+            "accepted": 26,
+            "correct": 26
+          },
+          "raccoon": {
+            "accepted": 13,
+            "correct": 12
+          }
+        },
         "needs_review": 818,
         "review_fraction": 0.87114,
         "passes": false
@@ -2945,6 +3691,28 @@
         },
         "unsupported_events": 123,
         "unsupported_accepted_as_known": 4,
+        "accepted_by_species": {
+          "bobcat": {
+            "accepted": 20,
+            "correct": 17
+          },
+          "coyote": {
+            "accepted": 12,
+            "correct": 7
+          },
+          "dog": {
+            "accepted": 10,
+            "correct": 3
+          },
+          "opossum": {
+            "accepted": 24,
+            "correct": 24
+          },
+          "raccoon": {
+            "accepted": 13,
+            "correct": 12
+          }
+        },
         "needs_review": 822,
         "review_fraction": 0.875399,
         "passes": false
@@ -2981,6 +3749,28 @@
         },
         "unsupported_events": 123,
         "unsupported_accepted_as_known": 4,
+        "accepted_by_species": {
+          "bobcat": {
+            "accepted": 19,
+            "correct": 16
+          },
+          "coyote": {
+            "accepted": 11,
+            "correct": 6
+          },
+          "dog": {
+            "accepted": 8,
+            "correct": 1
+          },
+          "opossum": {
+            "accepted": 23,
+            "correct": 23
+          },
+          "raccoon": {
+            "accepted": 12,
+            "correct": 11
+          }
+        },
         "needs_review": 828,
         "review_fraction": 0.881789,
         "passes": false
@@ -3017,6 +3807,28 @@
         },
         "unsupported_events": 123,
         "unsupported_accepted_as_known": 4,
+        "accepted_by_species": {
+          "bobcat": {
+            "accepted": 19,
+            "correct": 16
+          },
+          "coyote": {
+            "accepted": 11,
+            "correct": 6
+          },
+          "dog": {
+            "accepted": 8,
+            "correct": 1
+          },
+          "opossum": {
+            "accepted": 19,
+            "correct": 19
+          },
+          "raccoon": {
+            "accepted": 12,
+            "correct": 11
+          }
+        },
         "needs_review": 832,
         "review_fraction": 0.886049,
         "passes": false
@@ -3053,6 +3865,28 @@
         },
         "unsupported_events": 123,
         "unsupported_accepted_as_known": 4,
+        "accepted_by_species": {
+          "bobcat": {
+            "accepted": 18,
+            "correct": 15
+          },
+          "coyote": {
+            "accepted": 11,
+            "correct": 6
+          },
+          "dog": {
+            "accepted": 8,
+            "correct": 1
+          },
+          "opossum": {
+            "accepted": 18,
+            "correct": 18
+          },
+          "raccoon": {
+            "accepted": 11,
+            "correct": 10
+          }
+        },
         "needs_review": 835,
         "review_fraction": 0.889244,
         "passes": false
@@ -3089,6 +3923,28 @@
         },
         "unsupported_events": 123,
         "unsupported_accepted_as_known": 3,
+        "accepted_by_species": {
+          "bobcat": {
+            "accepted": 17,
+            "correct": 15
+          },
+          "coyote": {
+            "accepted": 10,
+            "correct": 6
+          },
+          "dog": {
+            "accepted": 8,
+            "correct": 1
+          },
+          "opossum": {
+            "accepted": 16,
+            "correct": 16
+          },
+          "raccoon": {
+            "accepted": 11,
+            "correct": 10
+          }
+        },
         "needs_review": 839,
         "review_fraction": 0.893504,
         "passes": false
@@ -3125,6 +3981,28 @@
         },
         "unsupported_events": 123,
         "unsupported_accepted_as_known": 3,
+        "accepted_by_species": {
+          "bobcat": {
+            "accepted": 12,
+            "correct": 11
+          },
+          "coyote": {
+            "accepted": 10,
+            "correct": 6
+          },
+          "dog": {
+            "accepted": 7,
+            "correct": 1
+          },
+          "opossum": {
+            "accepted": 14,
+            "correct": 14
+          },
+          "raccoon": {
+            "accepted": 11,
+            "correct": 10
+          }
+        },
         "needs_review": 847,
         "review_fraction": 0.902023,
         "passes": false
@@ -3160,6 +4038,28 @@
         },
         "unsupported_events": 123,
         "unsupported_accepted_as_known": 2,
+        "accepted_by_species": {
+          "bobcat": {
+            "accepted": 9,
+            "correct": 9
+          },
+          "coyote": {
+            "accepted": 8,
+            "correct": 5
+          },
+          "dog": {
+            "accepted": 6,
+            "correct": 1
+          },
+          "opossum": {
+            "accepted": 14,
+            "correct": 14
+          },
+          "raccoon": {
+            "accepted": 10,
+            "correct": 9
+          }
+        },
         "needs_review": 854,
         "review_fraction": 0.909478,
         "passes": false
@@ -3195,6 +4095,28 @@
         },
         "unsupported_events": 123,
         "unsupported_accepted_as_known": 2,
+        "accepted_by_species": {
+          "bobcat": {
+            "accepted": 6,
+            "correct": 6
+          },
+          "coyote": {
+            "accepted": 8,
+            "correct": 5
+          },
+          "dog": {
+            "accepted": 6,
+            "correct": 1
+          },
+          "opossum": {
+            "accepted": 12,
+            "correct": 12
+          },
+          "raccoon": {
+            "accepted": 10,
+            "correct": 9
+          }
+        },
         "needs_review": 859,
         "review_fraction": 0.914803,
         "passes": false
@@ -3230,6 +4152,28 @@
         },
         "unsupported_events": 123,
         "unsupported_accepted_as_known": 1,
+        "accepted_by_species": {
+          "bobcat": {
+            "accepted": 6,
+            "correct": 6
+          },
+          "coyote": {
+            "accepted": 6,
+            "correct": 4
+          },
+          "dog": {
+            "accepted": 5,
+            "correct": 1
+          },
+          "opossum": {
+            "accepted": 10,
+            "correct": 10
+          },
+          "raccoon": {
+            "accepted": 8,
+            "correct": 7
+          }
+        },
         "needs_review": 866,
         "review_fraction": 0.922258,
         "passes": false
@@ -3265,6 +4209,28 @@
         },
         "unsupported_events": 123,
         "unsupported_accepted_as_known": 1,
+        "accepted_by_species": {
+          "bobcat": {
+            "accepted": 5,
+            "correct": 5
+          },
+          "coyote": {
+            "accepted": 6,
+            "correct": 4
+          },
+          "dog": {
+            "accepted": 5,
+            "correct": 1
+          },
+          "opossum": {
+            "accepted": 9,
+            "correct": 9
+          },
+          "raccoon": {
+            "accepted": 8,
+            "correct": 7
+          }
+        },
         "needs_review": 868,
         "review_fraction": 0.924388,
         "passes": false
@@ -3300,6 +4266,28 @@
         },
         "unsupported_events": 123,
         "unsupported_accepted_as_known": 1,
+        "accepted_by_species": {
+          "bobcat": {
+            "accepted": 4,
+            "correct": 4
+          },
+          "coyote": {
+            "accepted": 5,
+            "correct": 3
+          },
+          "dog": {
+            "accepted": 4,
+            "correct": 1
+          },
+          "opossum": {
+            "accepted": 9,
+            "correct": 9
+          },
+          "raccoon": {
+            "accepted": 8,
+            "correct": 7
+          }
+        },
         "needs_review": 871,
         "review_fraction": 0.927583,
         "passes": false
@@ -3334,6 +4322,28 @@
         },
         "unsupported_events": 123,
         "unsupported_accepted_as_known": 0,
+        "accepted_by_species": {
+          "bobcat": {
+            "accepted": 4,
+            "correct": 4
+          },
+          "coyote": {
+            "accepted": 4,
+            "correct": 3
+          },
+          "dog": {
+            "accepted": 4,
+            "correct": 1
+          },
+          "opossum": {
+            "accepted": 8,
+            "correct": 8
+          },
+          "raccoon": {
+            "accepted": 8,
+            "correct": 7
+          }
+        },
         "needs_review": 873,
         "review_fraction": 0.929712,
         "passes": false
@@ -3368,6 +4378,28 @@
         },
         "unsupported_events": 123,
         "unsupported_accepted_as_known": 0,
+        "accepted_by_species": {
+          "bobcat": {
+            "accepted": 4,
+            "correct": 4
+          },
+          "coyote": {
+            "accepted": 3,
+            "correct": 3
+          },
+          "dog": {
+            "accepted": 4,
+            "correct": 1
+          },
+          "opossum": {
+            "accepted": 7,
+            "correct": 7
+          },
+          "raccoon": {
+            "accepted": 6,
+            "correct": 5
+          }
+        },
         "needs_review": 877,
         "review_fraction": 0.933972,
         "passes": false
@@ -3402,6 +4434,28 @@
         },
         "unsupported_events": 123,
         "unsupported_accepted_as_known": 0,
+        "accepted_by_species": {
+          "bobcat": {
+            "accepted": 3,
+            "correct": 3
+          },
+          "coyote": {
+            "accepted": 3,
+            "correct": 3
+          },
+          "dog": {
+            "accepted": 2,
+            "correct": 1
+          },
+          "opossum": {
+            "accepted": 6,
+            "correct": 6
+          },
+          "raccoon": {
+            "accepted": 6,
+            "correct": 5
+          }
+        },
         "needs_review": 881,
         "review_fraction": 0.938232,
         "passes": false
@@ -3436,6 +4490,28 @@
         },
         "unsupported_events": 123,
         "unsupported_accepted_as_known": 0,
+        "accepted_by_species": {
+          "bobcat": {
+            "accepted": 3,
+            "correct": 3
+          },
+          "coyote": {
+            "accepted": 3,
+            "correct": 3
+          },
+          "dog": {
+            "accepted": 2,
+            "correct": 1
+          },
+          "opossum": {
+            "accepted": 6,
+            "correct": 6
+          },
+          "raccoon": {
+            "accepted": 6,
+            "correct": 5
+          }
+        },
         "needs_review": 881,
         "review_fraction": 0.938232,
         "passes": false
@@ -3470,6 +4546,28 @@
         },
         "unsupported_events": 123,
         "unsupported_accepted_as_known": 0,
+        "accepted_by_species": {
+          "bobcat": {
+            "accepted": 2,
+            "correct": 2
+          },
+          "coyote": {
+            "accepted": 1,
+            "correct": 1
+          },
+          "dog": {
+            "accepted": 1,
+            "correct": 1
+          },
+          "opossum": {
+            "accepted": 6,
+            "correct": 6
+          },
+          "raccoon": {
+            "accepted": 6,
+            "correct": 5
+          }
+        },
         "needs_review": 885,
         "review_fraction": 0.942492,
         "passes": false
@@ -3504,6 +4602,24 @@
         },
         "unsupported_events": 123,
         "unsupported_accepted_as_known": 0,
+        "accepted_by_species": {
+          "bobcat": {
+            "accepted": 2,
+            "correct": 2
+          },
+          "dog": {
+            "accepted": 1,
+            "correct": 1
+          },
+          "opossum": {
+            "accepted": 5,
+            "correct": 5
+          },
+          "raccoon": {
+            "accepted": 5,
+            "correct": 4
+          }
+        },
         "needs_review": 888,
         "review_fraction": 0.945687,
         "passes": false
@@ -3538,6 +4654,24 @@
         },
         "unsupported_events": 123,
         "unsupported_accepted_as_known": 0,
+        "accepted_by_species": {
+          "bobcat": {
+            "accepted": 2,
+            "correct": 2
+          },
+          "dog": {
+            "accepted": 1,
+            "correct": 1
+          },
+          "opossum": {
+            "accepted": 5,
+            "correct": 5
+          },
+          "raccoon": {
+            "accepted": 4,
+            "correct": 3
+          }
+        },
         "needs_review": 889,
         "review_fraction": 0.946752,
         "passes": false
@@ -3570,6 +4704,24 @@
         "accepted_wrong_by_true_role": {},
         "unsupported_events": 123,
         "unsupported_accepted_as_known": 0,
+        "accepted_by_species": {
+          "bobcat": {
+            "accepted": 2,
+            "correct": 2
+          },
+          "dog": {
+            "accepted": 1,
+            "correct": 1
+          },
+          "opossum": {
+            "accepted": 2,
+            "correct": 2
+          },
+          "raccoon": {
+            "accepted": 2,
+            "correct": 2
+          }
+        },
         "needs_review": 894,
         "review_fraction": 0.952077,
         "passes": false
@@ -3602,6 +4754,24 @@
         "accepted_wrong_by_true_role": {},
         "unsupported_events": 123,
         "unsupported_accepted_as_known": 0,
+        "accepted_by_species": {
+          "bobcat": {
+            "accepted": 2,
+            "correct": 2
+          },
+          "dog": {
+            "accepted": 1,
+            "correct": 1
+          },
+          "opossum": {
+            "accepted": 1,
+            "correct": 1
+          },
+          "raccoon": {
+            "accepted": 2,
+            "correct": 2
+          }
+        },
         "needs_review": 895,
         "review_fraction": 0.953142,
         "passes": false
@@ -3634,6 +4804,24 @@
         "accepted_wrong_by_true_role": {},
         "unsupported_events": 123,
         "unsupported_accepted_as_known": 0,
+        "accepted_by_species": {
+          "bobcat": {
+            "accepted": 2,
+            "correct": 2
+          },
+          "dog": {
+            "accepted": 1,
+            "correct": 1
+          },
+          "opossum": {
+            "accepted": 1,
+            "correct": 1
+          },
+          "raccoon": {
+            "accepted": 2,
+            "correct": 2
+          }
+        },
         "needs_review": 895,
         "review_fraction": 0.953142,
         "passes": false
@@ -3666,6 +4854,20 @@
         "accepted_wrong_by_true_role": {},
         "unsupported_events": 123,
         "unsupported_accepted_as_known": 0,
+        "accepted_by_species": {
+          "bobcat": {
+            "accepted": 2,
+            "correct": 2
+          },
+          "dog": {
+            "accepted": 1,
+            "correct": 1
+          },
+          "raccoon": {
+            "accepted": 1,
+            "correct": 1
+          }
+        },
         "needs_review": 897,
         "review_fraction": 0.955272,
         "passes": false
@@ -3698,6 +4900,16 @@
         "accepted_wrong_by_true_role": {},
         "unsupported_events": 123,
         "unsupported_accepted_as_known": 0,
+        "accepted_by_species": {
+          "bobcat": {
+            "accepted": 2,
+            "correct": 2
+          },
+          "dog": {
+            "accepted": 1,
+            "correct": 1
+          }
+        },
         "needs_review": 898,
         "review_fraction": 0.956337,
         "passes": false
@@ -3730,6 +4942,16 @@
         "accepted_wrong_by_true_role": {},
         "unsupported_events": 123,
         "unsupported_accepted_as_known": 0,
+        "accepted_by_species": {
+          "bobcat": {
+            "accepted": 1,
+            "correct": 1
+          },
+          "dog": {
+            "accepted": 1,
+            "correct": 1
+          }
+        },
         "needs_review": 899,
         "review_fraction": 0.957401,
         "passes": false
@@ -3762,6 +4984,16 @@
         "accepted_wrong_by_true_role": {},
         "unsupported_events": 123,
         "unsupported_accepted_as_known": 0,
+        "accepted_by_species": {
+          "bobcat": {
+            "accepted": 1,
+            "correct": 1
+          },
+          "dog": {
+            "accepted": 1,
+            "correct": 1
+          }
+        },
         "needs_review": 899,
         "review_fraction": 0.957401,
         "passes": false
@@ -3794,6 +5026,12 @@
         "accepted_wrong_by_true_role": {},
         "unsupported_events": 123,
         "unsupported_accepted_as_known": 0,
+        "accepted_by_species": {
+          "dog": {
+            "accepted": 1,
+            "correct": 1
+          }
+        },
         "needs_review": 900,
         "review_fraction": 0.958466,
         "passes": false
@@ -3823,6 +5061,7 @@
         "accepted_wrong_by_true_role": {},
         "unsupported_events": 123,
         "unsupported_accepted_as_known": 0,
+        "accepted_by_species": {},
         "needs_review": 901,
         "review_fraction": 0.959531,
         "passes": false
@@ -3852,6 +5091,7 @@
         "accepted_wrong_by_true_role": {},
         "unsupported_events": 123,
         "unsupported_accepted_as_known": 0,
+        "accepted_by_species": {},
         "needs_review": 901,
         "review_fraction": 0.959531,
         "passes": false
@@ -3881,6 +5121,7 @@
         "accepted_wrong_by_true_role": {},
         "unsupported_events": 123,
         "unsupported_accepted_as_known": 0,
+        "accepted_by_species": {},
         "needs_review": 901,
         "review_fraction": 0.959531,
         "passes": false
@@ -3910,9 +5151,4603 @@
         "accepted_wrong_by_true_role": {},
         "unsupported_events": 123,
         "unsupported_accepted_as_known": 0,
+        "accepted_by_species": {},
         "needs_review": 901,
         "review_fraction": 0.959531,
         "passes": false
+      }
+    ]
+  },
+  "sweeps_fit_partition": {
+    "empty_filter": [
+      {
+        "thresholds": {
+          "empty_filter": 0.5,
+          "species_accept": null
+        },
+        "events": 908,
+        "animal_events": 724,
+        "false_empty": 46,
+        "false_empty_rate": 0.063536,
+        "false_empty_rate_ci95": [
+          0.047969,
+          0.08371
+        ],
+        "animal_event_retention": 0.936464,
+        "filtered": 139,
+        "filtered_true_empty": 93,
+        "filtered_non_animal": 0,
+        "empty_events": 184,
+        "accepted": 0,
+        "accepted_correct": 0,
+        "accepted_precision": null,
+        "accepted_precision_ci95": null,
+        "accepted_wrong_by_true_role": {},
+        "unsupported_events": 203,
+        "unsupported_accepted_as_known": 0,
+        "accepted_by_species": {},
+        "needs_review": 769,
+        "review_fraction": 0.846916
+      },
+      {
+        "thresholds": {
+          "empty_filter": 0.51,
+          "species_accept": null
+        },
+        "events": 908,
+        "animal_events": 724,
+        "false_empty": 46,
+        "false_empty_rate": 0.063536,
+        "false_empty_rate_ci95": [
+          0.047969,
+          0.08371
+        ],
+        "animal_event_retention": 0.936464,
+        "filtered": 137,
+        "filtered_true_empty": 91,
+        "filtered_non_animal": 0,
+        "empty_events": 184,
+        "accepted": 0,
+        "accepted_correct": 0,
+        "accepted_precision": null,
+        "accepted_precision_ci95": null,
+        "accepted_wrong_by_true_role": {},
+        "unsupported_events": 203,
+        "unsupported_accepted_as_known": 0,
+        "accepted_by_species": {},
+        "needs_review": 771,
+        "review_fraction": 0.849119
+      },
+      {
+        "thresholds": {
+          "empty_filter": 0.52,
+          "species_accept": null
+        },
+        "events": 908,
+        "animal_events": 724,
+        "false_empty": 46,
+        "false_empty_rate": 0.063536,
+        "false_empty_rate_ci95": [
+          0.047969,
+          0.08371
+        ],
+        "animal_event_retention": 0.936464,
+        "filtered": 137,
+        "filtered_true_empty": 91,
+        "filtered_non_animal": 0,
+        "empty_events": 184,
+        "accepted": 0,
+        "accepted_correct": 0,
+        "accepted_precision": null,
+        "accepted_precision_ci95": null,
+        "accepted_wrong_by_true_role": {},
+        "unsupported_events": 203,
+        "unsupported_accepted_as_known": 0,
+        "accepted_by_species": {},
+        "needs_review": 771,
+        "review_fraction": 0.849119
+      },
+      {
+        "thresholds": {
+          "empty_filter": 0.53,
+          "species_accept": null
+        },
+        "events": 908,
+        "animal_events": 724,
+        "false_empty": 46,
+        "false_empty_rate": 0.063536,
+        "false_empty_rate_ci95": [
+          0.047969,
+          0.08371
+        ],
+        "animal_event_retention": 0.936464,
+        "filtered": 137,
+        "filtered_true_empty": 91,
+        "filtered_non_animal": 0,
+        "empty_events": 184,
+        "accepted": 0,
+        "accepted_correct": 0,
+        "accepted_precision": null,
+        "accepted_precision_ci95": null,
+        "accepted_wrong_by_true_role": {},
+        "unsupported_events": 203,
+        "unsupported_accepted_as_known": 0,
+        "accepted_by_species": {},
+        "needs_review": 771,
+        "review_fraction": 0.849119
+      },
+      {
+        "thresholds": {
+          "empty_filter": 0.54,
+          "species_accept": null
+        },
+        "events": 908,
+        "animal_events": 724,
+        "false_empty": 46,
+        "false_empty_rate": 0.063536,
+        "false_empty_rate_ci95": [
+          0.047969,
+          0.08371
+        ],
+        "animal_event_retention": 0.936464,
+        "filtered": 137,
+        "filtered_true_empty": 91,
+        "filtered_non_animal": 0,
+        "empty_events": 184,
+        "accepted": 0,
+        "accepted_correct": 0,
+        "accepted_precision": null,
+        "accepted_precision_ci95": null,
+        "accepted_wrong_by_true_role": {},
+        "unsupported_events": 203,
+        "unsupported_accepted_as_known": 0,
+        "accepted_by_species": {},
+        "needs_review": 771,
+        "review_fraction": 0.849119
+      },
+      {
+        "thresholds": {
+          "empty_filter": 0.55,
+          "species_accept": null
+        },
+        "events": 908,
+        "animal_events": 724,
+        "false_empty": 45,
+        "false_empty_rate": 0.062155,
+        "false_empty_rate_ci95": [
+          0.046774,
+          0.082158
+        ],
+        "animal_event_retention": 0.937845,
+        "filtered": 136,
+        "filtered_true_empty": 91,
+        "filtered_non_animal": 0,
+        "empty_events": 184,
+        "accepted": 0,
+        "accepted_correct": 0,
+        "accepted_precision": null,
+        "accepted_precision_ci95": null,
+        "accepted_wrong_by_true_role": {},
+        "unsupported_events": 203,
+        "unsupported_accepted_as_known": 0,
+        "accepted_by_species": {},
+        "needs_review": 772,
+        "review_fraction": 0.85022
+      },
+      {
+        "thresholds": {
+          "empty_filter": 0.56,
+          "species_accept": null
+        },
+        "events": 908,
+        "animal_events": 724,
+        "false_empty": 43,
+        "false_empty_rate": 0.059392,
+        "false_empty_rate_ci95": [
+          0.04439,
+          0.079046
+        ],
+        "animal_event_retention": 0.940608,
+        "filtered": 133,
+        "filtered_true_empty": 90,
+        "filtered_non_animal": 0,
+        "empty_events": 184,
+        "accepted": 0,
+        "accepted_correct": 0,
+        "accepted_precision": null,
+        "accepted_precision_ci95": null,
+        "accepted_wrong_by_true_role": {},
+        "unsupported_events": 203,
+        "unsupported_accepted_as_known": 0,
+        "accepted_by_species": {},
+        "needs_review": 775,
+        "review_fraction": 0.853524
+      },
+      {
+        "thresholds": {
+          "empty_filter": 0.57,
+          "species_accept": null
+        },
+        "events": 908,
+        "animal_events": 724,
+        "false_empty": 43,
+        "false_empty_rate": 0.059392,
+        "false_empty_rate_ci95": [
+          0.04439,
+          0.079046
+        ],
+        "animal_event_retention": 0.940608,
+        "filtered": 132,
+        "filtered_true_empty": 89,
+        "filtered_non_animal": 0,
+        "empty_events": 184,
+        "accepted": 0,
+        "accepted_correct": 0,
+        "accepted_precision": null,
+        "accepted_precision_ci95": null,
+        "accepted_wrong_by_true_role": {},
+        "unsupported_events": 203,
+        "unsupported_accepted_as_known": 0,
+        "accepted_by_species": {},
+        "needs_review": 776,
+        "review_fraction": 0.854626
+      },
+      {
+        "thresholds": {
+          "empty_filter": 0.58,
+          "species_accept": null
+        },
+        "events": 908,
+        "animal_events": 724,
+        "false_empty": 43,
+        "false_empty_rate": 0.059392,
+        "false_empty_rate_ci95": [
+          0.04439,
+          0.079046
+        ],
+        "animal_event_retention": 0.940608,
+        "filtered": 131,
+        "filtered_true_empty": 88,
+        "filtered_non_animal": 0,
+        "empty_events": 184,
+        "accepted": 0,
+        "accepted_correct": 0,
+        "accepted_precision": null,
+        "accepted_precision_ci95": null,
+        "accepted_wrong_by_true_role": {},
+        "unsupported_events": 203,
+        "unsupported_accepted_as_known": 0,
+        "accepted_by_species": {},
+        "needs_review": 777,
+        "review_fraction": 0.855727
+      },
+      {
+        "thresholds": {
+          "empty_filter": 0.59,
+          "species_accept": null
+        },
+        "events": 908,
+        "animal_events": 724,
+        "false_empty": 42,
+        "false_empty_rate": 0.058011,
+        "false_empty_rate_ci95": [
+          0.043201,
+          0.077486
+        ],
+        "animal_event_retention": 0.941989,
+        "filtered": 129,
+        "filtered_true_empty": 87,
+        "filtered_non_animal": 0,
+        "empty_events": 184,
+        "accepted": 0,
+        "accepted_correct": 0,
+        "accepted_precision": null,
+        "accepted_precision_ci95": null,
+        "accepted_wrong_by_true_role": {},
+        "unsupported_events": 203,
+        "unsupported_accepted_as_known": 0,
+        "accepted_by_species": {},
+        "needs_review": 779,
+        "review_fraction": 0.85793
+      },
+      {
+        "thresholds": {
+          "empty_filter": 0.6,
+          "species_accept": null
+        },
+        "events": 908,
+        "animal_events": 724,
+        "false_empty": 42,
+        "false_empty_rate": 0.058011,
+        "false_empty_rate_ci95": [
+          0.043201,
+          0.077486
+        ],
+        "animal_event_retention": 0.941989,
+        "filtered": 129,
+        "filtered_true_empty": 87,
+        "filtered_non_animal": 0,
+        "empty_events": 184,
+        "accepted": 0,
+        "accepted_correct": 0,
+        "accepted_precision": null,
+        "accepted_precision_ci95": null,
+        "accepted_wrong_by_true_role": {},
+        "unsupported_events": 203,
+        "unsupported_accepted_as_known": 0,
+        "accepted_by_species": {},
+        "needs_review": 779,
+        "review_fraction": 0.85793
+      },
+      {
+        "thresholds": {
+          "empty_filter": 0.61,
+          "species_accept": null
+        },
+        "events": 908,
+        "animal_events": 724,
+        "false_empty": 42,
+        "false_empty_rate": 0.058011,
+        "false_empty_rate_ci95": [
+          0.043201,
+          0.077486
+        ],
+        "animal_event_retention": 0.941989,
+        "filtered": 128,
+        "filtered_true_empty": 86,
+        "filtered_non_animal": 0,
+        "empty_events": 184,
+        "accepted": 0,
+        "accepted_correct": 0,
+        "accepted_precision": null,
+        "accepted_precision_ci95": null,
+        "accepted_wrong_by_true_role": {},
+        "unsupported_events": 203,
+        "unsupported_accepted_as_known": 0,
+        "accepted_by_species": {},
+        "needs_review": 780,
+        "review_fraction": 0.859031
+      },
+      {
+        "thresholds": {
+          "empty_filter": 0.62,
+          "species_accept": null
+        },
+        "events": 908,
+        "animal_events": 724,
+        "false_empty": 42,
+        "false_empty_rate": 0.058011,
+        "false_empty_rate_ci95": [
+          0.043201,
+          0.077486
+        ],
+        "animal_event_retention": 0.941989,
+        "filtered": 125,
+        "filtered_true_empty": 83,
+        "filtered_non_animal": 0,
+        "empty_events": 184,
+        "accepted": 0,
+        "accepted_correct": 0,
+        "accepted_precision": null,
+        "accepted_precision_ci95": null,
+        "accepted_wrong_by_true_role": {},
+        "unsupported_events": 203,
+        "unsupported_accepted_as_known": 0,
+        "accepted_by_species": {},
+        "needs_review": 783,
+        "review_fraction": 0.862335
+      },
+      {
+        "thresholds": {
+          "empty_filter": 0.63,
+          "species_accept": null
+        },
+        "events": 908,
+        "animal_events": 724,
+        "false_empty": 41,
+        "false_empty_rate": 0.05663,
+        "false_empty_rate_ci95": [
+          0.042016,
+          0.075924
+        ],
+        "animal_event_retention": 0.94337,
+        "filtered": 122,
+        "filtered_true_empty": 81,
+        "filtered_non_animal": 0,
+        "empty_events": 184,
+        "accepted": 0,
+        "accepted_correct": 0,
+        "accepted_precision": null,
+        "accepted_precision_ci95": null,
+        "accepted_wrong_by_true_role": {},
+        "unsupported_events": 203,
+        "unsupported_accepted_as_known": 0,
+        "accepted_by_species": {},
+        "needs_review": 786,
+        "review_fraction": 0.865639
+      },
+      {
+        "thresholds": {
+          "empty_filter": 0.64,
+          "species_accept": null
+        },
+        "events": 908,
+        "animal_events": 724,
+        "false_empty": 41,
+        "false_empty_rate": 0.05663,
+        "false_empty_rate_ci95": [
+          0.042016,
+          0.075924
+        ],
+        "animal_event_retention": 0.94337,
+        "filtered": 120,
+        "filtered_true_empty": 79,
+        "filtered_non_animal": 0,
+        "empty_events": 184,
+        "accepted": 0,
+        "accepted_correct": 0,
+        "accepted_precision": null,
+        "accepted_precision_ci95": null,
+        "accepted_wrong_by_true_role": {},
+        "unsupported_events": 203,
+        "unsupported_accepted_as_known": 0,
+        "accepted_by_species": {},
+        "needs_review": 788,
+        "review_fraction": 0.867841
+      },
+      {
+        "thresholds": {
+          "empty_filter": 0.65,
+          "species_accept": null
+        },
+        "events": 908,
+        "animal_events": 724,
+        "false_empty": 40,
+        "false_empty_rate": 0.055249,
+        "false_empty_rate_ci95": [
+          0.040833,
+          0.074359
+        ],
+        "animal_event_retention": 0.944751,
+        "filtered": 118,
+        "filtered_true_empty": 78,
+        "filtered_non_animal": 0,
+        "empty_events": 184,
+        "accepted": 0,
+        "accepted_correct": 0,
+        "accepted_precision": null,
+        "accepted_precision_ci95": null,
+        "accepted_wrong_by_true_role": {},
+        "unsupported_events": 203,
+        "unsupported_accepted_as_known": 0,
+        "accepted_by_species": {},
+        "needs_review": 790,
+        "review_fraction": 0.870044
+      },
+      {
+        "thresholds": {
+          "empty_filter": 0.66,
+          "species_accept": null
+        },
+        "events": 908,
+        "animal_events": 724,
+        "false_empty": 39,
+        "false_empty_rate": 0.053867,
+        "false_empty_rate_ci95": [
+          0.039653,
+          0.072792
+        ],
+        "animal_event_retention": 0.946133,
+        "filtered": 115,
+        "filtered_true_empty": 76,
+        "filtered_non_animal": 0,
+        "empty_events": 184,
+        "accepted": 0,
+        "accepted_correct": 0,
+        "accepted_precision": null,
+        "accepted_precision_ci95": null,
+        "accepted_wrong_by_true_role": {},
+        "unsupported_events": 203,
+        "unsupported_accepted_as_known": 0,
+        "accepted_by_species": {},
+        "needs_review": 793,
+        "review_fraction": 0.873348
+      },
+      {
+        "thresholds": {
+          "empty_filter": 0.67,
+          "species_accept": null
+        },
+        "events": 908,
+        "animal_events": 724,
+        "false_empty": 37,
+        "false_empty_rate": 0.051105,
+        "false_empty_rate_ci95": [
+          0.037301,
+          0.069647
+        ],
+        "animal_event_retention": 0.948895,
+        "filtered": 113,
+        "filtered_true_empty": 76,
+        "filtered_non_animal": 0,
+        "empty_events": 184,
+        "accepted": 0,
+        "accepted_correct": 0,
+        "accepted_precision": null,
+        "accepted_precision_ci95": null,
+        "accepted_wrong_by_true_role": {},
+        "unsupported_events": 203,
+        "unsupported_accepted_as_known": 0,
+        "accepted_by_species": {},
+        "needs_review": 795,
+        "review_fraction": 0.875551
+      },
+      {
+        "thresholds": {
+          "empty_filter": 0.68,
+          "species_accept": null
+        },
+        "events": 908,
+        "animal_events": 724,
+        "false_empty": 36,
+        "false_empty_rate": 0.049724,
+        "false_empty_rate_ci95": [
+          0.03613,
+          0.06807
+        ],
+        "animal_event_retention": 0.950276,
+        "filtered": 110,
+        "filtered_true_empty": 74,
+        "filtered_non_animal": 0,
+        "empty_events": 184,
+        "accepted": 0,
+        "accepted_correct": 0,
+        "accepted_precision": null,
+        "accepted_precision_ci95": null,
+        "accepted_wrong_by_true_role": {},
+        "unsupported_events": 203,
+        "unsupported_accepted_as_known": 0,
+        "accepted_by_species": {},
+        "needs_review": 798,
+        "review_fraction": 0.878855
+      },
+      {
+        "thresholds": {
+          "empty_filter": 0.69,
+          "species_accept": null
+        },
+        "events": 908,
+        "animal_events": 724,
+        "false_empty": 33,
+        "false_empty_rate": 0.04558,
+        "false_empty_rate_ci95": [
+          0.032637,
+          0.06332
+        ],
+        "animal_event_retention": 0.95442,
+        "filtered": 106,
+        "filtered_true_empty": 73,
+        "filtered_non_animal": 0,
+        "empty_events": 184,
+        "accepted": 0,
+        "accepted_correct": 0,
+        "accepted_precision": null,
+        "accepted_precision_ci95": null,
+        "accepted_wrong_by_true_role": {},
+        "unsupported_events": 203,
+        "unsupported_accepted_as_known": 0,
+        "accepted_by_species": {},
+        "needs_review": 802,
+        "review_fraction": 0.88326
+      },
+      {
+        "thresholds": {
+          "empty_filter": 0.7,
+          "species_accept": null
+        },
+        "events": 908,
+        "animal_events": 724,
+        "false_empty": 32,
+        "false_empty_rate": 0.044199,
+        "false_empty_rate_ci95": [
+          0.03148,
+          0.06173
+        ],
+        "animal_event_retention": 0.955801,
+        "filtered": 103,
+        "filtered_true_empty": 71,
+        "filtered_non_animal": 0,
+        "empty_events": 184,
+        "accepted": 0,
+        "accepted_correct": 0,
+        "accepted_precision": null,
+        "accepted_precision_ci95": null,
+        "accepted_wrong_by_true_role": {},
+        "unsupported_events": 203,
+        "unsupported_accepted_as_known": 0,
+        "accepted_by_species": {},
+        "needs_review": 805,
+        "review_fraction": 0.886564
+      },
+      {
+        "thresholds": {
+          "empty_filter": 0.71,
+          "species_accept": null
+        },
+        "events": 908,
+        "animal_events": 724,
+        "false_empty": 30,
+        "false_empty_rate": 0.041436,
+        "false_empty_rate_ci95": [
+          0.029177,
+          0.058537
+        ],
+        "animal_event_retention": 0.958564,
+        "filtered": 99,
+        "filtered_true_empty": 69,
+        "filtered_non_animal": 0,
+        "empty_events": 184,
+        "accepted": 0,
+        "accepted_correct": 0,
+        "accepted_precision": null,
+        "accepted_precision_ci95": null,
+        "accepted_wrong_by_true_role": {},
+        "unsupported_events": 203,
+        "unsupported_accepted_as_known": 0,
+        "accepted_by_species": {},
+        "needs_review": 809,
+        "review_fraction": 0.890969
+      },
+      {
+        "thresholds": {
+          "empty_filter": 0.72,
+          "species_accept": null
+        },
+        "events": 908,
+        "animal_events": 724,
+        "false_empty": 26,
+        "false_empty_rate": 0.035912,
+        "false_empty_rate_ci95": [
+          0.024623,
+          0.052099
+        ],
+        "animal_event_retention": 0.964088,
+        "filtered": 92,
+        "filtered_true_empty": 66,
+        "filtered_non_animal": 0,
+        "empty_events": 184,
+        "accepted": 0,
+        "accepted_correct": 0,
+        "accepted_precision": null,
+        "accepted_precision_ci95": null,
+        "accepted_wrong_by_true_role": {},
+        "unsupported_events": 203,
+        "unsupported_accepted_as_known": 0,
+        "accepted_by_species": {},
+        "needs_review": 816,
+        "review_fraction": 0.898678
+      },
+      {
+        "thresholds": {
+          "empty_filter": 0.73,
+          "species_accept": null
+        },
+        "events": 908,
+        "animal_events": 724,
+        "false_empty": 26,
+        "false_empty_rate": 0.035912,
+        "false_empty_rate_ci95": [
+          0.024623,
+          0.052099
+        ],
+        "animal_event_retention": 0.964088,
+        "filtered": 91,
+        "filtered_true_empty": 65,
+        "filtered_non_animal": 0,
+        "empty_events": 184,
+        "accepted": 0,
+        "accepted_correct": 0,
+        "accepted_precision": null,
+        "accepted_precision_ci95": null,
+        "accepted_wrong_by_true_role": {},
+        "unsupported_events": 203,
+        "unsupported_accepted_as_known": 0,
+        "accepted_by_species": {},
+        "needs_review": 817,
+        "review_fraction": 0.89978
+      },
+      {
+        "thresholds": {
+          "empty_filter": 0.74,
+          "species_accept": null
+        },
+        "events": 908,
+        "animal_events": 724,
+        "false_empty": 24,
+        "false_empty_rate": 0.033149,
+        "false_empty_rate_ci95": [
+          0.022376,
+          0.048851
+        ],
+        "animal_event_retention": 0.966851,
+        "filtered": 88,
+        "filtered_true_empty": 64,
+        "filtered_non_animal": 0,
+        "empty_events": 184,
+        "accepted": 0,
+        "accepted_correct": 0,
+        "accepted_precision": null,
+        "accepted_precision_ci95": null,
+        "accepted_wrong_by_true_role": {},
+        "unsupported_events": 203,
+        "unsupported_accepted_as_known": 0,
+        "accepted_by_species": {},
+        "needs_review": 820,
+        "review_fraction": 0.903084
+      },
+      {
+        "thresholds": {
+          "empty_filter": 0.75,
+          "species_accept": null
+        },
+        "events": 908,
+        "animal_events": 724,
+        "false_empty": 24,
+        "false_empty_rate": 0.033149,
+        "false_empty_rate_ci95": [
+          0.022376,
+          0.048851
+        ],
+        "animal_event_retention": 0.966851,
+        "filtered": 84,
+        "filtered_true_empty": 60,
+        "filtered_non_animal": 0,
+        "empty_events": 184,
+        "accepted": 0,
+        "accepted_correct": 0,
+        "accepted_precision": null,
+        "accepted_precision_ci95": null,
+        "accepted_wrong_by_true_role": {},
+        "unsupported_events": 203,
+        "unsupported_accepted_as_known": 0,
+        "accepted_by_species": {},
+        "needs_review": 824,
+        "review_fraction": 0.907489
+      },
+      {
+        "thresholds": {
+          "empty_filter": 0.76,
+          "species_accept": null
+        },
+        "events": 908,
+        "animal_events": 724,
+        "false_empty": 23,
+        "false_empty_rate": 0.031768,
+        "false_empty_rate_ci95": [
+          0.02126,
+          0.047218
+        ],
+        "animal_event_retention": 0.968232,
+        "filtered": 80,
+        "filtered_true_empty": 57,
+        "filtered_non_animal": 0,
+        "empty_events": 184,
+        "accepted": 0,
+        "accepted_correct": 0,
+        "accepted_precision": null,
+        "accepted_precision_ci95": null,
+        "accepted_wrong_by_true_role": {},
+        "unsupported_events": 203,
+        "unsupported_accepted_as_known": 0,
+        "accepted_by_species": {},
+        "needs_review": 828,
+        "review_fraction": 0.911894
+      },
+      {
+        "thresholds": {
+          "empty_filter": 0.77,
+          "species_accept": null
+        },
+        "events": 908,
+        "animal_events": 724,
+        "false_empty": 22,
+        "false_empty_rate": 0.030387,
+        "false_empty_rate_ci95": [
+          0.020151,
+          0.04558
+        ],
+        "animal_event_retention": 0.969613,
+        "filtered": 75,
+        "filtered_true_empty": 53,
+        "filtered_non_animal": 0,
+        "empty_events": 184,
+        "accepted": 0,
+        "accepted_correct": 0,
+        "accepted_precision": null,
+        "accepted_precision_ci95": null,
+        "accepted_wrong_by_true_role": {},
+        "unsupported_events": 203,
+        "unsupported_accepted_as_known": 0,
+        "accepted_by_species": {},
+        "needs_review": 833,
+        "review_fraction": 0.917401
+      },
+      {
+        "thresholds": {
+          "empty_filter": 0.78,
+          "species_accept": null
+        },
+        "events": 908,
+        "animal_events": 724,
+        "false_empty": 21,
+        "false_empty_rate": 0.029006,
+        "false_empty_rate_ci95": [
+          0.019048,
+          0.043935
+        ],
+        "animal_event_retention": 0.970994,
+        "filtered": 71,
+        "filtered_true_empty": 50,
+        "filtered_non_animal": 0,
+        "empty_events": 184,
+        "accepted": 0,
+        "accepted_correct": 0,
+        "accepted_precision": null,
+        "accepted_precision_ci95": null,
+        "accepted_wrong_by_true_role": {},
+        "unsupported_events": 203,
+        "unsupported_accepted_as_known": 0,
+        "accepted_by_species": {},
+        "needs_review": 837,
+        "review_fraction": 0.921806
+      },
+      {
+        "thresholds": {
+          "empty_filter": 0.79,
+          "species_accept": null
+        },
+        "events": 908,
+        "animal_events": 724,
+        "false_empty": 20,
+        "false_empty_rate": 0.027624,
+        "false_empty_rate_ci95": [
+          0.017952,
+          0.042283
+        ],
+        "animal_event_retention": 0.972376,
+        "filtered": 65,
+        "filtered_true_empty": 45,
+        "filtered_non_animal": 0,
+        "empty_events": 184,
+        "accepted": 0,
+        "accepted_correct": 0,
+        "accepted_precision": null,
+        "accepted_precision_ci95": null,
+        "accepted_wrong_by_true_role": {},
+        "unsupported_events": 203,
+        "unsupported_accepted_as_known": 0,
+        "accepted_by_species": {},
+        "needs_review": 843,
+        "review_fraction": 0.928414
+      },
+      {
+        "thresholds": {
+          "empty_filter": 0.8,
+          "species_accept": null
+        },
+        "events": 908,
+        "animal_events": 724,
+        "false_empty": 19,
+        "false_empty_rate": 0.026243,
+        "false_empty_rate_ci95": [
+          0.016864,
+          0.040623
+        ],
+        "animal_event_retention": 0.973757,
+        "filtered": 59,
+        "filtered_true_empty": 40,
+        "filtered_non_animal": 0,
+        "empty_events": 184,
+        "accepted": 0,
+        "accepted_correct": 0,
+        "accepted_precision": null,
+        "accepted_precision_ci95": null,
+        "accepted_wrong_by_true_role": {},
+        "unsupported_events": 203,
+        "unsupported_accepted_as_known": 0,
+        "accepted_by_species": {},
+        "needs_review": 849,
+        "review_fraction": 0.935022
+      },
+      {
+        "thresholds": {
+          "empty_filter": 0.81,
+          "species_accept": null
+        },
+        "events": 908,
+        "animal_events": 724,
+        "false_empty": 18,
+        "false_empty_rate": 0.024862,
+        "false_empty_rate_ci95": [
+          0.015783,
+          0.038956
+        ],
+        "animal_event_retention": 0.975138,
+        "filtered": 54,
+        "filtered_true_empty": 36,
+        "filtered_non_animal": 0,
+        "empty_events": 184,
+        "accepted": 0,
+        "accepted_correct": 0,
+        "accepted_precision": null,
+        "accepted_precision_ci95": null,
+        "accepted_wrong_by_true_role": {},
+        "unsupported_events": 203,
+        "unsupported_accepted_as_known": 0,
+        "accepted_by_species": {},
+        "needs_review": 854,
+        "review_fraction": 0.940529
+      },
+      {
+        "thresholds": {
+          "empty_filter": 0.82,
+          "species_accept": null
+        },
+        "events": 908,
+        "animal_events": 724,
+        "false_empty": 17,
+        "false_empty_rate": 0.023481,
+        "false_empty_rate_ci95": [
+          0.014711,
+          0.037281
+        ],
+        "animal_event_retention": 0.976519,
+        "filtered": 48,
+        "filtered_true_empty": 31,
+        "filtered_non_animal": 0,
+        "empty_events": 184,
+        "accepted": 0,
+        "accepted_correct": 0,
+        "accepted_precision": null,
+        "accepted_precision_ci95": null,
+        "accepted_wrong_by_true_role": {},
+        "unsupported_events": 203,
+        "unsupported_accepted_as_known": 0,
+        "accepted_by_species": {},
+        "needs_review": 860,
+        "review_fraction": 0.947137
+      },
+      {
+        "thresholds": {
+          "empty_filter": 0.83,
+          "species_accept": null
+        },
+        "events": 908,
+        "animal_events": 724,
+        "false_empty": 15,
+        "false_empty_rate": 0.020718,
+        "false_empty_rate_ci95": [
+          0.012595,
+          0.033901
+        ],
+        "animal_event_retention": 0.979282,
+        "filtered": 45,
+        "filtered_true_empty": 30,
+        "filtered_non_animal": 0,
+        "empty_events": 184,
+        "accepted": 0,
+        "accepted_correct": 0,
+        "accepted_precision": null,
+        "accepted_precision_ci95": null,
+        "accepted_wrong_by_true_role": {},
+        "unsupported_events": 203,
+        "unsupported_accepted_as_known": 0,
+        "accepted_by_species": {},
+        "needs_review": 863,
+        "review_fraction": 0.950441
+      },
+      {
+        "thresholds": {
+          "empty_filter": 0.84,
+          "species_accept": null
+        },
+        "events": 908,
+        "animal_events": 724,
+        "false_empty": 11,
+        "false_empty_rate": 0.015193,
+        "false_empty_rate_ci95": [
+          0.008504,
+          0.027
+        ],
+        "animal_event_retention": 0.984807,
+        "filtered": 40,
+        "filtered_true_empty": 29,
+        "filtered_non_animal": 0,
+        "empty_events": 184,
+        "accepted": 0,
+        "accepted_correct": 0,
+        "accepted_precision": null,
+        "accepted_precision_ci95": null,
+        "accepted_wrong_by_true_role": {},
+        "unsupported_events": 203,
+        "unsupported_accepted_as_known": 0,
+        "accepted_by_species": {},
+        "needs_review": 868,
+        "review_fraction": 0.955947
+      },
+      {
+        "thresholds": {
+          "empty_filter": 0.85,
+          "species_accept": null
+        },
+        "events": 908,
+        "animal_events": 724,
+        "false_empty": 7,
+        "false_empty_rate": 0.009669,
+        "false_empty_rate_ci95": [
+          0.004691,
+          0.019822
+        ],
+        "animal_event_retention": 0.990331,
+        "filtered": 34,
+        "filtered_true_empty": 27,
+        "filtered_non_animal": 0,
+        "empty_events": 184,
+        "accepted": 0,
+        "accepted_correct": 0,
+        "accepted_precision": null,
+        "accepted_precision_ci95": null,
+        "accepted_wrong_by_true_role": {},
+        "unsupported_events": 203,
+        "unsupported_accepted_as_known": 0,
+        "accepted_by_species": {},
+        "needs_review": 874,
+        "review_fraction": 0.962555
+      },
+      {
+        "thresholds": {
+          "empty_filter": 0.86,
+          "species_accept": null
+        },
+        "events": 908,
+        "animal_events": 724,
+        "false_empty": 4,
+        "false_empty_rate": 0.005525,
+        "false_empty_rate_ci95": [
+          0.002151,
+          0.014119
+        ],
+        "animal_event_retention": 0.994475,
+        "filtered": 29,
+        "filtered_true_empty": 25,
+        "filtered_non_animal": 0,
+        "empty_events": 184,
+        "accepted": 0,
+        "accepted_correct": 0,
+        "accepted_precision": null,
+        "accepted_precision_ci95": null,
+        "accepted_wrong_by_true_role": {},
+        "unsupported_events": 203,
+        "unsupported_accepted_as_known": 0,
+        "accepted_by_species": {},
+        "needs_review": 879,
+        "review_fraction": 0.968062
+      },
+      {
+        "thresholds": {
+          "empty_filter": 0.87,
+          "species_accept": null
+        },
+        "events": 908,
+        "animal_events": 724,
+        "false_empty": 4,
+        "false_empty_rate": 0.005525,
+        "false_empty_rate_ci95": [
+          0.002151,
+          0.014119
+        ],
+        "animal_event_retention": 0.994475,
+        "filtered": 25,
+        "filtered_true_empty": 21,
+        "filtered_non_animal": 0,
+        "empty_events": 184,
+        "accepted": 0,
+        "accepted_correct": 0,
+        "accepted_precision": null,
+        "accepted_precision_ci95": null,
+        "accepted_wrong_by_true_role": {},
+        "unsupported_events": 203,
+        "unsupported_accepted_as_known": 0,
+        "accepted_by_species": {},
+        "needs_review": 883,
+        "review_fraction": 0.972467
+      },
+      {
+        "thresholds": {
+          "empty_filter": 0.88,
+          "species_accept": null
+        },
+        "events": 908,
+        "animal_events": 724,
+        "false_empty": 4,
+        "false_empty_rate": 0.005525,
+        "false_empty_rate_ci95": [
+          0.002151,
+          0.014119
+        ],
+        "animal_event_retention": 0.994475,
+        "filtered": 20,
+        "filtered_true_empty": 16,
+        "filtered_non_animal": 0,
+        "empty_events": 184,
+        "accepted": 0,
+        "accepted_correct": 0,
+        "accepted_precision": null,
+        "accepted_precision_ci95": null,
+        "accepted_wrong_by_true_role": {},
+        "unsupported_events": 203,
+        "unsupported_accepted_as_known": 0,
+        "accepted_by_species": {},
+        "needs_review": 888,
+        "review_fraction": 0.977974
+      },
+      {
+        "thresholds": {
+          "empty_filter": 0.89,
+          "species_accept": null
+        },
+        "events": 908,
+        "animal_events": 724,
+        "false_empty": 2,
+        "false_empty_rate": 0.002762,
+        "false_empty_rate_ci95": [
+          0.000758,
+          0.010016
+        ],
+        "animal_event_retention": 0.997238,
+        "filtered": 15,
+        "filtered_true_empty": 13,
+        "filtered_non_animal": 0,
+        "empty_events": 184,
+        "accepted": 0,
+        "accepted_correct": 0,
+        "accepted_precision": null,
+        "accepted_precision_ci95": null,
+        "accepted_wrong_by_true_role": {},
+        "unsupported_events": 203,
+        "unsupported_accepted_as_known": 0,
+        "accepted_by_species": {},
+        "needs_review": 893,
+        "review_fraction": 0.98348
+      },
+      {
+        "thresholds": {
+          "empty_filter": 0.9,
+          "species_accept": null
+        },
+        "events": 908,
+        "animal_events": 724,
+        "false_empty": 2,
+        "false_empty_rate": 0.002762,
+        "false_empty_rate_ci95": [
+          0.000758,
+          0.010016
+        ],
+        "animal_event_retention": 0.997238,
+        "filtered": 15,
+        "filtered_true_empty": 13,
+        "filtered_non_animal": 0,
+        "empty_events": 184,
+        "accepted": 0,
+        "accepted_correct": 0,
+        "accepted_precision": null,
+        "accepted_precision_ci95": null,
+        "accepted_wrong_by_true_role": {},
+        "unsupported_events": 203,
+        "unsupported_accepted_as_known": 0,
+        "accepted_by_species": {},
+        "needs_review": 893,
+        "review_fraction": 0.98348
+      },
+      {
+        "thresholds": {
+          "empty_filter": 0.91,
+          "species_accept": null
+        },
+        "events": 908,
+        "animal_events": 724,
+        "false_empty": 1,
+        "false_empty_rate": 0.001381,
+        "false_empty_rate_ci95": [
+          0.000244,
+          0.007782
+        ],
+        "animal_event_retention": 0.998619,
+        "filtered": 10,
+        "filtered_true_empty": 9,
+        "filtered_non_animal": 0,
+        "empty_events": 184,
+        "accepted": 0,
+        "accepted_correct": 0,
+        "accepted_precision": null,
+        "accepted_precision_ci95": null,
+        "accepted_wrong_by_true_role": {},
+        "unsupported_events": 203,
+        "unsupported_accepted_as_known": 0,
+        "accepted_by_species": {},
+        "needs_review": 898,
+        "review_fraction": 0.988987
+      },
+      {
+        "thresholds": {
+          "empty_filter": 0.92,
+          "species_accept": null
+        },
+        "events": 908,
+        "animal_events": 724,
+        "false_empty": 1,
+        "false_empty_rate": 0.001381,
+        "false_empty_rate_ci95": [
+          0.000244,
+          0.007782
+        ],
+        "animal_event_retention": 0.998619,
+        "filtered": 8,
+        "filtered_true_empty": 7,
+        "filtered_non_animal": 0,
+        "empty_events": 184,
+        "accepted": 0,
+        "accepted_correct": 0,
+        "accepted_precision": null,
+        "accepted_precision_ci95": null,
+        "accepted_wrong_by_true_role": {},
+        "unsupported_events": 203,
+        "unsupported_accepted_as_known": 0,
+        "accepted_by_species": {},
+        "needs_review": 900,
+        "review_fraction": 0.991189
+      },
+      {
+        "thresholds": {
+          "empty_filter": 0.93,
+          "species_accept": null
+        },
+        "events": 908,
+        "animal_events": 724,
+        "false_empty": 0,
+        "false_empty_rate": 0.0,
+        "false_empty_rate_ci95": [
+          0.0,
+          0.005278
+        ],
+        "animal_event_retention": 1.0,
+        "filtered": 5,
+        "filtered_true_empty": 5,
+        "filtered_non_animal": 0,
+        "empty_events": 184,
+        "accepted": 0,
+        "accepted_correct": 0,
+        "accepted_precision": null,
+        "accepted_precision_ci95": null,
+        "accepted_wrong_by_true_role": {},
+        "unsupported_events": 203,
+        "unsupported_accepted_as_known": 0,
+        "accepted_by_species": {},
+        "needs_review": 903,
+        "review_fraction": 0.994493
+      },
+      {
+        "thresholds": {
+          "empty_filter": 0.94,
+          "species_accept": null
+        },
+        "events": 908,
+        "animal_events": 724,
+        "false_empty": 0,
+        "false_empty_rate": 0.0,
+        "false_empty_rate_ci95": [
+          0.0,
+          0.005278
+        ],
+        "animal_event_retention": 1.0,
+        "filtered": 3,
+        "filtered_true_empty": 3,
+        "filtered_non_animal": 0,
+        "empty_events": 184,
+        "accepted": 0,
+        "accepted_correct": 0,
+        "accepted_precision": null,
+        "accepted_precision_ci95": null,
+        "accepted_wrong_by_true_role": {},
+        "unsupported_events": 203,
+        "unsupported_accepted_as_known": 0,
+        "accepted_by_species": {},
+        "needs_review": 905,
+        "review_fraction": 0.996696
+      },
+      {
+        "thresholds": {
+          "empty_filter": 0.95,
+          "species_accept": null
+        },
+        "events": 908,
+        "animal_events": 724,
+        "false_empty": 0,
+        "false_empty_rate": 0.0,
+        "false_empty_rate_ci95": [
+          0.0,
+          0.005278
+        ],
+        "animal_event_retention": 1.0,
+        "filtered": 2,
+        "filtered_true_empty": 2,
+        "filtered_non_animal": 0,
+        "empty_events": 184,
+        "accepted": 0,
+        "accepted_correct": 0,
+        "accepted_precision": null,
+        "accepted_precision_ci95": null,
+        "accepted_wrong_by_true_role": {},
+        "unsupported_events": 203,
+        "unsupported_accepted_as_known": 0,
+        "accepted_by_species": {},
+        "needs_review": 906,
+        "review_fraction": 0.997797
+      },
+      {
+        "thresholds": {
+          "empty_filter": 0.96,
+          "species_accept": null
+        },
+        "events": 908,
+        "animal_events": 724,
+        "false_empty": 0,
+        "false_empty_rate": 0.0,
+        "false_empty_rate_ci95": [
+          0.0,
+          0.005278
+        ],
+        "animal_event_retention": 1.0,
+        "filtered": 2,
+        "filtered_true_empty": 2,
+        "filtered_non_animal": 0,
+        "empty_events": 184,
+        "accepted": 0,
+        "accepted_correct": 0,
+        "accepted_precision": null,
+        "accepted_precision_ci95": null,
+        "accepted_wrong_by_true_role": {},
+        "unsupported_events": 203,
+        "unsupported_accepted_as_known": 0,
+        "accepted_by_species": {},
+        "needs_review": 906,
+        "review_fraction": 0.997797
+      },
+      {
+        "thresholds": {
+          "empty_filter": 0.97,
+          "species_accept": null
+        },
+        "events": 908,
+        "animal_events": 724,
+        "false_empty": 0,
+        "false_empty_rate": 0.0,
+        "false_empty_rate_ci95": [
+          0.0,
+          0.005278
+        ],
+        "animal_event_retention": 1.0,
+        "filtered": 1,
+        "filtered_true_empty": 1,
+        "filtered_non_animal": 0,
+        "empty_events": 184,
+        "accepted": 0,
+        "accepted_correct": 0,
+        "accepted_precision": null,
+        "accepted_precision_ci95": null,
+        "accepted_wrong_by_true_role": {},
+        "unsupported_events": 203,
+        "unsupported_accepted_as_known": 0,
+        "accepted_by_species": {},
+        "needs_review": 907,
+        "review_fraction": 0.998899
+      },
+      {
+        "thresholds": {
+          "empty_filter": 0.98,
+          "species_accept": null
+        },
+        "events": 908,
+        "animal_events": 724,
+        "false_empty": 0,
+        "false_empty_rate": 0.0,
+        "false_empty_rate_ci95": [
+          0.0,
+          0.005278
+        ],
+        "animal_event_retention": 1.0,
+        "filtered": 1,
+        "filtered_true_empty": 1,
+        "filtered_non_animal": 0,
+        "empty_events": 184,
+        "accepted": 0,
+        "accepted_correct": 0,
+        "accepted_precision": null,
+        "accepted_precision_ci95": null,
+        "accepted_wrong_by_true_role": {},
+        "unsupported_events": 203,
+        "unsupported_accepted_as_known": 0,
+        "accepted_by_species": {},
+        "needs_review": 907,
+        "review_fraction": 0.998899
+      },
+      {
+        "thresholds": {
+          "empty_filter": 0.99,
+          "species_accept": null
+        },
+        "events": 908,
+        "animal_events": 724,
+        "false_empty": 0,
+        "false_empty_rate": 0.0,
+        "false_empty_rate_ci95": [
+          0.0,
+          0.005278
+        ],
+        "animal_event_retention": 1.0,
+        "filtered": 0,
+        "filtered_true_empty": 0,
+        "filtered_non_animal": 0,
+        "empty_events": 184,
+        "accepted": 0,
+        "accepted_correct": 0,
+        "accepted_precision": null,
+        "accepted_precision_ci95": null,
+        "accepted_wrong_by_true_role": {},
+        "unsupported_events": 203,
+        "unsupported_accepted_as_known": 0,
+        "accepted_by_species": {},
+        "needs_review": 908,
+        "review_fraction": 1.0
+      },
+      {
+        "thresholds": {
+          "empty_filter": 0.995,
+          "species_accept": null
+        },
+        "events": 908,
+        "animal_events": 724,
+        "false_empty": 0,
+        "false_empty_rate": 0.0,
+        "false_empty_rate_ci95": [
+          0.0,
+          0.005278
+        ],
+        "animal_event_retention": 1.0,
+        "filtered": 0,
+        "filtered_true_empty": 0,
+        "filtered_non_animal": 0,
+        "empty_events": 184,
+        "accepted": 0,
+        "accepted_correct": 0,
+        "accepted_precision": null,
+        "accepted_precision_ci95": null,
+        "accepted_wrong_by_true_role": {},
+        "unsupported_events": 203,
+        "unsupported_accepted_as_known": 0,
+        "accepted_by_species": {},
+        "needs_review": 908,
+        "review_fraction": 1.0
+      },
+      {
+        "thresholds": {
+          "empty_filter": 0.999,
+          "species_accept": null
+        },
+        "events": 908,
+        "animal_events": 724,
+        "false_empty": 0,
+        "false_empty_rate": 0.0,
+        "false_empty_rate_ci95": [
+          0.0,
+          0.005278
+        ],
+        "animal_event_retention": 1.0,
+        "filtered": 0,
+        "filtered_true_empty": 0,
+        "filtered_non_animal": 0,
+        "empty_events": 184,
+        "accepted": 0,
+        "accepted_correct": 0,
+        "accepted_precision": null,
+        "accepted_precision_ci95": null,
+        "accepted_wrong_by_true_role": {},
+        "unsupported_events": 203,
+        "unsupported_accepted_as_known": 0,
+        "accepted_by_species": {},
+        "needs_review": 908,
+        "review_fraction": 1.0
+      }
+    ],
+    "species_accept": [
+      {
+        "thresholds": {
+          "empty_filter": 0.65,
+          "species_accept": 0.5
+        },
+        "events": 908,
+        "animal_events": 724,
+        "false_empty": 40,
+        "false_empty_rate": 0.055249,
+        "false_empty_rate_ci95": [
+          0.040833,
+          0.074359
+        ],
+        "animal_event_retention": 0.944751,
+        "filtered": 118,
+        "filtered_true_empty": 78,
+        "filtered_non_animal": 0,
+        "empty_events": 184,
+        "accepted": 188,
+        "accepted_correct": 112,
+        "accepted_precision": 0.595745,
+        "accepted_precision_ci95": [
+          0.524356,
+          0.663299
+        ],
+        "accepted_wrong_by_true_role": {
+          "unsupported_animal": 47,
+          "other_supported_species": 19,
+          "empty": 10
+        },
+        "unsupported_events": 203,
+        "unsupported_accepted_as_known": 47,
+        "accepted_by_species": {
+          "bobcat": {
+            "accepted": 20,
+            "correct": 19
+          },
+          "cat": {
+            "accepted": 18,
+            "correct": 0
+          },
+          "coyote": {
+            "accepted": 13,
+            "correct": 13
+          },
+          "dog": {
+            "accepted": 37,
+            "correct": 7
+          },
+          "opossum": {
+            "accepted": 52,
+            "correct": 50
+          },
+          "rabbit": {
+            "accepted": 43,
+            "correct": 18
+          },
+          "raccoon": {
+            "accepted": 5,
+            "correct": 5
+          }
+        },
+        "needs_review": 602,
+        "review_fraction": 0.662996
+      },
+      {
+        "thresholds": {
+          "empty_filter": 0.65,
+          "species_accept": 0.51
+        },
+        "events": 908,
+        "animal_events": 724,
+        "false_empty": 40,
+        "false_empty_rate": 0.055249,
+        "false_empty_rate_ci95": [
+          0.040833,
+          0.074359
+        ],
+        "animal_event_retention": 0.944751,
+        "filtered": 118,
+        "filtered_true_empty": 78,
+        "filtered_non_animal": 0,
+        "empty_events": 184,
+        "accepted": 178,
+        "accepted_correct": 109,
+        "accepted_precision": 0.61236,
+        "accepted_precision_ci95": [
+          0.539131,
+          0.680841
+        ],
+        "accepted_wrong_by_true_role": {
+          "unsupported_animal": 44,
+          "other_supported_species": 17,
+          "empty": 8
+        },
+        "unsupported_events": 203,
+        "unsupported_accepted_as_known": 44,
+        "accepted_by_species": {
+          "bobcat": {
+            "accepted": 19,
+            "correct": 18
+          },
+          "cat": {
+            "accepted": 18,
+            "correct": 0
+          },
+          "coyote": {
+            "accepted": 13,
+            "correct": 13
+          },
+          "dog": {
+            "accepted": 32,
+            "correct": 7
+          },
+          "opossum": {
+            "accepted": 48,
+            "correct": 48
+          },
+          "rabbit": {
+            "accepted": 43,
+            "correct": 18
+          },
+          "raccoon": {
+            "accepted": 5,
+            "correct": 5
+          }
+        },
+        "needs_review": 612,
+        "review_fraction": 0.674009
+      },
+      {
+        "thresholds": {
+          "empty_filter": 0.65,
+          "species_accept": 0.52
+        },
+        "events": 908,
+        "animal_events": 724,
+        "false_empty": 40,
+        "false_empty_rate": 0.055249,
+        "false_empty_rate_ci95": [
+          0.040833,
+          0.074359
+        ],
+        "animal_event_retention": 0.944751,
+        "filtered": 118,
+        "filtered_true_empty": 78,
+        "filtered_non_animal": 0,
+        "empty_events": 184,
+        "accepted": 171,
+        "accepted_correct": 108,
+        "accepted_precision": 0.631579,
+        "accepted_precision_ci95": [
+          0.557127,
+          0.700249
+        ],
+        "accepted_wrong_by_true_role": {
+          "unsupported_animal": 41,
+          "other_supported_species": 15,
+          "empty": 7
+        },
+        "unsupported_events": 203,
+        "unsupported_accepted_as_known": 41,
+        "accepted_by_species": {
+          "bobcat": {
+            "accepted": 18,
+            "correct": 18
+          },
+          "cat": {
+            "accepted": 17,
+            "correct": 0
+          },
+          "coyote": {
+            "accepted": 13,
+            "correct": 13
+          },
+          "dog": {
+            "accepted": 29,
+            "correct": 7
+          },
+          "opossum": {
+            "accepted": 47,
+            "correct": 47
+          },
+          "rabbit": {
+            "accepted": 42,
+            "correct": 18
+          },
+          "raccoon": {
+            "accepted": 5,
+            "correct": 5
+          }
+        },
+        "needs_review": 619,
+        "review_fraction": 0.681718
+      },
+      {
+        "thresholds": {
+          "empty_filter": 0.65,
+          "species_accept": 0.53
+        },
+        "events": 908,
+        "animal_events": 724,
+        "false_empty": 40,
+        "false_empty_rate": 0.055249,
+        "false_empty_rate_ci95": [
+          0.040833,
+          0.074359
+        ],
+        "animal_event_retention": 0.944751,
+        "filtered": 118,
+        "filtered_true_empty": 78,
+        "filtered_non_animal": 0,
+        "empty_events": 184,
+        "accepted": 164,
+        "accepted_correct": 104,
+        "accepted_precision": 0.634146,
+        "accepted_precision_ci95": [
+          0.55814,
+          0.704012
+        ],
+        "accepted_wrong_by_true_role": {
+          "unsupported_animal": 39,
+          "other_supported_species": 14,
+          "empty": 7
+        },
+        "unsupported_events": 203,
+        "unsupported_accepted_as_known": 39,
+        "accepted_by_species": {
+          "bobcat": {
+            "accepted": 18,
+            "correct": 18
+          },
+          "cat": {
+            "accepted": 16,
+            "correct": 0
+          },
+          "coyote": {
+            "accepted": 13,
+            "correct": 13
+          },
+          "dog": {
+            "accepted": 26,
+            "correct": 6
+          },
+          "opossum": {
+            "accepted": 46,
+            "correct": 46
+          },
+          "rabbit": {
+            "accepted": 40,
+            "correct": 16
+          },
+          "raccoon": {
+            "accepted": 5,
+            "correct": 5
+          }
+        },
+        "needs_review": 626,
+        "review_fraction": 0.689427
+      },
+      {
+        "thresholds": {
+          "empty_filter": 0.65,
+          "species_accept": 0.54
+        },
+        "events": 908,
+        "animal_events": 724,
+        "false_empty": 40,
+        "false_empty_rate": 0.055249,
+        "false_empty_rate_ci95": [
+          0.040833,
+          0.074359
+        ],
+        "animal_event_retention": 0.944751,
+        "filtered": 118,
+        "filtered_true_empty": 78,
+        "filtered_non_animal": 0,
+        "empty_events": 184,
+        "accepted": 156,
+        "accepted_correct": 99,
+        "accepted_precision": 0.634615,
+        "accepted_precision_ci95": [
+          0.556658,
+          0.706102
+        ],
+        "accepted_wrong_by_true_role": {
+          "unsupported_animal": 38,
+          "other_supported_species": 12,
+          "empty": 7
+        },
+        "unsupported_events": 203,
+        "unsupported_accepted_as_known": 38,
+        "accepted_by_species": {
+          "bobcat": {
+            "accepted": 18,
+            "correct": 18
+          },
+          "cat": {
+            "accepted": 15,
+            "correct": 0
+          },
+          "coyote": {
+            "accepted": 13,
+            "correct": 13
+          },
+          "dog": {
+            "accepted": 25,
+            "correct": 6
+          },
+          "opossum": {
+            "accepted": 42,
+            "correct": 42
+          },
+          "rabbit": {
+            "accepted": 38,
+            "correct": 15
+          },
+          "raccoon": {
+            "accepted": 5,
+            "correct": 5
+          }
+        },
+        "needs_review": 634,
+        "review_fraction": 0.698238
+      },
+      {
+        "thresholds": {
+          "empty_filter": 0.65,
+          "species_accept": 0.55
+        },
+        "events": 908,
+        "animal_events": 724,
+        "false_empty": 40,
+        "false_empty_rate": 0.055249,
+        "false_empty_rate_ci95": [
+          0.040833,
+          0.074359
+        ],
+        "animal_event_retention": 0.944751,
+        "filtered": 118,
+        "filtered_true_empty": 78,
+        "filtered_non_animal": 0,
+        "empty_events": 184,
+        "accepted": 149,
+        "accepted_correct": 94,
+        "accepted_precision": 0.630872,
+        "accepted_precision_ci95": [
+          0.551007,
+          0.70416
+        ],
+        "accepted_wrong_by_true_role": {
+          "unsupported_animal": 37,
+          "other_supported_species": 11,
+          "empty": 7
+        },
+        "unsupported_events": 203,
+        "unsupported_accepted_as_known": 37,
+        "accepted_by_species": {
+          "bobcat": {
+            "accepted": 17,
+            "correct": 17
+          },
+          "cat": {
+            "accepted": 15,
+            "correct": 0
+          },
+          "coyote": {
+            "accepted": 13,
+            "correct": 13
+          },
+          "dog": {
+            "accepted": 24,
+            "correct": 6
+          },
+          "opossum": {
+            "accepted": 38,
+            "correct": 38
+          },
+          "rabbit": {
+            "accepted": 37,
+            "correct": 15
+          },
+          "raccoon": {
+            "accepted": 5,
+            "correct": 5
+          }
+        },
+        "needs_review": 641,
+        "review_fraction": 0.705947
+      },
+      {
+        "thresholds": {
+          "empty_filter": 0.65,
+          "species_accept": 0.56
+        },
+        "events": 908,
+        "animal_events": 724,
+        "false_empty": 40,
+        "false_empty_rate": 0.055249,
+        "false_empty_rate_ci95": [
+          0.040833,
+          0.074359
+        ],
+        "animal_event_retention": 0.944751,
+        "filtered": 118,
+        "filtered_true_empty": 78,
+        "filtered_non_animal": 0,
+        "empty_events": 184,
+        "accepted": 140,
+        "accepted_correct": 92,
+        "accepted_precision": 0.657143,
+        "accepted_precision_ci95": [
+          0.575261,
+          0.730631
+        ],
+        "accepted_wrong_by_true_role": {
+          "unsupported_animal": 33,
+          "other_supported_species": 10,
+          "empty": 5
+        },
+        "unsupported_events": 203,
+        "unsupported_accepted_as_known": 33,
+        "accepted_by_species": {
+          "bobcat": {
+            "accepted": 16,
+            "correct": 16
+          },
+          "cat": {
+            "accepted": 13,
+            "correct": 0
+          },
+          "coyote": {
+            "accepted": 13,
+            "correct": 13
+          },
+          "dog": {
+            "accepted": 20,
+            "correct": 6
+          },
+          "opossum": {
+            "accepted": 37,
+            "correct": 37
+          },
+          "rabbit": {
+            "accepted": 36,
+            "correct": 15
+          },
+          "raccoon": {
+            "accepted": 5,
+            "correct": 5
+          }
+        },
+        "needs_review": 650,
+        "review_fraction": 0.715859
+      },
+      {
+        "thresholds": {
+          "empty_filter": 0.65,
+          "species_accept": 0.57
+        },
+        "events": 908,
+        "animal_events": 724,
+        "false_empty": 40,
+        "false_empty_rate": 0.055249,
+        "false_empty_rate_ci95": [
+          0.040833,
+          0.074359
+        ],
+        "animal_event_retention": 0.944751,
+        "filtered": 118,
+        "filtered_true_empty": 78,
+        "filtered_non_animal": 0,
+        "empty_events": 184,
+        "accepted": 134,
+        "accepted_correct": 90,
+        "accepted_precision": 0.671642,
+        "accepted_precision_ci95": [
+          0.588314,
+          0.745403
+        ],
+        "accepted_wrong_by_true_role": {
+          "unsupported_animal": 30,
+          "other_supported_species": 9,
+          "empty": 5
+        },
+        "unsupported_events": 203,
+        "unsupported_accepted_as_known": 30,
+        "accepted_by_species": {
+          "bobcat": {
+            "accepted": 16,
+            "correct": 16
+          },
+          "cat": {
+            "accepted": 13,
+            "correct": 0
+          },
+          "coyote": {
+            "accepted": 13,
+            "correct": 13
+          },
+          "dog": {
+            "accepted": 17,
+            "correct": 6
+          },
+          "opossum": {
+            "accepted": 36,
+            "correct": 36
+          },
+          "rabbit": {
+            "accepted": 35,
+            "correct": 15
+          },
+          "raccoon": {
+            "accepted": 4,
+            "correct": 4
+          }
+        },
+        "needs_review": 656,
+        "review_fraction": 0.722467
+      },
+      {
+        "thresholds": {
+          "empty_filter": 0.65,
+          "species_accept": 0.58
+        },
+        "events": 908,
+        "animal_events": 724,
+        "false_empty": 40,
+        "false_empty_rate": 0.055249,
+        "false_empty_rate_ci95": [
+          0.040833,
+          0.074359
+        ],
+        "animal_event_retention": 0.944751,
+        "filtered": 118,
+        "filtered_true_empty": 78,
+        "filtered_non_animal": 0,
+        "empty_events": 184,
+        "accepted": 129,
+        "accepted_correct": 88,
+        "accepted_precision": 0.682171,
+        "accepted_precision_ci95": [
+          0.597544,
+          0.756261
+        ],
+        "accepted_wrong_by_true_role": {
+          "unsupported_animal": 27,
+          "other_supported_species": 9,
+          "empty": 5
+        },
+        "unsupported_events": 203,
+        "unsupported_accepted_as_known": 27,
+        "accepted_by_species": {
+          "bobcat": {
+            "accepted": 16,
+            "correct": 16
+          },
+          "cat": {
+            "accepted": 12,
+            "correct": 0
+          },
+          "coyote": {
+            "accepted": 13,
+            "correct": 13
+          },
+          "dog": {
+            "accepted": 16,
+            "correct": 6
+          },
+          "opossum": {
+            "accepted": 35,
+            "correct": 35
+          },
+          "rabbit": {
+            "accepted": 33,
+            "correct": 14
+          },
+          "raccoon": {
+            "accepted": 4,
+            "correct": 4
+          }
+        },
+        "needs_review": 661,
+        "review_fraction": 0.727974
+      },
+      {
+        "thresholds": {
+          "empty_filter": 0.65,
+          "species_accept": 0.59
+        },
+        "events": 908,
+        "animal_events": 724,
+        "false_empty": 40,
+        "false_empty_rate": 0.055249,
+        "false_empty_rate_ci95": [
+          0.040833,
+          0.074359
+        ],
+        "animal_event_retention": 0.944751,
+        "filtered": 118,
+        "filtered_true_empty": 78,
+        "filtered_non_animal": 0,
+        "empty_events": 184,
+        "accepted": 125,
+        "accepted_correct": 86,
+        "accepted_precision": 0.688,
+        "accepted_precision_ci95": [
+          0.602197,
+          0.762592
+        ],
+        "accepted_wrong_by_true_role": {
+          "unsupported_animal": 26,
+          "other_supported_species": 8,
+          "empty": 5
+        },
+        "unsupported_events": 203,
+        "unsupported_accepted_as_known": 26,
+        "accepted_by_species": {
+          "bobcat": {
+            "accepted": 16,
+            "correct": 16
+          },
+          "cat": {
+            "accepted": 12,
+            "correct": 0
+          },
+          "coyote": {
+            "accepted": 13,
+            "correct": 13
+          },
+          "dog": {
+            "accepted": 15,
+            "correct": 6
+          },
+          "opossum": {
+            "accepted": 33,
+            "correct": 33
+          },
+          "rabbit": {
+            "accepted": 32,
+            "correct": 14
+          },
+          "raccoon": {
+            "accepted": 4,
+            "correct": 4
+          }
+        },
+        "needs_review": 665,
+        "review_fraction": 0.732379
+      },
+      {
+        "thresholds": {
+          "empty_filter": 0.65,
+          "species_accept": 0.6
+        },
+        "events": 908,
+        "animal_events": 724,
+        "false_empty": 40,
+        "false_empty_rate": 0.055249,
+        "false_empty_rate_ci95": [
+          0.040833,
+          0.074359
+        ],
+        "animal_event_retention": 0.944751,
+        "filtered": 118,
+        "filtered_true_empty": 78,
+        "filtered_non_animal": 0,
+        "empty_events": 184,
+        "accepted": 116,
+        "accepted_correct": 80,
+        "accepted_precision": 0.689655,
+        "accepted_precision_ci95": [
+          0.600522,
+          0.766629
+        ],
+        "accepted_wrong_by_true_role": {
+          "unsupported_animal": 25,
+          "other_supported_species": 7,
+          "empty": 4
+        },
+        "unsupported_events": 203,
+        "unsupported_accepted_as_known": 25,
+        "accepted_by_species": {
+          "bobcat": {
+            "accepted": 15,
+            "correct": 15
+          },
+          "cat": {
+            "accepted": 9,
+            "correct": 0
+          },
+          "coyote": {
+            "accepted": 13,
+            "correct": 13
+          },
+          "dog": {
+            "accepted": 15,
+            "correct": 6
+          },
+          "opossum": {
+            "accepted": 30,
+            "correct": 30
+          },
+          "rabbit": {
+            "accepted": 31,
+            "correct": 13
+          },
+          "raccoon": {
+            "accepted": 3,
+            "correct": 3
+          }
+        },
+        "needs_review": 674,
+        "review_fraction": 0.742291
+      },
+      {
+        "thresholds": {
+          "empty_filter": 0.65,
+          "species_accept": 0.61
+        },
+        "events": 908,
+        "animal_events": 724,
+        "false_empty": 40,
+        "false_empty_rate": 0.055249,
+        "false_empty_rate_ci95": [
+          0.040833,
+          0.074359
+        ],
+        "animal_event_retention": 0.944751,
+        "filtered": 118,
+        "filtered_true_empty": 78,
+        "filtered_non_animal": 0,
+        "empty_events": 184,
+        "accepted": 113,
+        "accepted_correct": 78,
+        "accepted_precision": 0.690265,
+        "accepted_precision_ci95": [
+          0.599935,
+          0.768085
+        ],
+        "accepted_wrong_by_true_role": {
+          "unsupported_animal": 24,
+          "other_supported_species": 7,
+          "empty": 4
+        },
+        "unsupported_events": 203,
+        "unsupported_accepted_as_known": 24,
+        "accepted_by_species": {
+          "bobcat": {
+            "accepted": 15,
+            "correct": 15
+          },
+          "cat": {
+            "accepted": 9,
+            "correct": 0
+          },
+          "coyote": {
+            "accepted": 13,
+            "correct": 13
+          },
+          "dog": {
+            "accepted": 15,
+            "correct": 6
+          },
+          "opossum": {
+            "accepted": 28,
+            "correct": 28
+          },
+          "rabbit": {
+            "accepted": 30,
+            "correct": 13
+          },
+          "raccoon": {
+            "accepted": 3,
+            "correct": 3
+          }
+        },
+        "needs_review": 677,
+        "review_fraction": 0.745595
+      },
+      {
+        "thresholds": {
+          "empty_filter": 0.65,
+          "species_accept": 0.62
+        },
+        "events": 908,
+        "animal_events": 724,
+        "false_empty": 40,
+        "false_empty_rate": 0.055249,
+        "false_empty_rate_ci95": [
+          0.040833,
+          0.074359
+        ],
+        "animal_event_retention": 0.944751,
+        "filtered": 118,
+        "filtered_true_empty": 78,
+        "filtered_non_animal": 0,
+        "empty_events": 184,
+        "accepted": 106,
+        "accepted_correct": 73,
+        "accepted_precision": 0.688679,
+        "accepted_precision_ci95": [
+          0.595236,
+          0.768925
+        ],
+        "accepted_wrong_by_true_role": {
+          "unsupported_animal": 23,
+          "other_supported_species": 7,
+          "empty": 3
+        },
+        "unsupported_events": 203,
+        "unsupported_accepted_as_known": 23,
+        "accepted_by_species": {
+          "bobcat": {
+            "accepted": 15,
+            "correct": 15
+          },
+          "cat": {
+            "accepted": 9,
+            "correct": 0
+          },
+          "coyote": {
+            "accepted": 13,
+            "correct": 13
+          },
+          "dog": {
+            "accepted": 13,
+            "correct": 5
+          },
+          "opossum": {
+            "accepted": 25,
+            "correct": 25
+          },
+          "rabbit": {
+            "accepted": 29,
+            "correct": 13
+          },
+          "raccoon": {
+            "accepted": 2,
+            "correct": 2
+          }
+        },
+        "needs_review": 684,
+        "review_fraction": 0.753304
+      },
+      {
+        "thresholds": {
+          "empty_filter": 0.65,
+          "species_accept": 0.63
+        },
+        "events": 908,
+        "animal_events": 724,
+        "false_empty": 40,
+        "false_empty_rate": 0.055249,
+        "false_empty_rate_ci95": [
+          0.040833,
+          0.074359
+        ],
+        "animal_event_retention": 0.944751,
+        "filtered": 118,
+        "filtered_true_empty": 78,
+        "filtered_non_animal": 0,
+        "empty_events": 184,
+        "accepted": 105,
+        "accepted_correct": 72,
+        "accepted_precision": 0.685714,
+        "accepted_precision_ci95": [
+          0.591698,
+          0.766621
+        ],
+        "accepted_wrong_by_true_role": {
+          "unsupported_animal": 23,
+          "other_supported_species": 7,
+          "empty": 3
+        },
+        "unsupported_events": 203,
+        "unsupported_accepted_as_known": 23,
+        "accepted_by_species": {
+          "bobcat": {
+            "accepted": 15,
+            "correct": 15
+          },
+          "cat": {
+            "accepted": 9,
+            "correct": 0
+          },
+          "coyote": {
+            "accepted": 13,
+            "correct": 13
+          },
+          "dog": {
+            "accepted": 13,
+            "correct": 5
+          },
+          "opossum": {
+            "accepted": 24,
+            "correct": 24
+          },
+          "rabbit": {
+            "accepted": 29,
+            "correct": 13
+          },
+          "raccoon": {
+            "accepted": 2,
+            "correct": 2
+          }
+        },
+        "needs_review": 685,
+        "review_fraction": 0.754405
+      },
+      {
+        "thresholds": {
+          "empty_filter": 0.65,
+          "species_accept": 0.64
+        },
+        "events": 908,
+        "animal_events": 724,
+        "false_empty": 40,
+        "false_empty_rate": 0.055249,
+        "false_empty_rate_ci95": [
+          0.040833,
+          0.074359
+        ],
+        "animal_event_retention": 0.944751,
+        "filtered": 118,
+        "filtered_true_empty": 78,
+        "filtered_non_animal": 0,
+        "empty_events": 184,
+        "accepted": 100,
+        "accepted_correct": 69,
+        "accepted_precision": 0.69,
+        "accepted_precision_ci95": [
+          0.593738,
+          0.772204
+        ],
+        "accepted_wrong_by_true_role": {
+          "unsupported_animal": 22,
+          "other_supported_species": 6,
+          "empty": 3
+        },
+        "unsupported_events": 203,
+        "unsupported_accepted_as_known": 22,
+        "accepted_by_species": {
+          "bobcat": {
+            "accepted": 14,
+            "correct": 14
+          },
+          "cat": {
+            "accepted": 8,
+            "correct": 0
+          },
+          "coyote": {
+            "accepted": 12,
+            "correct": 12
+          },
+          "dog": {
+            "accepted": 13,
+            "correct": 5
+          },
+          "opossum": {
+            "accepted": 23,
+            "correct": 23
+          },
+          "rabbit": {
+            "accepted": 28,
+            "correct": 13
+          },
+          "raccoon": {
+            "accepted": 2,
+            "correct": 2
+          }
+        },
+        "needs_review": 690,
+        "review_fraction": 0.759912
+      },
+      {
+        "thresholds": {
+          "empty_filter": 0.65,
+          "species_accept": 0.65
+        },
+        "events": 908,
+        "animal_events": 724,
+        "false_empty": 40,
+        "false_empty_rate": 0.055249,
+        "false_empty_rate_ci95": [
+          0.040833,
+          0.074359
+        ],
+        "animal_event_retention": 0.944751,
+        "filtered": 118,
+        "filtered_true_empty": 78,
+        "filtered_non_animal": 0,
+        "empty_events": 184,
+        "accepted": 91,
+        "accepted_correct": 64,
+        "accepted_precision": 0.703297,
+        "accepted_precision_ci95": [
+          0.602758,
+          0.787366
+        ],
+        "accepted_wrong_by_true_role": {
+          "unsupported_animal": 18,
+          "other_supported_species": 6,
+          "empty": 3
+        },
+        "unsupported_events": 203,
+        "unsupported_accepted_as_known": 18,
+        "accepted_by_species": {
+          "bobcat": {
+            "accepted": 14,
+            "correct": 14
+          },
+          "cat": {
+            "accepted": 7,
+            "correct": 0
+          },
+          "coyote": {
+            "accepted": 11,
+            "correct": 11
+          },
+          "dog": {
+            "accepted": 10,
+            "correct": 4
+          },
+          "opossum": {
+            "accepted": 20,
+            "correct": 20
+          },
+          "rabbit": {
+            "accepted": 27,
+            "correct": 13
+          },
+          "raccoon": {
+            "accepted": 2,
+            "correct": 2
+          }
+        },
+        "needs_review": 699,
+        "review_fraction": 0.769824
+      },
+      {
+        "thresholds": {
+          "empty_filter": 0.65,
+          "species_accept": 0.66
+        },
+        "events": 908,
+        "animal_events": 724,
+        "false_empty": 40,
+        "false_empty_rate": 0.055249,
+        "false_empty_rate_ci95": [
+          0.040833,
+          0.074359
+        ],
+        "animal_event_retention": 0.944751,
+        "filtered": 118,
+        "filtered_true_empty": 78,
+        "filtered_non_animal": 0,
+        "empty_events": 184,
+        "accepted": 86,
+        "accepted_correct": 62,
+        "accepted_precision": 0.72093,
+        "accepted_precision_ci95": [
+          0.618252,
+          0.804715
+        ],
+        "accepted_wrong_by_true_role": {
+          "unsupported_animal": 15,
+          "other_supported_species": 6,
+          "empty": 3
+        },
+        "unsupported_events": 203,
+        "unsupported_accepted_as_known": 15,
+        "accepted_by_species": {
+          "bobcat": {
+            "accepted": 14,
+            "correct": 14
+          },
+          "cat": {
+            "accepted": 7,
+            "correct": 0
+          },
+          "coyote": {
+            "accepted": 10,
+            "correct": 10
+          },
+          "dog": {
+            "accepted": 9,
+            "correct": 4
+          },
+          "opossum": {
+            "accepted": 19,
+            "correct": 19
+          },
+          "rabbit": {
+            "accepted": 25,
+            "correct": 13
+          },
+          "raccoon": {
+            "accepted": 2,
+            "correct": 2
+          }
+        },
+        "needs_review": 704,
+        "review_fraction": 0.77533
+      },
+      {
+        "thresholds": {
+          "empty_filter": 0.65,
+          "species_accept": 0.67
+        },
+        "events": 908,
+        "animal_events": 724,
+        "false_empty": 40,
+        "false_empty_rate": 0.055249,
+        "false_empty_rate_ci95": [
+          0.040833,
+          0.074359
+        ],
+        "animal_event_retention": 0.944751,
+        "filtered": 118,
+        "filtered_true_empty": 78,
+        "filtered_non_animal": 0,
+        "empty_events": 184,
+        "accepted": 84,
+        "accepted_correct": 61,
+        "accepted_precision": 0.72619,
+        "accepted_precision_ci95": [
+          0.622524,
+          0.810073
+        ],
+        "accepted_wrong_by_true_role": {
+          "unsupported_animal": 15,
+          "other_supported_species": 5,
+          "empty": 3
+        },
+        "unsupported_events": 203,
+        "unsupported_accepted_as_known": 15,
+        "accepted_by_species": {
+          "bobcat": {
+            "accepted": 13,
+            "correct": 13
+          },
+          "cat": {
+            "accepted": 6,
+            "correct": 0
+          },
+          "coyote": {
+            "accepted": 10,
+            "correct": 10
+          },
+          "dog": {
+            "accepted": 9,
+            "correct": 4
+          },
+          "opossum": {
+            "accepted": 19,
+            "correct": 19
+          },
+          "rabbit": {
+            "accepted": 25,
+            "correct": 13
+          },
+          "raccoon": {
+            "accepted": 2,
+            "correct": 2
+          }
+        },
+        "needs_review": 706,
+        "review_fraction": 0.777533
+      },
+      {
+        "thresholds": {
+          "empty_filter": 0.65,
+          "species_accept": 0.68
+        },
+        "events": 908,
+        "animal_events": 724,
+        "false_empty": 40,
+        "false_empty_rate": 0.055249,
+        "false_empty_rate_ci95": [
+          0.040833,
+          0.074359
+        ],
+        "animal_event_retention": 0.944751,
+        "filtered": 118,
+        "filtered_true_empty": 78,
+        "filtered_non_animal": 0,
+        "empty_events": 184,
+        "accepted": 80,
+        "accepted_correct": 57,
+        "accepted_precision": 0.7125,
+        "accepted_precision_ci95": [
+          0.605394,
+          0.800132
+        ],
+        "accepted_wrong_by_true_role": {
+          "unsupported_animal": 15,
+          "other_supported_species": 5,
+          "empty": 3
+        },
+        "unsupported_events": 203,
+        "unsupported_accepted_as_known": 15,
+        "accepted_by_species": {
+          "bobcat": {
+            "accepted": 13,
+            "correct": 13
+          },
+          "cat": {
+            "accepted": 6,
+            "correct": 0
+          },
+          "coyote": {
+            "accepted": 8,
+            "correct": 8
+          },
+          "dog": {
+            "accepted": 9,
+            "correct": 4
+          },
+          "opossum": {
+            "accepted": 18,
+            "correct": 18
+          },
+          "rabbit": {
+            "accepted": 24,
+            "correct": 12
+          },
+          "raccoon": {
+            "accepted": 2,
+            "correct": 2
+          }
+        },
+        "needs_review": 710,
+        "review_fraction": 0.781938
+      },
+      {
+        "thresholds": {
+          "empty_filter": 0.65,
+          "species_accept": 0.69
+        },
+        "events": 908,
+        "animal_events": 724,
+        "false_empty": 40,
+        "false_empty_rate": 0.055249,
+        "false_empty_rate_ci95": [
+          0.040833,
+          0.074359
+        ],
+        "animal_event_retention": 0.944751,
+        "filtered": 118,
+        "filtered_true_empty": 78,
+        "filtered_non_animal": 0,
+        "empty_events": 184,
+        "accepted": 72,
+        "accepted_correct": 53,
+        "accepted_precision": 0.736111,
+        "accepted_precision_ci95": [
+          0.624239,
+          0.824064
+        ],
+        "accepted_wrong_by_true_role": {
+          "unsupported_animal": 12,
+          "other_supported_species": 5,
+          "empty": 2
+        },
+        "unsupported_events": 203,
+        "unsupported_accepted_as_known": 12,
+        "accepted_by_species": {
+          "bobcat": {
+            "accepted": 13,
+            "correct": 13
+          },
+          "cat": {
+            "accepted": 6,
+            "correct": 0
+          },
+          "coyote": {
+            "accepted": 8,
+            "correct": 8
+          },
+          "dog": {
+            "accepted": 7,
+            "correct": 4
+          },
+          "opossum": {
+            "accepted": 14,
+            "correct": 14
+          },
+          "rabbit": {
+            "accepted": 22,
+            "correct": 12
+          },
+          "raccoon": {
+            "accepted": 2,
+            "correct": 2
+          }
+        },
+        "needs_review": 718,
+        "review_fraction": 0.790749
+      },
+      {
+        "thresholds": {
+          "empty_filter": 0.65,
+          "species_accept": 0.7
+        },
+        "events": 908,
+        "animal_events": 724,
+        "false_empty": 40,
+        "false_empty_rate": 0.055249,
+        "false_empty_rate_ci95": [
+          0.040833,
+          0.074359
+        ],
+        "animal_event_retention": 0.944751,
+        "filtered": 118,
+        "filtered_true_empty": 78,
+        "filtered_non_animal": 0,
+        "empty_events": 184,
+        "accepted": 70,
+        "accepted_correct": 51,
+        "accepted_precision": 0.728571,
+        "accepted_precision_ci95": [
+          0.614555,
+          0.818805
+        ],
+        "accepted_wrong_by_true_role": {
+          "unsupported_animal": 12,
+          "other_supported_species": 5,
+          "empty": 2
+        },
+        "unsupported_events": 203,
+        "unsupported_accepted_as_known": 12,
+        "accepted_by_species": {
+          "bobcat": {
+            "accepted": 13,
+            "correct": 13
+          },
+          "cat": {
+            "accepted": 6,
+            "correct": 0
+          },
+          "coyote": {
+            "accepted": 8,
+            "correct": 8
+          },
+          "dog": {
+            "accepted": 7,
+            "correct": 4
+          },
+          "opossum": {
+            "accepted": 12,
+            "correct": 12
+          },
+          "rabbit": {
+            "accepted": 22,
+            "correct": 12
+          },
+          "raccoon": {
+            "accepted": 2,
+            "correct": 2
+          }
+        },
+        "needs_review": 720,
+        "review_fraction": 0.792952
+      },
+      {
+        "thresholds": {
+          "empty_filter": 0.65,
+          "species_accept": 0.71
+        },
+        "events": 908,
+        "animal_events": 724,
+        "false_empty": 40,
+        "false_empty_rate": 0.055249,
+        "false_empty_rate_ci95": [
+          0.040833,
+          0.074359
+        ],
+        "animal_event_retention": 0.944751,
+        "filtered": 118,
+        "filtered_true_empty": 78,
+        "filtered_non_animal": 0,
+        "empty_events": 184,
+        "accepted": 69,
+        "accepted_correct": 50,
+        "accepted_precision": 0.724638,
+        "accepted_precision_ci95": [
+          0.609525,
+          0.816056
+        ],
+        "accepted_wrong_by_true_role": {
+          "unsupported_animal": 12,
+          "other_supported_species": 5,
+          "empty": 2
+        },
+        "unsupported_events": 203,
+        "unsupported_accepted_as_known": 12,
+        "accepted_by_species": {
+          "bobcat": {
+            "accepted": 12,
+            "correct": 12
+          },
+          "cat": {
+            "accepted": 6,
+            "correct": 0
+          },
+          "coyote": {
+            "accepted": 8,
+            "correct": 8
+          },
+          "dog": {
+            "accepted": 7,
+            "correct": 4
+          },
+          "opossum": {
+            "accepted": 12,
+            "correct": 12
+          },
+          "rabbit": {
+            "accepted": 22,
+            "correct": 12
+          },
+          "raccoon": {
+            "accepted": 2,
+            "correct": 2
+          }
+        },
+        "needs_review": 721,
+        "review_fraction": 0.794053
+      },
+      {
+        "thresholds": {
+          "empty_filter": 0.65,
+          "species_accept": 0.72
+        },
+        "events": 908,
+        "animal_events": 724,
+        "false_empty": 40,
+        "false_empty_rate": 0.055249,
+        "false_empty_rate_ci95": [
+          0.040833,
+          0.074359
+        ],
+        "animal_event_retention": 0.944751,
+        "filtered": 118,
+        "filtered_true_empty": 78,
+        "filtered_non_animal": 0,
+        "empty_events": 184,
+        "accepted": 61,
+        "accepted_correct": 45,
+        "accepted_precision": 0.737705,
+        "accepted_precision_ci95": [
+          0.61563,
+          0.831614
+        ],
+        "accepted_wrong_by_true_role": {
+          "unsupported_animal": 9,
+          "other_supported_species": 5,
+          "empty": 2
+        },
+        "unsupported_events": 203,
+        "unsupported_accepted_as_known": 9,
+        "accepted_by_species": {
+          "bobcat": {
+            "accepted": 11,
+            "correct": 11
+          },
+          "cat": {
+            "accepted": 6,
+            "correct": 0
+          },
+          "coyote": {
+            "accepted": 8,
+            "correct": 8
+          },
+          "dog": {
+            "accepted": 6,
+            "correct": 3
+          },
+          "opossum": {
+            "accepted": 10,
+            "correct": 10
+          },
+          "rabbit": {
+            "accepted": 18,
+            "correct": 11
+          },
+          "raccoon": {
+            "accepted": 2,
+            "correct": 2
+          }
+        },
+        "needs_review": 729,
+        "review_fraction": 0.802863
+      },
+      {
+        "thresholds": {
+          "empty_filter": 0.65,
+          "species_accept": 0.73
+        },
+        "events": 908,
+        "animal_events": 724,
+        "false_empty": 40,
+        "false_empty_rate": 0.055249,
+        "false_empty_rate_ci95": [
+          0.040833,
+          0.074359
+        ],
+        "animal_event_retention": 0.944751,
+        "filtered": 118,
+        "filtered_true_empty": 78,
+        "filtered_non_animal": 0,
+        "empty_events": 184,
+        "accepted": 60,
+        "accepted_correct": 45,
+        "accepted_precision": 0.75,
+        "accepted_precision_ci95": [
+          0.627677,
+          0.842236
+        ],
+        "accepted_wrong_by_true_role": {
+          "unsupported_animal": 8,
+          "other_supported_species": 5,
+          "empty": 2
+        },
+        "unsupported_events": 203,
+        "unsupported_accepted_as_known": 8,
+        "accepted_by_species": {
+          "bobcat": {
+            "accepted": 11,
+            "correct": 11
+          },
+          "cat": {
+            "accepted": 6,
+            "correct": 0
+          },
+          "coyote": {
+            "accepted": 8,
+            "correct": 8
+          },
+          "dog": {
+            "accepted": 6,
+            "correct": 3
+          },
+          "opossum": {
+            "accepted": 10,
+            "correct": 10
+          },
+          "rabbit": {
+            "accepted": 17,
+            "correct": 11
+          },
+          "raccoon": {
+            "accepted": 2,
+            "correct": 2
+          }
+        },
+        "needs_review": 730,
+        "review_fraction": 0.803965
+      },
+      {
+        "thresholds": {
+          "empty_filter": 0.65,
+          "species_accept": 0.74
+        },
+        "events": 908,
+        "animal_events": 724,
+        "false_empty": 40,
+        "false_empty_rate": 0.055249,
+        "false_empty_rate_ci95": [
+          0.040833,
+          0.074359
+        ],
+        "animal_event_retention": 0.944751,
+        "filtered": 118,
+        "filtered_true_empty": 78,
+        "filtered_non_animal": 0,
+        "empty_events": 184,
+        "accepted": 54,
+        "accepted_correct": 43,
+        "accepted_precision": 0.796296,
+        "accepted_precision_ci95": [
+          0.670974,
+          0.882261
+        ],
+        "accepted_wrong_by_true_role": {
+          "unsupported_animal": 6,
+          "other_supported_species": 3,
+          "empty": 2
+        },
+        "unsupported_events": 203,
+        "unsupported_accepted_as_known": 6,
+        "accepted_by_species": {
+          "bobcat": {
+            "accepted": 10,
+            "correct": 10
+          },
+          "cat": {
+            "accepted": 4,
+            "correct": 0
+          },
+          "coyote": {
+            "accepted": 8,
+            "correct": 8
+          },
+          "dog": {
+            "accepted": 5,
+            "correct": 3
+          },
+          "opossum": {
+            "accepted": 9,
+            "correct": 9
+          },
+          "rabbit": {
+            "accepted": 16,
+            "correct": 11
+          },
+          "raccoon": {
+            "accepted": 2,
+            "correct": 2
+          }
+        },
+        "needs_review": 736,
+        "review_fraction": 0.810573
+      },
+      {
+        "thresholds": {
+          "empty_filter": 0.65,
+          "species_accept": 0.75
+        },
+        "events": 908,
+        "animal_events": 724,
+        "false_empty": 40,
+        "false_empty_rate": 0.055249,
+        "false_empty_rate_ci95": [
+          0.040833,
+          0.074359
+        ],
+        "animal_event_retention": 0.944751,
+        "filtered": 118,
+        "filtered_true_empty": 78,
+        "filtered_non_animal": 0,
+        "empty_events": 184,
+        "accepted": 49,
+        "accepted_correct": 38,
+        "accepted_precision": 0.77551,
+        "accepted_precision_ci95": [
+          0.641209,
+          0.869752
+        ],
+        "accepted_wrong_by_true_role": {
+          "unsupported_animal": 6,
+          "other_supported_species": 3,
+          "empty": 2
+        },
+        "unsupported_events": 203,
+        "unsupported_accepted_as_known": 6,
+        "accepted_by_species": {
+          "bobcat": {
+            "accepted": 8,
+            "correct": 8
+          },
+          "cat": {
+            "accepted": 4,
+            "correct": 0
+          },
+          "coyote": {
+            "accepted": 8,
+            "correct": 8
+          },
+          "dog": {
+            "accepted": 5,
+            "correct": 3
+          },
+          "opossum": {
+            "accepted": 7,
+            "correct": 7
+          },
+          "rabbit": {
+            "accepted": 15,
+            "correct": 10
+          },
+          "raccoon": {
+            "accepted": 2,
+            "correct": 2
+          }
+        },
+        "needs_review": 741,
+        "review_fraction": 0.816079
+      },
+      {
+        "thresholds": {
+          "empty_filter": 0.65,
+          "species_accept": 0.76
+        },
+        "events": 908,
+        "animal_events": 724,
+        "false_empty": 40,
+        "false_empty_rate": 0.055249,
+        "false_empty_rate_ci95": [
+          0.040833,
+          0.074359
+        ],
+        "animal_event_retention": 0.944751,
+        "filtered": 118,
+        "filtered_true_empty": 78,
+        "filtered_non_animal": 0,
+        "empty_events": 184,
+        "accepted": 48,
+        "accepted_correct": 38,
+        "accepted_precision": 0.791667,
+        "accepted_precision_ci95": [
+          0.657408,
+          0.882699
+        ],
+        "accepted_wrong_by_true_role": {
+          "unsupported_animal": 5,
+          "other_supported_species": 3,
+          "empty": 2
+        },
+        "unsupported_events": 203,
+        "unsupported_accepted_as_known": 5,
+        "accepted_by_species": {
+          "bobcat": {
+            "accepted": 8,
+            "correct": 8
+          },
+          "cat": {
+            "accepted": 4,
+            "correct": 0
+          },
+          "coyote": {
+            "accepted": 8,
+            "correct": 8
+          },
+          "dog": {
+            "accepted": 5,
+            "correct": 3
+          },
+          "opossum": {
+            "accepted": 7,
+            "correct": 7
+          },
+          "rabbit": {
+            "accepted": 14,
+            "correct": 10
+          },
+          "raccoon": {
+            "accepted": 2,
+            "correct": 2
+          }
+        },
+        "needs_review": 742,
+        "review_fraction": 0.817181
+      },
+      {
+        "thresholds": {
+          "empty_filter": 0.65,
+          "species_accept": 0.77
+        },
+        "events": 908,
+        "animal_events": 724,
+        "false_empty": 40,
+        "false_empty_rate": 0.055249,
+        "false_empty_rate_ci95": [
+          0.040833,
+          0.074359
+        ],
+        "animal_event_retention": 0.944751,
+        "filtered": 118,
+        "filtered_true_empty": 78,
+        "filtered_non_animal": 0,
+        "empty_events": 184,
+        "accepted": 48,
+        "accepted_correct": 38,
+        "accepted_precision": 0.791667,
+        "accepted_precision_ci95": [
+          0.657408,
+          0.882699
+        ],
+        "accepted_wrong_by_true_role": {
+          "unsupported_animal": 5,
+          "other_supported_species": 3,
+          "empty": 2
+        },
+        "unsupported_events": 203,
+        "unsupported_accepted_as_known": 5,
+        "accepted_by_species": {
+          "bobcat": {
+            "accepted": 8,
+            "correct": 8
+          },
+          "cat": {
+            "accepted": 4,
+            "correct": 0
+          },
+          "coyote": {
+            "accepted": 8,
+            "correct": 8
+          },
+          "dog": {
+            "accepted": 5,
+            "correct": 3
+          },
+          "opossum": {
+            "accepted": 7,
+            "correct": 7
+          },
+          "rabbit": {
+            "accepted": 14,
+            "correct": 10
+          },
+          "raccoon": {
+            "accepted": 2,
+            "correct": 2
+          }
+        },
+        "needs_review": 742,
+        "review_fraction": 0.817181
+      },
+      {
+        "thresholds": {
+          "empty_filter": 0.65,
+          "species_accept": 0.78
+        },
+        "events": 908,
+        "animal_events": 724,
+        "false_empty": 40,
+        "false_empty_rate": 0.055249,
+        "false_empty_rate_ci95": [
+          0.040833,
+          0.074359
+        ],
+        "animal_event_retention": 0.944751,
+        "filtered": 118,
+        "filtered_true_empty": 78,
+        "filtered_non_animal": 0,
+        "empty_events": 184,
+        "accepted": 44,
+        "accepted_correct": 36,
+        "accepted_precision": 0.818182,
+        "accepted_precision_ci95": [
+          0.680392,
+          0.904873
+        ],
+        "accepted_wrong_by_true_role": {
+          "unsupported_animal": 4,
+          "empty": 2,
+          "other_supported_species": 2
+        },
+        "unsupported_events": 203,
+        "unsupported_accepted_as_known": 4,
+        "accepted_by_species": {
+          "bobcat": {
+            "accepted": 7,
+            "correct": 7
+          },
+          "cat": {
+            "accepted": 3,
+            "correct": 0
+          },
+          "coyote": {
+            "accepted": 8,
+            "correct": 8
+          },
+          "dog": {
+            "accepted": 5,
+            "correct": 3
+          },
+          "opossum": {
+            "accepted": 7,
+            "correct": 7
+          },
+          "rabbit": {
+            "accepted": 12,
+            "correct": 9
+          },
+          "raccoon": {
+            "accepted": 2,
+            "correct": 2
+          }
+        },
+        "needs_review": 746,
+        "review_fraction": 0.821586
+      },
+      {
+        "thresholds": {
+          "empty_filter": 0.65,
+          "species_accept": 0.79
+        },
+        "events": 908,
+        "animal_events": 724,
+        "false_empty": 40,
+        "false_empty_rate": 0.055249,
+        "false_empty_rate_ci95": [
+          0.040833,
+          0.074359
+        ],
+        "animal_event_retention": 0.944751,
+        "filtered": 118,
+        "filtered_true_empty": 78,
+        "filtered_non_animal": 0,
+        "empty_events": 184,
+        "accepted": 42,
+        "accepted_correct": 36,
+        "accepted_precision": 0.857143,
+        "accepted_precision_ci95": [
+          0.721586,
+          0.932841
+        ],
+        "accepted_wrong_by_true_role": {
+          "unsupported_animal": 4,
+          "other_supported_species": 1,
+          "empty": 1
+        },
+        "unsupported_events": 203,
+        "unsupported_accepted_as_known": 4,
+        "accepted_by_species": {
+          "bobcat": {
+            "accepted": 7,
+            "correct": 7
+          },
+          "cat": {
+            "accepted": 2,
+            "correct": 0
+          },
+          "coyote": {
+            "accepted": 8,
+            "correct": 8
+          },
+          "dog": {
+            "accepted": 4,
+            "correct": 3
+          },
+          "opossum": {
+            "accepted": 7,
+            "correct": 7
+          },
+          "rabbit": {
+            "accepted": 12,
+            "correct": 9
+          },
+          "raccoon": {
+            "accepted": 2,
+            "correct": 2
+          }
+        },
+        "needs_review": 748,
+        "review_fraction": 0.823789
+      },
+      {
+        "thresholds": {
+          "empty_filter": 0.65,
+          "species_accept": 0.8
+        },
+        "events": 908,
+        "animal_events": 724,
+        "false_empty": 40,
+        "false_empty_rate": 0.055249,
+        "false_empty_rate_ci95": [
+          0.040833,
+          0.074359
+        ],
+        "animal_event_retention": 0.944751,
+        "filtered": 118,
+        "filtered_true_empty": 78,
+        "filtered_non_animal": 0,
+        "empty_events": 184,
+        "accepted": 37,
+        "accepted_correct": 33,
+        "accepted_precision": 0.891892,
+        "accepted_precision_ci95": [
+          0.752912,
+          0.957149
+        ],
+        "accepted_wrong_by_true_role": {
+          "unsupported_animal": 3,
+          "empty": 1
+        },
+        "unsupported_events": 203,
+        "unsupported_accepted_as_known": 3,
+        "accepted_by_species": {
+          "bobcat": {
+            "accepted": 5,
+            "correct": 5
+          },
+          "cat": {
+            "accepted": 1,
+            "correct": 0
+          },
+          "coyote": {
+            "accepted": 8,
+            "correct": 8
+          },
+          "dog": {
+            "accepted": 4,
+            "correct": 3
+          },
+          "opossum": {
+            "accepted": 7,
+            "correct": 7
+          },
+          "rabbit": {
+            "accepted": 10,
+            "correct": 8
+          },
+          "raccoon": {
+            "accepted": 2,
+            "correct": 2
+          }
+        },
+        "needs_review": 753,
+        "review_fraction": 0.829295
+      },
+      {
+        "thresholds": {
+          "empty_filter": 0.65,
+          "species_accept": 0.81
+        },
+        "events": 908,
+        "animal_events": 724,
+        "false_empty": 40,
+        "false_empty_rate": 0.055249,
+        "false_empty_rate_ci95": [
+          0.040833,
+          0.074359
+        ],
+        "animal_event_retention": 0.944751,
+        "filtered": 118,
+        "filtered_true_empty": 78,
+        "filtered_non_animal": 0,
+        "empty_events": 184,
+        "accepted": 34,
+        "accepted_correct": 31,
+        "accepted_precision": 0.911765,
+        "accepted_precision_ci95": [
+          0.770392,
+          0.969535
+        ],
+        "accepted_wrong_by_true_role": {
+          "unsupported_animal": 2,
+          "empty": 1
+        },
+        "unsupported_events": 203,
+        "unsupported_accepted_as_known": 2,
+        "accepted_by_species": {
+          "bobcat": {
+            "accepted": 5,
+            "correct": 5
+          },
+          "cat": {
+            "accepted": 1,
+            "correct": 0
+          },
+          "coyote": {
+            "accepted": 7,
+            "correct": 7
+          },
+          "dog": {
+            "accepted": 4,
+            "correct": 3
+          },
+          "opossum": {
+            "accepted": 6,
+            "correct": 6
+          },
+          "rabbit": {
+            "accepted": 9,
+            "correct": 8
+          },
+          "raccoon": {
+            "accepted": 2,
+            "correct": 2
+          }
+        },
+        "needs_review": 756,
+        "review_fraction": 0.832599
+      },
+      {
+        "thresholds": {
+          "empty_filter": 0.65,
+          "species_accept": 0.82
+        },
+        "events": 908,
+        "animal_events": 724,
+        "false_empty": 40,
+        "false_empty_rate": 0.055249,
+        "false_empty_rate_ci95": [
+          0.040833,
+          0.074359
+        ],
+        "animal_event_retention": 0.944751,
+        "filtered": 118,
+        "filtered_true_empty": 78,
+        "filtered_non_animal": 0,
+        "empty_events": 184,
+        "accepted": 30,
+        "accepted_correct": 28,
+        "accepted_precision": 0.933333,
+        "accepted_precision_ci95": [
+          0.786762,
+          0.981523
+        ],
+        "accepted_wrong_by_true_role": {
+          "unsupported_animal": 1,
+          "empty": 1
+        },
+        "unsupported_events": 203,
+        "unsupported_accepted_as_known": 1,
+        "accepted_by_species": {
+          "bobcat": {
+            "accepted": 5,
+            "correct": 5
+          },
+          "cat": {
+            "accepted": 1,
+            "correct": 0
+          },
+          "coyote": {
+            "accepted": 6,
+            "correct": 6
+          },
+          "dog": {
+            "accepted": 3,
+            "correct": 2
+          },
+          "opossum": {
+            "accepted": 5,
+            "correct": 5
+          },
+          "rabbit": {
+            "accepted": 8,
+            "correct": 8
+          },
+          "raccoon": {
+            "accepted": 2,
+            "correct": 2
+          }
+        },
+        "needs_review": 760,
+        "review_fraction": 0.837004
+      },
+      {
+        "thresholds": {
+          "empty_filter": 0.65,
+          "species_accept": 0.83
+        },
+        "events": 908,
+        "animal_events": 724,
+        "false_empty": 40,
+        "false_empty_rate": 0.055249,
+        "false_empty_rate_ci95": [
+          0.040833,
+          0.074359
+        ],
+        "animal_event_retention": 0.944751,
+        "filtered": 118,
+        "filtered_true_empty": 78,
+        "filtered_non_animal": 0,
+        "empty_events": 184,
+        "accepted": 29,
+        "accepted_correct": 28,
+        "accepted_precision": 0.965517,
+        "accepted_precision_ci95": [
+          0.828241,
+          0.993887
+        ],
+        "accepted_wrong_by_true_role": {
+          "empty": 1
+        },
+        "unsupported_events": 203,
+        "unsupported_accepted_as_known": 0,
+        "accepted_by_species": {
+          "bobcat": {
+            "accepted": 5,
+            "correct": 5
+          },
+          "cat": {
+            "accepted": 1,
+            "correct": 0
+          },
+          "coyote": {
+            "accepted": 6,
+            "correct": 6
+          },
+          "dog": {
+            "accepted": 2,
+            "correct": 2
+          },
+          "opossum": {
+            "accepted": 5,
+            "correct": 5
+          },
+          "rabbit": {
+            "accepted": 8,
+            "correct": 8
+          },
+          "raccoon": {
+            "accepted": 2,
+            "correct": 2
+          }
+        },
+        "needs_review": 761,
+        "review_fraction": 0.838106
+      },
+      {
+        "thresholds": {
+          "empty_filter": 0.65,
+          "species_accept": 0.84
+        },
+        "events": 908,
+        "animal_events": 724,
+        "false_empty": 40,
+        "false_empty_rate": 0.055249,
+        "false_empty_rate_ci95": [
+          0.040833,
+          0.074359
+        ],
+        "animal_event_retention": 0.944751,
+        "filtered": 118,
+        "filtered_true_empty": 78,
+        "filtered_non_animal": 0,
+        "empty_events": 184,
+        "accepted": 26,
+        "accepted_correct": 25,
+        "accepted_precision": 0.961538,
+        "accepted_precision_ci95": [
+          0.811068,
+          0.993178
+        ],
+        "accepted_wrong_by_true_role": {
+          "empty": 1
+        },
+        "unsupported_events": 203,
+        "unsupported_accepted_as_known": 0,
+        "accepted_by_species": {
+          "bobcat": {
+            "accepted": 4,
+            "correct": 4
+          },
+          "cat": {
+            "accepted": 1,
+            "correct": 0
+          },
+          "coyote": {
+            "accepted": 5,
+            "correct": 5
+          },
+          "dog": {
+            "accepted": 2,
+            "correct": 2
+          },
+          "opossum": {
+            "accepted": 4,
+            "correct": 4
+          },
+          "rabbit": {
+            "accepted": 8,
+            "correct": 8
+          },
+          "raccoon": {
+            "accepted": 2,
+            "correct": 2
+          }
+        },
+        "needs_review": 764,
+        "review_fraction": 0.84141
+      },
+      {
+        "thresholds": {
+          "empty_filter": 0.65,
+          "species_accept": 0.85
+        },
+        "events": 908,
+        "animal_events": 724,
+        "false_empty": 40,
+        "false_empty_rate": 0.055249,
+        "false_empty_rate_ci95": [
+          0.040833,
+          0.074359
+        ],
+        "animal_event_retention": 0.944751,
+        "filtered": 118,
+        "filtered_true_empty": 78,
+        "filtered_non_animal": 0,
+        "empty_events": 184,
+        "accepted": 25,
+        "accepted_correct": 24,
+        "accepted_precision": 0.96,
+        "accepted_precision_ci95": [
+          0.804555,
+          0.992904
+        ],
+        "accepted_wrong_by_true_role": {
+          "empty": 1
+        },
+        "unsupported_events": 203,
+        "unsupported_accepted_as_known": 0,
+        "accepted_by_species": {
+          "bobcat": {
+            "accepted": 4,
+            "correct": 4
+          },
+          "cat": {
+            "accepted": 1,
+            "correct": 0
+          },
+          "coyote": {
+            "accepted": 5,
+            "correct": 5
+          },
+          "dog": {
+            "accepted": 2,
+            "correct": 2
+          },
+          "opossum": {
+            "accepted": 4,
+            "correct": 4
+          },
+          "rabbit": {
+            "accepted": 7,
+            "correct": 7
+          },
+          "raccoon": {
+            "accepted": 2,
+            "correct": 2
+          }
+        },
+        "needs_review": 765,
+        "review_fraction": 0.842511
+      },
+      {
+        "thresholds": {
+          "empty_filter": 0.65,
+          "species_accept": 0.86
+        },
+        "events": 908,
+        "animal_events": 724,
+        "false_empty": 40,
+        "false_empty_rate": 0.055249,
+        "false_empty_rate_ci95": [
+          0.040833,
+          0.074359
+        ],
+        "animal_event_retention": 0.944751,
+        "filtered": 118,
+        "filtered_true_empty": 78,
+        "filtered_non_animal": 0,
+        "empty_events": 184,
+        "accepted": 22,
+        "accepted_correct": 21,
+        "accepted_precision": 0.954545,
+        "accepted_precision_ci95": [
+          0.782015,
+          0.991931
+        ],
+        "accepted_wrong_by_true_role": {
+          "empty": 1
+        },
+        "unsupported_events": 203,
+        "unsupported_accepted_as_known": 0,
+        "accepted_by_species": {
+          "bobcat": {
+            "accepted": 4,
+            "correct": 4
+          },
+          "cat": {
+            "accepted": 1,
+            "correct": 0
+          },
+          "coyote": {
+            "accepted": 4,
+            "correct": 4
+          },
+          "dog": {
+            "accepted": 2,
+            "correct": 2
+          },
+          "opossum": {
+            "accepted": 3,
+            "correct": 3
+          },
+          "rabbit": {
+            "accepted": 6,
+            "correct": 6
+          },
+          "raccoon": {
+            "accepted": 2,
+            "correct": 2
+          }
+        },
+        "needs_review": 768,
+        "review_fraction": 0.845815
+      },
+      {
+        "thresholds": {
+          "empty_filter": 0.65,
+          "species_accept": 0.87
+        },
+        "events": 908,
+        "animal_events": 724,
+        "false_empty": 40,
+        "false_empty_rate": 0.055249,
+        "false_empty_rate_ci95": [
+          0.040833,
+          0.074359
+        ],
+        "animal_event_retention": 0.944751,
+        "filtered": 118,
+        "filtered_true_empty": 78,
+        "filtered_non_animal": 0,
+        "empty_events": 184,
+        "accepted": 20,
+        "accepted_correct": 19,
+        "accepted_precision": 0.95,
+        "accepted_precision_ci95": [
+          0.763864,
+          0.991119
+        ],
+        "accepted_wrong_by_true_role": {
+          "empty": 1
+        },
+        "unsupported_events": 203,
+        "unsupported_accepted_as_known": 0,
+        "accepted_by_species": {
+          "bobcat": {
+            "accepted": 4,
+            "correct": 4
+          },
+          "cat": {
+            "accepted": 1,
+            "correct": 0
+          },
+          "coyote": {
+            "accepted": 4,
+            "correct": 4
+          },
+          "dog": {
+            "accepted": 2,
+            "correct": 2
+          },
+          "opossum": {
+            "accepted": 2,
+            "correct": 2
+          },
+          "rabbit": {
+            "accepted": 5,
+            "correct": 5
+          },
+          "raccoon": {
+            "accepted": 2,
+            "correct": 2
+          }
+        },
+        "needs_review": 770,
+        "review_fraction": 0.848018
+      },
+      {
+        "thresholds": {
+          "empty_filter": 0.65,
+          "species_accept": 0.88
+        },
+        "events": 908,
+        "animal_events": 724,
+        "false_empty": 40,
+        "false_empty_rate": 0.055249,
+        "false_empty_rate_ci95": [
+          0.040833,
+          0.074359
+        ],
+        "animal_event_retention": 0.944751,
+        "filtered": 118,
+        "filtered_true_empty": 78,
+        "filtered_non_animal": 0,
+        "empty_events": 184,
+        "accepted": 17,
+        "accepted_correct": 16,
+        "accepted_precision": 0.941176,
+        "accepted_precision_ci95": [
+          0.730175,
+          0.98954
+        ],
+        "accepted_wrong_by_true_role": {
+          "empty": 1
+        },
+        "unsupported_events": 203,
+        "unsupported_accepted_as_known": 0,
+        "accepted_by_species": {
+          "bobcat": {
+            "accepted": 3,
+            "correct": 3
+          },
+          "cat": {
+            "accepted": 1,
+            "correct": 0
+          },
+          "coyote": {
+            "accepted": 4,
+            "correct": 4
+          },
+          "dog": {
+            "accepted": 2,
+            "correct": 2
+          },
+          "opossum": {
+            "accepted": 2,
+            "correct": 2
+          },
+          "rabbit": {
+            "accepted": 3,
+            "correct": 3
+          },
+          "raccoon": {
+            "accepted": 2,
+            "correct": 2
+          }
+        },
+        "needs_review": 773,
+        "review_fraction": 0.851322
+      },
+      {
+        "thresholds": {
+          "empty_filter": 0.65,
+          "species_accept": 0.89
+        },
+        "events": 908,
+        "animal_events": 724,
+        "false_empty": 40,
+        "false_empty_rate": 0.055249,
+        "false_empty_rate_ci95": [
+          0.040833,
+          0.074359
+        ],
+        "animal_event_retention": 0.944751,
+        "filtered": 118,
+        "filtered_true_empty": 78,
+        "filtered_non_animal": 0,
+        "empty_events": 184,
+        "accepted": 14,
+        "accepted_correct": 13,
+        "accepted_precision": 0.928571,
+        "accepted_precision_ci95": [
+          0.685307,
+          0.987278
+        ],
+        "accepted_wrong_by_true_role": {
+          "empty": 1
+        },
+        "unsupported_events": 203,
+        "unsupported_accepted_as_known": 0,
+        "accepted_by_species": {
+          "bobcat": {
+            "accepted": 2,
+            "correct": 2
+          },
+          "cat": {
+            "accepted": 1,
+            "correct": 0
+          },
+          "coyote": {
+            "accepted": 4,
+            "correct": 4
+          },
+          "dog": {
+            "accepted": 1,
+            "correct": 1
+          },
+          "opossum": {
+            "accepted": 1,
+            "correct": 1
+          },
+          "rabbit": {
+            "accepted": 3,
+            "correct": 3
+          },
+          "raccoon": {
+            "accepted": 2,
+            "correct": 2
+          }
+        },
+        "needs_review": 776,
+        "review_fraction": 0.854626
+      },
+      {
+        "thresholds": {
+          "empty_filter": 0.65,
+          "species_accept": 0.9
+        },
+        "events": 908,
+        "animal_events": 724,
+        "false_empty": 40,
+        "false_empty_rate": 0.055249,
+        "false_empty_rate_ci95": [
+          0.040833,
+          0.074359
+        ],
+        "animal_event_retention": 0.944751,
+        "filtered": 118,
+        "filtered_true_empty": 78,
+        "filtered_non_animal": 0,
+        "empty_events": 184,
+        "accepted": 13,
+        "accepted_correct": 12,
+        "accepted_precision": 0.923077,
+        "accepted_precision_ci95": [
+          0.666855,
+          0.98629
+        ],
+        "accepted_wrong_by_true_role": {
+          "empty": 1
+        },
+        "unsupported_events": 203,
+        "unsupported_accepted_as_known": 0,
+        "accepted_by_species": {
+          "bobcat": {
+            "accepted": 2,
+            "correct": 2
+          },
+          "cat": {
+            "accepted": 1,
+            "correct": 0
+          },
+          "coyote": {
+            "accepted": 4,
+            "correct": 4
+          },
+          "dog": {
+            "accepted": 1,
+            "correct": 1
+          },
+          "opossum": {
+            "accepted": 1,
+            "correct": 1
+          },
+          "rabbit": {
+            "accepted": 2,
+            "correct": 2
+          },
+          "raccoon": {
+            "accepted": 2,
+            "correct": 2
+          }
+        },
+        "needs_review": 777,
+        "review_fraction": 0.855727
+      },
+      {
+        "thresholds": {
+          "empty_filter": 0.65,
+          "species_accept": 0.91
+        },
+        "events": 908,
+        "animal_events": 724,
+        "false_empty": 40,
+        "false_empty_rate": 0.055249,
+        "false_empty_rate_ci95": [
+          0.040833,
+          0.074359
+        ],
+        "animal_event_retention": 0.944751,
+        "filtered": 118,
+        "filtered_true_empty": 78,
+        "filtered_non_animal": 0,
+        "empty_events": 184,
+        "accepted": 12,
+        "accepted_correct": 11,
+        "accepted_precision": 0.916667,
+        "accepted_precision_ci95": [
+          0.646114,
+          0.985135
+        ],
+        "accepted_wrong_by_true_role": {
+          "empty": 1
+        },
+        "unsupported_events": 203,
+        "unsupported_accepted_as_known": 0,
+        "accepted_by_species": {
+          "bobcat": {
+            "accepted": 1,
+            "correct": 1
+          },
+          "cat": {
+            "accepted": 1,
+            "correct": 0
+          },
+          "coyote": {
+            "accepted": 4,
+            "correct": 4
+          },
+          "dog": {
+            "accepted": 1,
+            "correct": 1
+          },
+          "opossum": {
+            "accepted": 1,
+            "correct": 1
+          },
+          "rabbit": {
+            "accepted": 2,
+            "correct": 2
+          },
+          "raccoon": {
+            "accepted": 2,
+            "correct": 2
+          }
+        },
+        "needs_review": 778,
+        "review_fraction": 0.856828
+      },
+      {
+        "thresholds": {
+          "empty_filter": 0.65,
+          "species_accept": 0.92
+        },
+        "events": 908,
+        "animal_events": 724,
+        "false_empty": 40,
+        "false_empty_rate": 0.055249,
+        "false_empty_rate_ci95": [
+          0.040833,
+          0.074359
+        ],
+        "animal_event_retention": 0.944751,
+        "filtered": 118,
+        "filtered_true_empty": 78,
+        "filtered_non_animal": 0,
+        "empty_events": 184,
+        "accepted": 8,
+        "accepted_correct": 8,
+        "accepted_precision": 1.0,
+        "accepted_precision_ci95": [
+          0.675584,
+          1.0
+        ],
+        "accepted_wrong_by_true_role": {},
+        "unsupported_events": 203,
+        "unsupported_accepted_as_known": 0,
+        "accepted_by_species": {
+          "coyote": {
+            "accepted": 3,
+            "correct": 3
+          },
+          "dog": {
+            "accepted": 1,
+            "correct": 1
+          },
+          "opossum": {
+            "accepted": 1,
+            "correct": 1
+          },
+          "rabbit": {
+            "accepted": 1,
+            "correct": 1
+          },
+          "raccoon": {
+            "accepted": 2,
+            "correct": 2
+          }
+        },
+        "needs_review": 782,
+        "review_fraction": 0.861233
+      },
+      {
+        "thresholds": {
+          "empty_filter": 0.65,
+          "species_accept": 0.93
+        },
+        "events": 908,
+        "animal_events": 724,
+        "false_empty": 40,
+        "false_empty_rate": 0.055249,
+        "false_empty_rate_ci95": [
+          0.040833,
+          0.074359
+        ],
+        "animal_event_retention": 0.944751,
+        "filtered": 118,
+        "filtered_true_empty": 78,
+        "filtered_non_animal": 0,
+        "empty_events": 184,
+        "accepted": 6,
+        "accepted_correct": 6,
+        "accepted_precision": 1.0,
+        "accepted_precision_ci95": [
+          0.609657,
+          1.0
+        ],
+        "accepted_wrong_by_true_role": {},
+        "unsupported_events": 203,
+        "unsupported_accepted_as_known": 0,
+        "accepted_by_species": {
+          "coyote": {
+            "accepted": 3,
+            "correct": 3
+          },
+          "dog": {
+            "accepted": 1,
+            "correct": 1
+          },
+          "rabbit": {
+            "accepted": 1,
+            "correct": 1
+          },
+          "raccoon": {
+            "accepted": 1,
+            "correct": 1
+          }
+        },
+        "needs_review": 784,
+        "review_fraction": 0.863436
+      },
+      {
+        "thresholds": {
+          "empty_filter": 0.65,
+          "species_accept": 0.94
+        },
+        "events": 908,
+        "animal_events": 724,
+        "false_empty": 40,
+        "false_empty_rate": 0.055249,
+        "false_empty_rate_ci95": [
+          0.040833,
+          0.074359
+        ],
+        "animal_event_retention": 0.944751,
+        "filtered": 118,
+        "filtered_true_empty": 78,
+        "filtered_non_animal": 0,
+        "empty_events": 184,
+        "accepted": 4,
+        "accepted_correct": 4,
+        "accepted_precision": 1.0,
+        "accepted_precision_ci95": [
+          0.5101,
+          1.0
+        ],
+        "accepted_wrong_by_true_role": {},
+        "unsupported_events": 203,
+        "unsupported_accepted_as_known": 0,
+        "accepted_by_species": {
+          "coyote": {
+            "accepted": 2,
+            "correct": 2
+          },
+          "dog": {
+            "accepted": 1,
+            "correct": 1
+          },
+          "raccoon": {
+            "accepted": 1,
+            "correct": 1
+          }
+        },
+        "needs_review": 786,
+        "review_fraction": 0.865639
+      },
+      {
+        "thresholds": {
+          "empty_filter": 0.65,
+          "species_accept": 0.95
+        },
+        "events": 908,
+        "animal_events": 724,
+        "false_empty": 40,
+        "false_empty_rate": 0.055249,
+        "false_empty_rate_ci95": [
+          0.040833,
+          0.074359
+        ],
+        "animal_event_retention": 0.944751,
+        "filtered": 118,
+        "filtered_true_empty": 78,
+        "filtered_non_animal": 0,
+        "empty_events": 184,
+        "accepted": 2,
+        "accepted_correct": 2,
+        "accepted_precision": 1.0,
+        "accepted_precision_ci95": [
+          0.342372,
+          1.0
+        ],
+        "accepted_wrong_by_true_role": {},
+        "unsupported_events": 203,
+        "unsupported_accepted_as_known": 0,
+        "accepted_by_species": {
+          "dog": {
+            "accepted": 1,
+            "correct": 1
+          },
+          "raccoon": {
+            "accepted": 1,
+            "correct": 1
+          }
+        },
+        "needs_review": 788,
+        "review_fraction": 0.867841
+      },
+      {
+        "thresholds": {
+          "empty_filter": 0.65,
+          "species_accept": 0.96
+        },
+        "events": 908,
+        "animal_events": 724,
+        "false_empty": 40,
+        "false_empty_rate": 0.055249,
+        "false_empty_rate_ci95": [
+          0.040833,
+          0.074359
+        ],
+        "animal_event_retention": 0.944751,
+        "filtered": 118,
+        "filtered_true_empty": 78,
+        "filtered_non_animal": 0,
+        "empty_events": 184,
+        "accepted": 1,
+        "accepted_correct": 1,
+        "accepted_precision": 1.0,
+        "accepted_precision_ci95": [
+          0.206543,
+          1.0
+        ],
+        "accepted_wrong_by_true_role": {},
+        "unsupported_events": 203,
+        "unsupported_accepted_as_known": 0,
+        "accepted_by_species": {
+          "raccoon": {
+            "accepted": 1,
+            "correct": 1
+          }
+        },
+        "needs_review": 789,
+        "review_fraction": 0.868943
+      },
+      {
+        "thresholds": {
+          "empty_filter": 0.65,
+          "species_accept": 0.97
+        },
+        "events": 908,
+        "animal_events": 724,
+        "false_empty": 40,
+        "false_empty_rate": 0.055249,
+        "false_empty_rate_ci95": [
+          0.040833,
+          0.074359
+        ],
+        "animal_event_retention": 0.944751,
+        "filtered": 118,
+        "filtered_true_empty": 78,
+        "filtered_non_animal": 0,
+        "empty_events": 184,
+        "accepted": 0,
+        "accepted_correct": 0,
+        "accepted_precision": null,
+        "accepted_precision_ci95": null,
+        "accepted_wrong_by_true_role": {},
+        "unsupported_events": 203,
+        "unsupported_accepted_as_known": 0,
+        "accepted_by_species": {},
+        "needs_review": 790,
+        "review_fraction": 0.870044
+      },
+      {
+        "thresholds": {
+          "empty_filter": 0.65,
+          "species_accept": 0.98
+        },
+        "events": 908,
+        "animal_events": 724,
+        "false_empty": 40,
+        "false_empty_rate": 0.055249,
+        "false_empty_rate_ci95": [
+          0.040833,
+          0.074359
+        ],
+        "animal_event_retention": 0.944751,
+        "filtered": 118,
+        "filtered_true_empty": 78,
+        "filtered_non_animal": 0,
+        "empty_events": 184,
+        "accepted": 0,
+        "accepted_correct": 0,
+        "accepted_precision": null,
+        "accepted_precision_ci95": null,
+        "accepted_wrong_by_true_role": {},
+        "unsupported_events": 203,
+        "unsupported_accepted_as_known": 0,
+        "accepted_by_species": {},
+        "needs_review": 790,
+        "review_fraction": 0.870044
+      },
+      {
+        "thresholds": {
+          "empty_filter": 0.65,
+          "species_accept": 0.99
+        },
+        "events": 908,
+        "animal_events": 724,
+        "false_empty": 40,
+        "false_empty_rate": 0.055249,
+        "false_empty_rate_ci95": [
+          0.040833,
+          0.074359
+        ],
+        "animal_event_retention": 0.944751,
+        "filtered": 118,
+        "filtered_true_empty": 78,
+        "filtered_non_animal": 0,
+        "empty_events": 184,
+        "accepted": 0,
+        "accepted_correct": 0,
+        "accepted_precision": null,
+        "accepted_precision_ci95": null,
+        "accepted_wrong_by_true_role": {},
+        "unsupported_events": 203,
+        "unsupported_accepted_as_known": 0,
+        "accepted_by_species": {},
+        "needs_review": 790,
+        "review_fraction": 0.870044
+      },
+      {
+        "thresholds": {
+          "empty_filter": 0.65,
+          "species_accept": 0.995
+        },
+        "events": 908,
+        "animal_events": 724,
+        "false_empty": 40,
+        "false_empty_rate": 0.055249,
+        "false_empty_rate_ci95": [
+          0.040833,
+          0.074359
+        ],
+        "animal_event_retention": 0.944751,
+        "filtered": 118,
+        "filtered_true_empty": 78,
+        "filtered_non_animal": 0,
+        "empty_events": 184,
+        "accepted": 0,
+        "accepted_correct": 0,
+        "accepted_precision": null,
+        "accepted_precision_ci95": null,
+        "accepted_wrong_by_true_role": {},
+        "unsupported_events": 203,
+        "unsupported_accepted_as_known": 0,
+        "accepted_by_species": {},
+        "needs_review": 790,
+        "review_fraction": 0.870044
+      },
+      {
+        "thresholds": {
+          "empty_filter": 0.65,
+          "species_accept": 0.999
+        },
+        "events": 908,
+        "animal_events": 724,
+        "false_empty": 40,
+        "false_empty_rate": 0.055249,
+        "false_empty_rate_ci95": [
+          0.040833,
+          0.074359
+        ],
+        "animal_event_retention": 0.944751,
+        "filtered": 118,
+        "filtered_true_empty": 78,
+        "filtered_non_animal": 0,
+        "empty_events": 184,
+        "accepted": 0,
+        "accepted_correct": 0,
+        "accepted_precision": null,
+        "accepted_precision_ci95": null,
+        "accepted_wrong_by_true_role": {},
+        "unsupported_events": 203,
+        "unsupported_accepted_as_known": 0,
+        "accepted_by_species": {},
+        "needs_review": 790,
+        "review_fraction": 0.870044
       }
     ]
   }

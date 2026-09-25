@@ -54,6 +54,198 @@ def _deviation(d: dict[str, Any] | None) -> list[str]:
     ]
 
 
+def _policy_section(r: dict[str, Any]) -> list[str]:
+    pol = r.get("policy")
+    if not pol:
+        return []
+    unf = pol.get("unfamiliar")
+    unf_text = (
+        "not part of the rule"
+        if not unf
+        else (
+            f"adopted: frames with distance > {unf['threshold']:.4f} are flagged "
+            f"`possible_unknown` (version `{unf['version']}`)"
+            if unf["adopted"]
+            else f"evaluated, not adopted (version `{unf['version']}`); see "
+            "[`reports/unfamiliar`](../unfamiliar/README.md)"
+        )
+    )
+    return [
+        "## Decision policy",
+        "",
+        _t(
+            ["", "Value"],
+            [
+                [
+                    "Policy",
+                    f"`{pol['policy']}` ([source](../../src/wildinbox/policy/conservative.py))",
+                ],
+                ["Released policy version", f"`{pol['released']['policy_version']}`"],
+                ["Rule's policy version (evaluated)", f"`{pol['rule']['policy_version']}`"],
+                [
+                    "Calibration",
+                    f"temperature {pol['calibration']['temperature']:.3f}, "
+                    f"version `{pol['calibration']['version']}`",
+                ],
+                ["Unfamiliar-input score", unf_text],
+                ["Artifact", f"[`policy.json`](policy.json), version `{pol['artifact_version']}`"],
+            ],
+        ),
+        "",
+        "Every development event's saved frame predictions and both decisions are in "
+        "[`decisions.jsonl.gz`](decisions.jsonl.gz); `uv run wildinbox replay` recomputes "
+        "every disposition from them and the policy artifact (also run in CI). Incomplete "
+        "or failed frames never allow filtering; reasons are machine-readable "
+        "(`low_confidence`, `conflicting_frames`, `possible_unknown`, `processing_failure`, "
+        "`species_not_validated`, `automation_disabled`).",
+        "",
+    ]
+
+
+def _gate_section(r: dict[str, Any]) -> list[str]:
+    op = r["operating_point"]
+    if op.get("species_gate") is None:
+        return []
+    rows = []
+    for sweep in r["sweeps"]["species_accept"]:
+        th = sweep["thresholds"]["species_accept"]
+        if th not in (0.5, 0.7, 0.9):
+            continue
+        for sp, v in sweep.get("accepted_by_species", {}).items():
+            lo, hi = _wilson(v["correct"], v["accepted"])
+            rows.append(
+                [
+                    f"{th:g}",
+                    sp,
+                    f"{v['correct']} / {v['accepted']}",
+                    f"{_pct(v['correct'] / v['accepted'])} [{100 * lo:.1f}, {100 * hi:.1f}]",
+                    "**pass**" if lo >= op["targets"]["min_accepted_precision"] else "fail",
+                ]
+            )
+    enabled = op.get("accept_species")
+    return [
+        "## Per-species gate",
+        "",
+        "A species can be accepted automatically only if its own accepted events meet the "
+        "precision bound at the chosen species threshold. "
+        + (
+            f"Enabled species: {', '.join(enabled) if enabled else 'none'}."
+            if op["species_accept"] is not None
+            else "No species threshold passed the overall rule, so no species is enabled."
+        )
+        + " Evidence per species at a few thresholds (policy validation):",
+        "",
+        _t(
+            [
+                "Species >=",
+                "Predicted species",
+                "Correct / accepted",
+                "Precision (95% CI)",
+                "Bound",
+            ],
+            rows,
+        ),
+        "",
+    ]
+
+
+def _wilson(k: int, n: int) -> tuple[float, float]:
+    from wildinbox.evaluation.metrics import wilson
+
+    return wilson(k, n)
+
+
+def _curves_section(report_dir: Path, r: dict[str, Any]) -> list[str]:
+    from wildinbox.evaluation.curves import Point, Series, render
+
+    op, tg = r["operating_point"], r["operating_point"]["targets"]
+    fit_name = r["calibration"]["fit_partition"].replace("_", " ") + " cameras"
+    choose_name = op["chosen_on"].replace("_", " ") + " cameras"
+
+    def empty_points(sweep: list[dict[str, Any]]) -> list[Point]:
+        return [
+            Point(
+                m["filtered"] / m["events"],
+                m["false_empty_rate"],
+                m["false_empty_rate_ci95"][0],
+                m["false_empty_rate_ci95"][1],
+                label=f"{m['thresholds']['empty_filter']:g}",
+                mark=m["thresholds"]["empty_filter"] in SHOWN,
+            )
+            for m in sweep
+        ]
+
+    def species_points(sweep: list[dict[str, Any]]) -> list[Point]:
+        out = []
+        for m in sweep:
+            if not m["accepted"]:
+                continue
+            lo, hi = m["accepted_precision_ci95"]
+            out.append(
+                Point(
+                    m["accepted"] / m["events"],
+                    1 - m["accepted_precision"],
+                    1 - hi,
+                    1 - lo,
+                    label=f"{m['thresholds']['species_accept']:g}",
+                    mark=m["thresholds"]["species_accept"] in SHOWN,
+                )
+            )
+        return out
+
+    fit_sweeps = r.get("sweeps_fit_partition")
+    if not fit_sweeps:
+        return []
+    chosen_e = next(
+        (
+            p
+            for p in empty_points(r["sweeps"]["empty_filter"])
+            if op["empty_filter"] is not None and float(p.label) == op["empty_filter"]
+        ),
+        None,
+    )
+    (report_dir / "curve-empty-filter.svg").write_text(
+        render(
+            "Empty filter: animals lost vs events filtered",
+            "Events filtered automatically (coverage)",
+            "Animal events filtered as empty",
+            [
+                Series(choose_name, empty_points(r["sweeps"]["empty_filter"]), band=True),
+                Series(fit_name, empty_points(fit_sweeps["empty_filter"])),
+            ],
+            tg["max_false_empty_rate"],
+            f"target {_pct(tg['max_false_empty_rate'], 0)}",
+            chosen_e,
+            f"rule: {op['empty_filter']:g}" if chosen_e else "",
+        )
+    )
+    (report_dir / "curve-species-accept.svg").write_text(
+        render(
+            "Species acceptance: wrong labels vs events accepted",
+            "Events accepted automatically (coverage)",
+            "Accepted labels that are wrong",
+            [
+                Series(choose_name, species_points(r["sweeps"]["species_accept"]), band=True),
+                Series(fit_name, species_points(fit_sweeps["species_accept"])),
+            ],
+            1 - tg["min_accepted_precision"],
+            f"target {_pct(1 - tg['min_accepted_precision'], 0)}",
+        )
+    )
+    return [
+        "## Error versus coverage",
+        "",
+        "Each point is one threshold on the grid; moving right automates more events and "
+        "shows the error it costs. The band is the 95% interval on the cameras thresholds are "
+        "chosen on; the other line is the replication cameras. Tables below list the numbers.",
+        "",
+        "![Empty filter: animals lost vs events filtered](curve-empty-filter.svg)",
+        "",
+        "![Species acceptance: wrong labels vs events accepted](curve-species-accept.svg)",
+        "",
+    ]
+
+
 def _shown(sweep: list[dict[str, Any]], key: str, chosen: float | None) -> list[dict[str, Any]]:
     return [m for m in sweep if m["thresholds"][key] in SHOWN or m["thresholds"][key] == chosen]
 
@@ -126,6 +318,9 @@ def write_report(report_dir: Path, r: dict[str, Any]) -> Path:
             ],
         ),
         "",
+        *_policy_section(r),
+        *_gate_section(r),
+        *_curves_section(report_dir, r),
         "## Replication on every development camera",
         "",
         "The rule's thresholds applied to each unseen development camera. The calibration "

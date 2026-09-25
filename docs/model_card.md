@@ -101,7 +101,10 @@ Details: [`reports/calibration/README.md`](../reports/calibration/README.md).
   committed before any calibrated result): on the policy-validation cameras
   (90, 125), enable a threshold only if the worst case of its 95% Wilson
   interval meets the target: at most 2% of animal-containing events filtered
-  as empty, at least 95% of accepted labels correct.
+  as empty, at least 95% of accepted labels correct. v2
+  ([`operating_point_v2.yaml`](../configs/experiments/operating_point_v2.yaml),
+  also committed before its results) adds the versioned policy, unfamiliar
+  flags if adopted, and the per-species gate; the outcome is unchanged.
 - **Rule result:** empty filter at calibrated P(empty) >= 0.65; species
   acceptance disabled (no threshold reaches the precision bound; the few
   high-confidence acceptances are too few to prove 95%).
@@ -111,12 +114,48 @@ Details: [`reports/calibration/README.md`](../reports/calibration/README.md).
   it passed by a hair (upper bound 1.99%) but filters 9.8% of animal events on
   camera 51, and would take only 4% of events out of review.
 
+## Decision policy
+
+- **Policy `conservative/v1`** ([source](../src/wildinbox/policy/conservative.py)),
+  released as `conservative/v1+fe20c7586555` in the versioned artifact
+  [`policy.json`](../reports/calibration/policy.json), which also carries the
+  calibration and unfamiliar-input versions.
+- An event is filtered only when every frame has completed processing and looks
+  empty; any pending or failed frame sends it to review (`processing_failure`).
+  Any animal-looking frame keeps the event; conflicting frames, low confidence,
+  possible unknowns, species without validation evidence, and disabled
+  automation are each listed as machine-readable reasons.
+- **Per-species gate:** a species is auto-accepted only if its own accepted
+  events reach the precision bound. None does yet; opossum comes closest
+  (26 of 26 correct at 0.7, lower bound 87%).
+- **Reproducibility:** every development event's saved predictions and both
+  decisions (released and the rule's) are committed; `wildinbox replay`
+  reproduces all 1,847 exactly, and CI runs it.
+
+## Unfamiliar inputs
+
+Details: [`reports/unfamiliar/README.md`](../reports/unfamiliar/README.md).
+
+- Score: mean cosine distance from an image's features to its 10 nearest
+  training images, compared with ordinary confidence at the same false-flag
+  rate (10% of supported animals).
+- **Not adopted.** On the calibration cameras it detects 0.4% of squirrel and
+  rodent images (confidence: 2.0%); both AUROCs are below 0.5. Exploratory
+  check: every unseen-camera image is far from the training images (mean
+  distance 0.27-0.41 against 0.08 within training), whatever it shows, so the
+  distance measures "new camera" rather than "new species"; squirrels and
+  rodents are small (median box ~1% of the frame) and mostly predicted empty,
+  dog, or rabbit. Recognising unknown species likely needs animal-centred
+  features (for example crops from an animal detector).
+- Tuning species: squirrel, rodent. Held out for the final test: skunk, bird,
+  badger, fox, deer (deer has no development or final-test events). All were
+  unseen during fine-tuning; **all but deer appear in ImageNet-1k pretraining
+  classes**, so no evaluated unknown species is new to the backbone.
+
 ## Promotion and rollback (*planned*)
 
-1. Re-choose the operating point with the same rule once the unfamiliar-input
-   score is part of the policy.
-2. Freeze the model, calibration, and thresholds, then open the final test once
+1. Freeze the model, calibration, and thresholds, then open the final test once
    and publish the result, including failures.
-3. A retrained candidate replaces the deployed model only if it passes the same
+2. A retrained candidate replaces the deployed model only if it passes the same
    evaluation. The API reports model, preprocessing, and decision-policy
    versions; rollback redeploys the retained previous version.

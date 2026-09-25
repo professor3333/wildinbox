@@ -1,0 +1,33 @@
+# Operating-point rule v2, fixed BEFORE any v2 result was computed.
+# Applied by: uv run wildinbox calibrate
+#
+# Changes from v1 (configs/experiments/operating_point.yaml, results in PR #8):
+# - the event policy is the versioned conservative/v1 policy: incomplete or failed
+#   events never filter; unfamiliar frames (if the score is adopted by
+#   configs/experiments/unfamiliar.yaml) send an event to review;
+# - per-species gate (new): a species can be auto-accepted only if its OWN
+#   accepted events meet the precision bound, so low-support species stay in review.
+# Unchanged: calibration, targets, interval, grids, and the empty-filter rule.
+# The recorded deviation (operating_point_deviation.yaml) still applies.
+version: 2
+model: models/finetune-e3-deep-balanced
+
+calibration:
+  method: temperature
+  fit_partition: calibration
+  objective: nll
+
+operating_point:
+  choose_on: policy_validation
+  policy: conservative/v1
+  interval: wilson95
+  max_false_empty_rate: 0.02
+  min_accepted_precision: 0.95
+  empty_grid: {start: 0.50, stop: 0.99, step: 0.01, extra: [0.995, 0.999]}
+  species_grid: {start: 0.50, stop: 0.99, step: 0.01, extra: [0.995, 0.999]}
+  # At the chosen species threshold, each supported species is enabled only if
+  # the Wilson 95% lower bound of precision among events accepted AS that
+  # species is >= min_accepted_precision. Species without accepted events stay
+  # in review.
+  per_species_gate: true
+  unfamiliar_rule: configs/experiments/unfamiliar.yaml

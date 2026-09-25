@@ -12,7 +12,6 @@ from wildinbox.evaluation.calibration import (
     Grid,
     OperatingPointRule,
     OperatingPointSpec,
-    apply_temperature,
     choose_operating_point,
     fit_temperature,
     load_rule,
@@ -20,6 +19,7 @@ from wildinbox.evaluation.calibration import (
     released,
 )
 from wildinbox.evaluation.metrics import ScoredEvent
+from wildinbox.inference.calibration import apply_temperature
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 RULE = REPO_ROOT / "configs/experiments/operating_point.yaml"

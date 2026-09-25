@@ -1,3 +1,4 @@
+# SUPERSEDED by operating_point_v2.yaml; kept unchanged as the v1 pre-registration record.
 # Calibration and operating-point rule, fixed BEFORE any calibrated
 # policy-validation result was computed. Applied by: uv run wildinbox calibrate
 #

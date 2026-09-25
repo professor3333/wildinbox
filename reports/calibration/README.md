@@ -1,6 +1,6 @@
 # Calibration and operating point: `finetune-e3-deep-balanced`
 
-Rule: [`configs/experiments/operating_point.yaml`](../../configs/experiments/operating_point.yaml), committed before any calibrated policy-validation result was computed. Development partitions only; **the locked final test was not opened.**
+Rule: [`configs/experiments/operating_point_v2.yaml`](../../configs/experiments/operating_point_v2.yaml), committed before any calibrated policy-validation result was computed. Development partitions only; **the locked final test was not opened.**
 
 ## Decision
 
@@ -22,6 +22,51 @@ At the rule's operating point on policy validation:
 | Labels accepted automatically | 0 / 939 |
 | Unsupported animals accepted as a known species | 0 |
 | Events left for review | 901 (96.0%) |
+
+## Decision policy
+
+|  | Value |
+|---|---|
+| Policy | `conservative/v1` ([source](../../src/wildinbox/policy/conservative.py)) |
+| Released policy version | `conservative/v1+fe20c7586555` |
+| Rule's policy version (evaluated) | `conservative/v1+1dba9bb7ad2b` |
+| Calibration | temperature 2.008, version `55cdb7daad08` |
+| Unfamiliar-input score | evaluated, not adopted (version `66c288910007`); see [`reports/unfamiliar`](../unfamiliar/README.md) |
+| Artifact | [`policy.json`](policy.json), version `518a8da39ee0` |
+
+Every development event's saved frame predictions and both decisions are in [`decisions.jsonl.gz`](decisions.jsonl.gz); `uv run wildinbox replay` recomputes every disposition from them and the policy artifact (also run in CI). Incomplete or failed frames never allow filtering; reasons are machine-readable (`low_confidence`, `conflicting_frames`, `possible_unknown`, `processing_failure`, `species_not_validated`, `automation_disabled`).
+
+## Per-species gate
+
+A species can be accepted automatically only if its own accepted events meet the precision bound at the chosen species threshold. No species threshold passed the overall rule, so no species is enabled. Evidence per species at a few thresholds (policy validation):
+
+| Species >= | Predicted species | Correct / accepted | Precision (95% CI) | Bound |
+|---|---|---|---|---|
+| 0.5 | bobcat | 56 / 67 | 83.6% [72.9, 90.6] | fail |
+| 0.5 | cat | 3 / 11 | 27.3% [9.7, 56.6] | fail |
+| 0.5 | coyote | 12 / 46 | 26.1% [15.6, 40.3] | fail |
+| 0.5 | dog | 8 / 17 | 47.1% [26.2, 69.0] | fail |
+| 0.5 | opossum | 53 / 56 | 94.6% [85.4, 98.2] | fail |
+| 0.5 | rabbit | 0 / 1 | 0.0% [0.0, 79.3] | fail |
+| 0.5 | raccoon | 17 / 21 | 81.0% [60.0, 92.3] | fail |
+| 0.7 | bobcat | 17 / 21 | 81.0% [60.0, 92.3] | fail |
+| 0.7 | cat | 1 / 1 | 100.0% [20.7, 100.0] | fail |
+| 0.7 | coyote | 8 / 13 | 61.5% [35.5, 82.3] | fail |
+| 0.7 | dog | 4 / 11 | 36.4% [15.2, 64.6] | fail |
+| 0.7 | opossum | 26 / 26 | 100.0% [87.1, 100.0] | fail |
+| 0.7 | raccoon | 12 / 13 | 92.3% [66.7, 98.6] | fail |
+| 0.9 | bobcat | 2 / 2 | 100.0% [34.2, 100.0] | fail |
+| 0.9 | dog | 1 / 1 | 100.0% [20.7, 100.0] | fail |
+| 0.9 | opossum | 2 / 2 | 100.0% [34.2, 100.0] | fail |
+| 0.9 | raccoon | 2 / 2 | 100.0% [34.2, 100.0] | fail |
+
+## Error versus coverage
+
+Each point is one threshold on the grid; moving right automates more events and shows the error it costs. The band is the 95% interval on the cameras thresholds are chosen on; the other line is the replication cameras. Tables below list the numbers.
+
+![Empty filter: animals lost vs events filtered](curve-empty-filter.svg)
+
+![Species acceptance: wrong labels vs events accepted](curve-species-accept.svg)
 
 ## Replication on every development camera
 
@@ -112,7 +157,7 @@ Species acceptance (empty filter 0.65):
 ## Reproduce
 
 ```bash
-uv run wildinbox calibrate --rule configs/experiments/operating_point.yaml
+uv run wildinbox calibrate --rule configs/experiments/operating_point_v2.yaml
 ```
 
-Code `14f02bbc658d28cbc1565fb84f545dcaee00357d`; split `cct20-splits-v1-7de740aba75f`.
+Code `1e6aa3af2b6f2abe608fbb6917cf5dde0edb9786`; split `cct20-splits-v1-7de740aba75f`.
