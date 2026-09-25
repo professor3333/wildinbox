@@ -534,6 +534,7 @@ def run(
 
     unc = plan["uncertainty"]
     results: dict[str, Any] = {
+        "images": sum(len(r.frames) for r in records),
         "events": len(records),
         "roles": dict(Counter(r.role for r in records)),
         "camera_nights": len({r.camera_night for r in records}),
