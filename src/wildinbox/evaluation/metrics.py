@@ -86,12 +86,15 @@ class ScoredEvent:
     label: str | None
     animal_present: bool
     frames: list[dict[str, float]]
+    unfamiliar: tuple[bool, ...] | None = None  # per frame, when the score is in use
 
 
 def event_metrics(
-    events: Sequence[ScoredEvent], t: Thresholds
+    events: Sequence[ScoredEvent],
+    t: Thresholds,
+    accept_species: tuple[str, ...] | None = None,
 ) -> tuple[dict[str, Any], list[EventOutcome]]:
-    outcomes = [decide_event(e.frames, t) for e in events]
+    outcomes = [decide_event(e.frames, t, e.unfamiliar, accept_species) for e in events]
     n = len(events)
     animal = [e for e in events if e.animal_present]
     false_empty = sum(
@@ -115,6 +118,11 @@ def event_metrics(
         for e, o in accepted
         if not (e.role == "supported_species" and e.label == o.label)
     )
+    by_species: dict[str, dict[str, int]] = {}
+    for e, o in accepted:
+        d = by_species.setdefault(o.label or "", {"accepted": 0, "correct": 0})
+        d["accepted"] += 1
+        d["correct"] += int(e.role == "supported_species" and e.label == o.label)
     review = n - len(filtered) - len(accepted)
     empties = sum(1 for e in events if e.role == Role.EMPTY)
     unsupported = sum(1 for e in events if e.role == "unsupported_animal")
@@ -137,6 +145,7 @@ def event_metrics(
         "accepted_wrong_by_true_role": dict(wrong_by_role.most_common()),
         "unsupported_events": unsupported,
         "unsupported_accepted_as_known": wrong_by_role.get("unsupported_animal", 0),
+        "accepted_by_species": dict(sorted(by_species.items())),
         "needs_review": review,
         "review_fraction": review / n if n else 0.0,
     }, outcomes

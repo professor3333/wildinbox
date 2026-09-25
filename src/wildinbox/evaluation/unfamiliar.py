@@ -107,10 +107,10 @@ def summarise(
 
 def run(rule_path: Path, config_path: Path, report_dir: Path) -> dict[str, Any]:
     from wildinbox.datasets.spec import Partition
-    from wildinbox.evaluation.calibration import apply_temperature
     from wildinbox.evaluation.data import load_rows
     from wildinbox.evaluation.predictors import FinetunedPredictor
     from wildinbox.evaluation.run import _round, _score
+    from wildinbox.inference.calibration import apply_temperature
     from wildinbox.inference.unfamiliar import knn_cosine_distance, normalize
     from wildinbox.settings import Settings
     from wildinbox.training.run import git_state, load_context

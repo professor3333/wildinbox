@@ -204,7 +204,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         "calibrate", help="Fit calibration and choose the operating point (pre-registered rule)."
     )
     p_cal.add_argument(
-        "--rule", type=Path, default=Path("configs/experiments/operating_point.yaml")
+        "--rule", type=Path, default=Path("configs/experiments/operating_point_v2.yaml")
     )
     p_cal.add_argument("--config", type=Path, default=Path("configs/experiments/baseline.yaml"))
     p_cal.add_argument("--report-dir", type=Path, default=Path("reports/calibration"))
@@ -221,6 +221,14 @@ def main(argv: Sequence[str] | None = None) -> int:
     p_unf.add_argument("--rule", type=Path, default=Path("configs/experiments/unfamiliar.yaml"))
     p_unf.add_argument("--config", type=Path, default=Path("configs/experiments/baseline.yaml"))
     p_unf.add_argument("--report-dir", type=Path, default=Path("reports/unfamiliar"))
+
+    p_rep = sub.add_parser(
+        "replay", help="Reproduce every saved event decision from predictions + policy."
+    )
+    p_rep.add_argument("--policy", type=Path, default=Path("reports/calibration/policy.json"))
+    p_rep.add_argument(
+        "--decisions", type=Path, default=Path("reports/calibration/decisions.jsonl.gz")
+    )
 
     p_api = sub.add_parser("api", help="Serve the HTTP API.")
     p_api.add_argument("--host", default="127.0.0.1")
@@ -286,6 +294,16 @@ def main(argv: Sequence[str] | None = None) -> int:
         )
         print(f"report -> {args.report_dir / 'README.md'}")
         return 0
+    if args.command == "replay":
+        from wildinbox.policy.replay import replay
+
+        replayed = replay(args.decisions, json.loads(args.policy.read_text()))
+        for name, counts in replayed["dispositions"].items():
+            print(f"{name}: {counts}")
+        for problem in replayed["problems"][:20]:
+            print(f"MISMATCH {problem}", file=sys.stderr)
+        print(f"{replayed['events']} events replayed, {len(replayed['problems'])} mismatches")
+        return 1 if replayed["problems"] else 0
     if args.command == "api":
         import uvicorn
 

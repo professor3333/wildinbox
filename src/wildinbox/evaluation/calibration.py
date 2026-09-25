@@ -1,6 +1,7 @@
 """`wildinbox calibrate`: fit score calibration and choose the operating point.
 
-Applies the pre-registered rule in configs/experiments/operating_point.yaml:
+Applies a pre-registered rule (configs/experiments/operating_point_v2.yaml;
+v1 is kept as the earlier record):
 
 1. Fit temperature scaling on the calibration partition only.
 2. On policy validation, with calibrated scores and the conservative event
@@ -8,16 +9,22 @@ Applies the pre-registered rule in configs/experiments/operating_point.yaml:
    95% upper bound within the limit, then (at that threshold) the lowest species
    threshold whose accepted-label precision has a 95% lower bound above the
    target. A step with no passing threshold leaves that automation disabled.
+3. v2: the policy is conservative/v1 with unfamiliar-input flags (if adopted),
+   and each species is enabled only if its own accepted events pass the bound.
+4. Write the versioned policy artifact and every event's saved predictions and
+   decisions, so each disposition can be replayed (wildinbox replay).
 
 The final test is never read (load_rows refuses it).
 """
 
 from __future__ import annotations
 
+import gzip
+import hashlib
 import json
 import math
 from collections.abc import Sequence
-from dataclasses import dataclass
+from dataclasses import asdict, dataclass
 from datetime import date
 from itertools import pairwise
 from pathlib import Path
@@ -29,12 +36,12 @@ from pydantic import BaseModel, ConfigDict, Field
 
 from wildinbox.class_map import EMPTY_CLASS
 from wildinbox.evaluation.metrics import ScoredEvent, event_metrics, wilson
+from wildinbox.inference.calibration import P_FLOOR, apply_temperature, log_probs
 from wildinbox.policy.conservative import Thresholds
 
 # decide_event filters only when every frame has P(empty) >= threshold, so a
 # threshold above 1 disables filtering; likewise for species acceptance.
 DISABLED = math.inf
-P_FLOOR = 1e-12  # cached scores are probabilities; log(0) would be -inf
 
 
 class _Strict(BaseModel):
@@ -61,15 +68,18 @@ class CalibrationSpec(_Strict):
 
 class OperatingPointSpec(_Strict):
     choose_on: Literal["policy_validation"]
-    policy: Literal["conservative"]
+    policy: Literal["conservative", "conservative/v1"]
     interval: Literal["wilson95"]
     max_false_empty_rate: float = Field(gt=0, lt=1)
     min_accepted_precision: float = Field(gt=0, lt=1)
     empty_grid: Grid
     species_grid: Grid
+    per_species_gate: bool = False
+    unfamiliar_rule: Path | None = None
 
 
 class OperatingPointRule(_Strict):
+    version: Literal[1, 2] = 1
     model: Path
     calibration: CalibrationSpec
     operating_point: OperatingPointSpec
@@ -109,21 +119,6 @@ def released(
 # ------------------------------------------------------------ temperature
 
 
-def _log_probs(probs: np.ndarray) -> np.ndarray:
-    # softmax(log p / T) == softmax(z / T) for the logits z behind p, because
-    # log p differs from z by a per-row constant.
-    out: np.ndarray = np.log(np.clip(probs, P_FLOOR, 1.0))
-    return out
-
-
-def apply_temperature(probs: np.ndarray, temperature: float) -> np.ndarray:
-    z = _log_probs(probs) / temperature
-    z -= z.max(axis=1, keepdims=True)
-    e = np.exp(z)
-    out: np.ndarray = e / e.sum(axis=1, keepdims=True)
-    return out
-
-
 def nll(probs: np.ndarray, y: np.ndarray) -> float:
     return float(-np.mean(np.log(np.clip(probs[np.arange(len(y)), y], P_FLOOR, 1.0))))
 
@@ -133,7 +128,7 @@ def fit_temperature(probs: np.ndarray, y: np.ndarray, lo: float = 0.05, hi: floa
     search over 1/T finds the optimum deterministically."""
     if len(y) == 0:
         raise ValueError("no labeled images to fit calibration on")
-    logp = _log_probs(probs)
+    logp = log_probs(probs)
 
     def loss(beta: float) -> float:
         z = logp * beta
@@ -222,6 +217,9 @@ class OperatingPoint:
     empty_sweep: list[dict[str, Any]]
     species_sweep: list[dict[str, Any]]
     metrics: dict[str, Any]
+    # Species enabled by the per-species gate (None: no gate).
+    accept_species: tuple[str, ...] | None = None
+    species_gate: dict[str, Any] | None = None
 
 
 def _t(x: float | None) -> float:
@@ -251,8 +249,25 @@ def choose_operating_point(
         if passes and chosen_species is None:
             chosen_species = s
 
-    final = event_metrics(events, Thresholds(_t(chosen_empty), _t(chosen_species)))[0]
-    return OperatingPoint(chosen_empty, chosen_species, empty_sweep, species_sweep, final)
+    chosen = Thresholds(_t(chosen_empty), _t(chosen_species))
+    accept: tuple[str, ...] | None = None
+    gate: dict[str, Any] | None = None
+    if spec.per_species_gate:
+        # Each species must pass the precision bound on its OWN accepted events.
+        by_species = (
+            event_metrics(events, chosen)[0]["accepted_by_species"]
+            if chosen_species is not None
+            else {}
+        )
+        gate = {}
+        for sp, v in by_species.items():
+            ci = wilson(v["correct"], v["accepted"])
+            gate[sp] = {**v, "precision_ci95": ci, "passes": ci[0] >= spec.min_accepted_precision}
+        accept = tuple(sp for sp, g in gate.items() if g["passes"])
+    final = event_metrics(events, chosen, accept)[0]
+    return OperatingPoint(
+        chosen_empty, chosen_species, empty_sweep, species_sweep, final, accept, gate
+    )
 
 
 def _jsonable(m: dict[str, Any]) -> dict[str, Any]:
@@ -264,13 +279,27 @@ def _jsonable(m: dict[str, Any]) -> dict[str, Any]:
 # ------------------------------------------------------------------ run
 
 
+def _version(obj: Any) -> str:
+    return hashlib.sha256(json.dumps(obj, sort_keys=True).encode()).hexdigest()[:12]
+
+
+def _outcome(o: Any) -> dict[str, Any]:
+    return {
+        "disposition": o.disposition.value,
+        "label": o.label,
+        "confidence": o.confidence,
+        "reasons": [r.value for r in o.reasons],
+    }
+
+
 def run(
     rule_path: Path, config_path: Path, report_dir: Path, deviation_path: Path | None = None
 ) -> dict[str, Any]:
     from wildinbox.datasets.spec import Partition
     from wildinbox.evaluation.data import load_rows
     from wildinbox.evaluation.predictors import predictor_for
-    from wildinbox.evaluation.run import _events, _score
+    from wildinbox.evaluation.run import _round, _score
+    from wildinbox.policy.conservative import POLICY_NAME, Frame, PolicyConfig, decide
     from wildinbox.settings import Settings
     from wildinbox.training.run import git_state, load_context
 
@@ -284,6 +313,15 @@ def run(
     if classes != ctx.classes:
         raise ValueError(f"model classes {classes} differ from config {ctx.classes}")
     empty_idx = classes.index(EMPTY_CLASS)
+
+    # Unfamiliar-input flags, if the rule names the score and it was adopted.
+    unfamiliar: dict[str, Any] | None = None
+    distance: dict[str, float] = {}
+    if rule.operating_point.unfamiliar_rule is not None:
+        unfamiliar = json.loads((rule.model / "unfamiliar.json").read_text())
+        with np.load(rule.model / "unfamiliar-scores.npz") as z:
+            distance = dict(zip(z["ids"].tolist(), z["scores"].tolist(), strict=True))
+    flag_threshold = unfamiliar["threshold"] if unfamiliar and unfamiliar["adopted"] else None
 
     fit_part = Partition(rule.calibration.fit_partition)
     choose_part = Partition(rule.operating_point.choose_on)
@@ -302,43 +340,143 @@ def run(
     temperature = fit_temperature(fit_probs[sup], fit_y[sup])
 
     calib: dict[str, Any] = {}
-    calibrated_items: list[Any] = []
+    calibrated: dict[str, dict[str, float]] = {}
     for part in (fit_part, choose_part):
         items, probs, y, is_empty = arrays(part)
         cal = apply_temperature(probs, temperature)
         calib[part.value] = calibration_summary(probs, cal, y, is_empty, empty_idx)
         for s, p in zip(items, cal, strict=True):
-            calibrated_items.append((s, {c: float(v) for c, v in zip(classes, p, strict=True)}))
+            calibrated[s.row.source_id] = {c: float(v) for c, v in zip(classes, p, strict=True)}
 
-    def scored_events(part: Partition, calibrated: bool) -> list[ScoredEvent]:
-        from dataclasses import replace
+    by_image = {s.row.source_id: s for s in scored}
 
-        items = [
-            replace(s, probs=p) if calibrated else s
-            for s, p in calibrated_items
-            if s.row.partition is part
+    def frame_ids(part: Partition) -> list[tuple[Any, list[str]]]:
+        out = []
+        for ev in events.values():
+            if ev.partition is part:
+                ids = [i for i in ev.image_ids if i in by_image]
+                if ids:
+                    out.append((ev, ids))
+        return out
+
+    def scored_events(part: Partition) -> list[ScoredEvent]:
+        return [
+            ScoredEvent(
+                ev.event_id,
+                ev.role,
+                ev.label,
+                ev.animal_present,
+                [calibrated[i] for i in ids],
+                tuple(distance[i] > flag_threshold for i in ids)
+                if flag_threshold is not None
+                else None,
+            )
+            for ev, ids in frame_ids(part)
         ]
-        return _events(items, {k: v for k, v in events.items() if v.partition is part})
 
-    op = choose_operating_point(scored_events(choose_part, True), rule.operating_point)
+    op = choose_operating_point(scored_events(choose_part), rule.operating_point)
     rule_t = Thresholds(_t(op.empty_threshold), _t(op.species_threshold))
     # Replication check: the chosen thresholds on the calibration cameras (not
     # used to choose them) and on every development camera separately.
-    fit_side = event_metrics(scored_events(fit_part, True), rule_t)[0]
+    fit_events = scored_events(fit_part)
+    fit_side = event_metrics(fit_events, rule_t, op.accept_species)[0]
+    sweeps_fit = {
+        "empty_filter": [
+            _jsonable(event_metrics(fit_events, Thresholds(t, DISABLED))[0])
+            for t in rule.operating_point.empty_grid.values()
+        ],
+        "species_accept": [
+            _jsonable(event_metrics(fit_events, Thresholds(_t(op.empty_threshold), sp))[0])
+            for sp in rule.operating_point.species_grid.values()
+        ],
+    }
     per_camera = {}
     for part in (fit_part, choose_part):
-        evs = scored_events(part, True)
+        evs = scored_events(part)
         cams = {e.event_id: events[e.event_id].camera_id for e in evs}
         for cam in sorted(set(cams.values()), key=lambda c: (len(c), c)):
-            m = event_metrics([e for e in evs if cams[e.event_id] == cam], rule_t)[0]
+            m = event_metrics(
+                [e for e in evs if cams[e.event_id] == cam], rule_t, op.accept_species
+            )[0]
             per_camera[cam] = {"partition": part.value, **_jsonable(m)}
     enabled = released(op.empty_threshold, op.species_threshold, deviation)
+
+    # The versioned decision policy: what is released, and what the rule chose.
+    released_cfg = PolicyConfig(
+        op.empty_threshold,
+        op.species_threshold,
+        enabled["auto_filter_enabled"],
+        enabled["auto_accept_enabled"],
+        op.accept_species,
+    )
+    rule_cfg = PolicyConfig(
+        op.empty_threshold,
+        op.species_threshold,
+        op.empty_threshold is not None,
+        op.species_threshold is not None,
+        op.accept_species,
+    )
+    calibration_artifact = {
+        "method": "temperature",
+        "temperature": temperature,
+        "fit_partition": fit_part.value,
+        "weights_digest": getattr(predictor, "weights_digest", None),
+    }
+    calibration_artifact["version"] = _version(calibration_artifact)
+    policy = {
+        "policy": POLICY_NAME,
+        "model": meta["name"],
+        "classes": classes,
+        "calibration": calibration_artifact,
+        "unfamiliar": (
+            {k: unfamiliar[k] for k in ("version", "method", "k", "threshold", "adopted")}
+            if unfamiliar
+            else None
+        ),
+        "released": {**asdict(released_cfg), "policy_version": _pv(released_cfg)},
+        "rule": {**asdict(rule_cfg), "policy_version": _pv(rule_cfg)},
+    }
+    policy["artifact_version"] = _version(policy)
+
+    # Saved predictions and decisions for every development event (replayable).
+    report_dir.mkdir(parents=True, exist_ok=True)
+    with gzip.open(report_dir / "decisions.jsonl.gz", "wt") as f:
+        for part in (fit_part, choose_part):
+            for ev, ids in frame_ids(part):
+                frames = [
+                    Frame(
+                        calibrated[i],
+                        unfamiliar=bool(
+                            flag_threshold is not None and distance[i] > flag_threshold
+                        ),
+                    )
+                    for i in ids
+                ]
+                row = {
+                    "event_id": ev.event_id,
+                    "partition": part.value,
+                    "camera_id": ev.camera_id,
+                    "frames": [
+                        {
+                            "image_id": i,
+                            "status": "completed",
+                            "raw_probs": [by_image[i].probs[c] for c in classes],
+                            "unfamiliar_distance": distance.get(i),
+                        }
+                        for i in ids
+                    ],
+                    "released": _outcome(decide(frames, released_cfg)),
+                    "rule": _outcome(decide(frames, rule_cfg)),
+                }
+                f.write(json.dumps(row) + "\n")
 
     result: dict[str, Any] = {
         "model": meta["name"],
         "rule": str(rule_path),
+        "rule_version": rule.version,
         "code": code,
         "split_version": meta["split_version"],
+        "policy": policy,
         "calibration": {
             "method": rule.calibration.method,
             "temperature": temperature,
@@ -353,6 +491,8 @@ def run(
             "rule_auto_filter_enabled": op.empty_threshold is not None,
             "rule_auto_accept_enabled": op.species_threshold is not None,
             **enabled,
+            "accept_species": list(op.accept_species) if op.accept_species is not None else None,
+            "species_gate": op.species_gate,
             "deviation": deviation.model_dump(mode="json") if deviation else None,
             "targets": {
                 "max_false_empty_rate": rule.operating_point.max_false_empty_rate,
@@ -367,31 +507,19 @@ def run(
             "empty_filter": [_jsonable(m) for m in op.empty_sweep],
             "species_accept": [_jsonable(m) for m in op.species_sweep],
         },
+        "sweeps_fit_partition": sweeps_fit,
     }
-    from wildinbox.evaluation.run import _round
-
-    report_dir.mkdir(parents=True, exist_ok=True)
     (report_dir / "metrics.json").write_text(json.dumps(_round(result), indent=2) + "\n")
-    (rule.model / "calibration.json").write_text(
-        json.dumps(
-            {
-                "method": "temperature",
-                "temperature": temperature,
-                "operating_point": {
-                    k: result["operating_point"][k]
-                    for k in (
-                        "empty_filter",
-                        "species_accept",
-                        "auto_filter_enabled",
-                        "auto_accept_enabled",
-                    )
-                },
-            },
-            indent=2,
-        )
-        + "\n"
-    )
+    (report_dir / "policy.json").write_text(json.dumps(policy, indent=2) + "\n")
+    (rule.model / "policy.json").write_text(json.dumps(policy, indent=2) + "\n")
+    (rule.model / "calibration.json").write_text(json.dumps(calibration_artifact, indent=2) + "\n")
     from wildinbox.evaluation.calibration_report import write_report
 
     write_report(report_dir, result)
     return result
+
+
+def _pv(cfg: Any) -> str:
+    from wildinbox.policy.conservative import POLICY_NAME
+
+    return f"{POLICY_NAME}+{cfg.fingerprint()}"
