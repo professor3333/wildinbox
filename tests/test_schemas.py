@@ -92,7 +92,7 @@ def test_decision_consistency_rules() -> None:
         disposition=Disposition.NEEDS_REVIEW,
         suggested_label=None,
         confidence=None,
-        reasons=[ReviewReason.CONFLICTING_SPECIES],
+        reasons=[ReviewReason.CONFLICTING_FRAMES],
     )
     with pytest.raises(ValidationError, match="at least one reason"):
         _decision(disposition=Disposition.NEEDS_REVIEW)

@@ -10,11 +10,13 @@
       "type": "string"
     },
     "ReviewReason": {
+      "description": "Machine-readable reasons an event needs review. Every reason that\nindependently blocks automation is listed.",
       "enum": [
         "low_confidence",
-        "animal_evidence",
-        "conflicting_species",
-        "possible_unsupported_input",
+        "conflicting_frames",
+        "possible_unknown",
+        "processing_failure",
+        "species_not_validated",
         "automation_disabled"
       ],
       "title": "ReviewReason",

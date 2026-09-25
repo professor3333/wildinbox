@@ -78,11 +78,23 @@ class Disposition(StrEnum):
 
 
 class ReviewReason(StrEnum):
+    """Machine-readable reasons an event needs review. Every reason that
+    independently blocks automation is listed."""
+
     LOW_CONFIDENCE = "low_confidence"
-    ANIMAL_EVIDENCE = "animal_evidence"
-    CONFLICTING_SPECIES = "conflicting_species"
-    POSSIBLE_UNSUPPORTED_INPUT = "possible_unsupported_input"
+    CONFLICTING_FRAMES = "conflicting_frames"
+    POSSIBLE_UNKNOWN = "possible_unknown"
+    PROCESSING_FAILURE = "processing_failure"
+    SPECIES_NOT_VALIDATED = "species_not_validated"
     AUTOMATION_DISABLED = "automation_disabled"
+
+
+class FrameStatus(StrEnum):
+    """Prediction status of one frame of an event."""
+
+    COMPLETED = "completed"
+    FAILED = "failed"
+    PENDING = "pending"
 
 
 class EventDecision(_Contract):
