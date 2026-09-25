@@ -215,6 +215,13 @@ def main(argv: Sequence[str] | None = None) -> int:
         help="Recorded decision to release less automation than the rule allows (if present).",
     )
 
+    p_unf = sub.add_parser(
+        "unfamiliar", help="Evaluate the unfamiliar-input score (pre-registered rule)."
+    )
+    p_unf.add_argument("--rule", type=Path, default=Path("configs/experiments/unfamiliar.yaml"))
+    p_unf.add_argument("--config", type=Path, default=Path("configs/experiments/baseline.yaml"))
+    p_unf.add_argument("--report-dir", type=Path, default=Path("reports/unfamiliar"))
+
     p_api = sub.add_parser("api", help="Serve the HTTP API.")
     p_api.add_argument("--host", default="127.0.0.1")
     p_api.add_argument("--port", type=int, default=8000)
@@ -266,6 +273,16 @@ def main(argv: Sequence[str] | None = None) -> int:
             f"{op['species_accept'] or 'disabled'}; released: filtering "
             f"{'on' if op['auto_filter_enabled'] else 'off'}, acceptance "
             f"{'on' if op['auto_accept_enabled'] else 'off'}"
+        )
+        print(f"report -> {args.report_dir / 'README.md'}")
+        return 0
+    if args.command == "unfamiliar":
+        from wildinbox.evaluation.unfamiliar import run as run_unfamiliar
+
+        u = run_unfamiliar(args.rule, args.config, args.report_dir)
+        print(
+            f"distance score {'adopted' if u['adopted'] else 'not adopted'} "
+            f"(detection gain {u['detection_gain_on_fit']:+.3f} on {u['artifact']['method']})"
         )
         print(f"report -> {args.report_dir / 'README.md'}")
         return 0

@@ -88,6 +88,29 @@ class FinetunedPredictor:
         out: np.ndarray = self._probs(x).float().cpu().numpy()
         return out
 
+    def _features(self, x: torch.Tensor) -> torch.Tensor:
+        """Pooled penultimate features (the classifier's input)."""
+        m = self.model
+        return torch.flatten(m.avgpool(m.features(x)), 1)  # type: ignore[operator]
+
+    def features(self, name: str, rows: list[ImageRow]) -> Extraction:
+        """Penultimate features for `rows`, cached by weights like `score`."""
+        ids = [r.source_id for r in rows]
+        path = self.model_dir / "eval-cache" / self.weights_digest / f"features-{name}.npz"
+        cached = load_cache(path, ids)
+        if cached is not None:
+            return cached
+        ext = extract(
+            self._features,
+            [self.ctx.images_root / r.storage_path for r in rows],
+            self.ctx.run.preprocessing,
+            device=self.device,
+            batch_size=64,
+            num_workers=self.ctx.cfg.extraction.num_workers,
+        )
+        save_cache(path, ids, ext)
+        return ext
+
 
 def predictor_for(ctx: Context, model_dir: Path, device: str) -> Predictor:
     kind = json.loads((model_dir / "meta.json").read_text()).get("kind", "linear_probe")
