@@ -280,6 +280,7 @@ def _review(r: Review) -> dict[str, Any]:
     return {
         "id": str(r.id),
         "reviewer": r.reviewer,
+        "recorded_by": r.recorded_by,
         "outcome": r.outcome,
         "suggested_label": r.suggested_label,
         "confirmed_label": r.confirmed_label,
@@ -290,7 +291,9 @@ def _review(r: Review) -> dict[str, Any]:
 
 
 class ReviewIn(BaseModel):
-    reviewer: str = Field(min_length=1, max_length=200)
+    # With token auth the reviewer is the authenticated principal; this field may
+    # be omitted, must match it, or name someone else only for a delegate.
+    reviewer: str | None = Field(default=None, min_length=1, max_length=200)
     outcome: ReviewOutcome
     confirmed_label: str | None = Field(default=None, max_length=100)
     note: str | None = Field(default=None, max_length=2000)
@@ -336,6 +339,7 @@ def create_app(
         try:
             if settings.auth == "tokens":
                 who = principal(request.headers.get("authorization"), settings.api_tokens)
+                request.state.principal = who
                 if who is None and request.url.path not in PUBLIC_PATHS:
                     status = 401
                     response = _error(401, "unauthorized", "send Authorization: Bearer <token>")
@@ -860,8 +864,29 @@ def create_app(
         with sessions()() as s:
             return event_row(s, _event(s, event_id), detail=True)
 
+    def review_identity(request: Request, claimed: str | None) -> tuple[str, str | None]:
+        """(reviewer, recorded_by). With tokens the reviewer is the caller, unless
+        the caller is an authorized delegate recording for someone else; without
+        authentication the claimed name is all there is."""
+        if settings.auth != "tokens":
+            if not claimed:
+                raise ApiError(422, "invalid_review", "reviewer is required")
+            return claimed, None
+        who: str = request.state.principal
+        if not claimed or claimed == who:
+            return who, who
+        if who in settings.review_delegates:
+            return claimed, who
+        raise ApiError(
+            403,
+            "reviewer_mismatch",
+            f"reviews are recorded under your own identity ({who}); recording one for "
+            f"{claimed!r} needs your principal in WILDINBOX_REVIEW_DELEGATES",
+        )
+
     @app.post("/events/{event_id}/reviews", status_code=201)
-    def create_review(event_id: uuid.UUID, body: ReviewIn) -> dict[str, Any]:
+    def create_review(request: Request, event_id: uuid.UUID, body: ReviewIn) -> dict[str, Any]:
+        reviewer, recorded_by = review_identity(request, body.reviewer)
         with sessions()() as s:
             event = _event(s, event_id)
             decision = max(event.decisions, key=lambda d: d.created_at, default=None)
@@ -875,7 +900,7 @@ def create_app(
                     outcome=body.outcome,
                     suggested_label=suggested,
                     confirmed_label=body.confirmed_label,
-                    reviewer=body.reviewer,
+                    reviewer=reviewer,
                     reviewed_at=_utcnow(),
                     note=body.note,
                 )
@@ -886,7 +911,8 @@ def create_app(
             review = Review(
                 id=review_id,
                 event_id=event.id,
-                reviewer=body.reviewer,
+                reviewer=reviewer,
+                recorded_by=recorded_by,
                 outcome=body.outcome.value,
                 suggested_label=suggested,
                 confirmed_label=body.confirmed_label,

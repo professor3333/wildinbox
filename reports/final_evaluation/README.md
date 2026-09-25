@@ -29,6 +29,10 @@ The 50% review-reduction target is not met at any operating point development ev
 
 So the deployed release keeps both automations disabled: every event is reviewed, with the suggestion and its confidence shown. The filter is not enabled per camera or per time of day either: choosing such a restriction from these results would turn the final test into development evidence.
 
+## What the 50% target could have reached
+
+The target assumed that most events are empty, from the dataset's roughly 70% empty *images*. At the event level, which is what a reviewer sees, only 715 of 8,982 final-test events are truly empty (8.0%). A perfect empty filter could therefore save at most 8.0% of reviews before audits; counting vehicle-only events too, which a wildlife reviewer need not see, the ceiling is 20.4%. 50% was out of reach for filtering alone: it would need reliable automatic species labels, or a different measure of benefit such as review time per event (the pre-registered review study). This corrects the target's rationale, not the measured results.
+
 ## Grouping versus the model
 
 Review reduction is measured against an already grouped workflow, so grouping is not credited to the model. Grouping alone turns 23,275 images into 8,982 events to review (61.4% fewer items than reviewing every image); the model adds nothing on top of that as released.

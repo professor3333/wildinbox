@@ -48,6 +48,11 @@ It reads through the API, as an offline training machine would.
 - **Approved labels only.** An event counts only when its *latest* review is by
   an approved reviewer. Automatic labels, unreviewed suggestions, and reviews by
   anyone else never do (the count of skipped events is recorded).
+  Approval trusts the reviewer name, so it must be authenticated: with token
+  access the API records every review under the caller's own principal, and only
+  principals in `WILDINBOX_REVIEW_DELEGATES` may record one for someone else (both
+  names are kept, `reviewer` and `recorded_by`). A deployment without
+  authentication cannot prove who reviewed; build snapshots from one that has it.
 - **Protected evaluation records are excluded, including corrections made to
   them.** An event is dropped, with every review on it, when any frame belongs
   to a protected partition or the event was in an earlier snapshot's holdout.

@@ -250,6 +250,10 @@ class Review(Base):
     id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
     event_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("events.id", ondelete="CASCADE"))
     reviewer: Mapped[str] = mapped_column(String(200))
+    # The authenticated principal that submitted the review: the reviewer
+    # itself, or an authorized delegate recording on the reviewer's behalf.
+    # Null where the deployment has no authentication (local development).
+    recorded_by: Mapped[str | None] = mapped_column(String(200))
     outcome: Mapped[str] = mapped_column(String(20))
     suggested_label: Mapped[str | None] = mapped_column(String(100))
     confirmed_label: Mapped[str | None] = mapped_column(String(100))

@@ -106,6 +106,7 @@ grant access.
 |---|---|
 | `POSTGRES_PASSWORD` | database password (random, generated above) |
 | `WILDINBOX_API_TOKENS` | JSON object of principal name → SHA-256 of that principal's token |
+| `WILDINBOX_REVIEW_DELEGATES` | optional JSON list of principals allowed to record reviews on someone else's behalf (e.g. `'["importer"]'`); everyone else reviews as themselves, and each review stores both names |
 | `WILDINBOX_EXPECTED_RELEASE` | the release this deployment must serve; readiness fails otherwise |
 | `WILDINBOX_WORKERS` | worker processes (default 1) |
 | `WILDINBOX_TORCH_THREADS` | PyTorch threads per worker (unset: one per vCPU) |
