@@ -32,14 +32,14 @@ unfamiliar:                 # evaluated, not adopted; its held-out species are o
 # Reported, in this order. Intervals: Wilson 95% for proportions; macro-F1 by
 # a 95% bootstrap over capture events (1,000 resamples, fixed seed).
 report:
-  - image-level macro-F1, per-class precision/recall/F1, lowest per-species recall, confusion (E3 and baseline)
-  - event decisions under the RELEASED policy (automation off) and under the RULE's operating point (empty filter 0.65)
-  - animal events filtered as empty at the rule's operating point vs the 98% retention target
-  - error-versus-coverage sweeps for both automations (reported, nothing chosen)
-  - unsupported inputs, tuning and held-out species separately: predicted labels, acceptance as a known species, unfamiliar-score detection (distance and confidence at their frozen thresholds)
-  - review reduction against an already sequence-grouped workflow
-  - per camera (9 cameras) and day/night, with camera-level spread
-  - random-image vs unseen-camera: seen-camera diagnostic vs final test, same models
-  - every success target in CLAUDE.md with result and whether it is met
+  - "image-level macro-F1, per-class precision/recall/F1, lowest per-species recall, confusion (E3 and baseline)"
+  - "event decisions under the RELEASED policy (automation off) and under the RULE's operating point (empty filter 0.65)"
+  - "animal events filtered as empty at the rule's operating point vs the 98% retention target"
+  - "error-versus-coverage sweeps for both automations (reported, nothing chosen)"
+  - "unsupported inputs, tuning and held-out species separately: predicted labels, acceptance as a known species, unfamiliar-score detection (distance and confidence at their frozen thresholds)"
+  - "review reduction against an already sequence-grouped workflow"
+  - "per camera (9 cameras) and day/night, with camera-level spread"
+  - "random-image vs unseen-camera: seen-camera diagnostic vs final test, same models"
+  - "every success target in CLAUDE.md with result and whether it is met"
 bootstrap_resamples: 1000
 bootstrap_seed: 20260925
