@@ -2684,37 +2684,48 @@
     },
     "calibration": {
       "images": 2641,
-      "seconds": 109.17,
-      "images_per_second": 24.19,
-      "peak_rss_mb": 387.7
+      "seconds": 83.61,
+      "images_per_second": 31.59,
+      "peak_rss_mb": 385.6
     },
     "policy_validation": {
       "images": 2732,
-      "seconds": 100.89,
-      "images_per_second": 27.08,
-      "peak_rss_mb": 387.7
+      "seconds": 94.27,
+      "images_per_second": 28.98,
+      "peak_rss_mb": 385.6
     },
     "seen_camera_diagnostic": {
       "images": 4313,
-      "seconds": 183.9,
-      "images_per_second": 23.45,
-      "peak_rss_mb": 387.7
+      "seconds": 180.18,
+      "images_per_second": 23.94,
+      "peak_rss_mb": 385.6
     }
+  },
+  "lineage": {
+    "kind": null,
+    "description": null,
+    "mlflow_run_id": "b01897994d4245d0aa070c499dc47e06",
+    "train_seconds": null,
+    "code": {
+      "commit": "189dbb13b3d55b5ff6dafd4725e0f765a811fdf0",
+      "dirty": false
+    },
+    "split_version": "cct20-splits-v1-7de740aba75f"
   },
   "latency": [
     {
       "device": "mps",
       "images": 32,
-      "p50_ms": 28.911334,
-      "p95_ms": 32.246541,
-      "peak_rss_mb": 454.703125
+      "p50_ms": 23.410167,
+      "p95_ms": 33.233459,
+      "peak_rss_mb": 600.421875
     },
     {
       "device": "cpu",
       "images": 32,
-      "p50_ms": 190.729562,
-      "p95_ms": 237.129917,
-      "peak_rss_mb": 454.703125
+      "p50_ms": 131.251292,
+      "p95_ms": 138.074917,
+      "peak_rss_mb": 600.421875
     }
   ]
 }

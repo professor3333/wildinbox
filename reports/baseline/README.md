@@ -152,16 +152,16 @@ Declared hardware: Apple M1, 8 GB RAM, macOS-26.6.2-arm64-arm-64bit, torch 2.14.
 | Stage | Images | Seconds | Images/s | Peak RSS, main process (MB) |
 |---|---|---|---|---|
 | train_fit | 20287 | 718.6 | 28.23 | 312.4 |
-| calibration | 2641 | 109.17 | 24.19 | 387.7 |
-| policy_validation | 2732 | 100.89 | 27.08 | 387.7 |
-| seen_camera_diagnostic | 4313 | 183.9 | 23.45 | 387.7 |
+| calibration | 2641 | 83.61 | 31.59 | 385.6 |
+| policy_validation | 2732 | 94.27 | 28.98 | 385.6 |
+| seen_camera_diagnostic | 4313 | 180.18 | 23.94 | 385.6 |
 
 Single image end to end (decode, preprocess, embed, classify; batch size 1, after warm-up). The Docker deployment runs on CPU.
 
 | Device | Images | p50 ms | p95 ms | Peak RSS, main process (MB) |
 |---|---|---|---|---|
-| mps | 32 | 29 | 32 | 455 |
-| cpu | 32 | 191 | 237 | 455 |
+| mps | 32 | 23 | 33 | 600 |
+| cpu | 32 | 131 | 138 | 600 |
 
 ## Error gallery
 
