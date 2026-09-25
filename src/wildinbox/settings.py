@@ -39,6 +39,18 @@ class Settings(BaseSettings):
     # Model release used for new batches. "test-predictor-v0" validates plumbing only.
     active_release: str = "test-predictor-v0"
 
+    # Workers. Images are scored in bounded chunks; each chunk commit renews the
+    # job's lease. A lease not renewed within `lease_seconds` is presumed dead and
+    # the job is recovered. Failed attempts retry with exponential backoff until
+    # the job's `max_attempts`, then fail terminally.
+    inference_device: str = "cpu"
+    inference_chunk: int = Field(default=16, gt=0)
+    lease_seconds: int = Field(default=120, gt=0)
+    job_timeout_seconds: int = Field(default=3600, gt=0)
+    retry_backoff_seconds: int = Field(default=30, ge=0)
+    retry_backoff_max_seconds: int = Field(default=900, ge=0)
+    recovery_interval_seconds: int = Field(default=30, gt=0)
+
     # Input limits. Oversized batches are rejected whole; oversized or unsupported
     # files get individual error records.
     max_files_per_batch: int = Field(default=2000, gt=0)

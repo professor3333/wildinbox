@@ -54,6 +54,7 @@ services:
 
   api:
     build: .
+    restart: unless-stopped
     environment: *app-env
     ports: ["127.0.0.1:8000:8000"]
     depends_on:
@@ -68,6 +69,7 @@ services:
   worker:
     build: .
     command: ["wildinbox", "worker"]
+    restart: unless-stopped   # a crashed or killed worker comes back; its job is recovered
     environment: *app-env
     depends_on:
       migrate: {condition: service_completed_successfully}

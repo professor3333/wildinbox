@@ -13,7 +13,7 @@ from fastapi import FastAPI, Header, Request
 from fastapi.concurrency import run_in_threadpool
 from fastapi.responses import HTMLResponse, JSONResponse, Response
 from pydantic import BaseModel, Field, ValidationError
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session, sessionmaker
 from starlette.datastructures import UploadFile
@@ -29,7 +29,7 @@ from wildinbox.api.uploads import (
     request_fingerprint,
 )
 from wildinbox.config import load_config
-from wildinbox.inference.releases import ensure_test_release, release_notice
+from wildinbox.inference.releases import active_release_id, ensure_test_release, release_notice
 from wildinbox.schemas import Review as ReviewContract
 from wildinbox.schemas import ReviewOutcome
 from wildinbox.settings import Settings
@@ -65,15 +65,51 @@ def _release(release: ModelRelease) -> dict[str, Any]:
         "id": release.id,
         "kind": release.kind,
         "is_test": release.is_test,
+        "weights_sha256": release.weights_sha256,
+        "class_names": release.class_names,
+        "class_map_fingerprint": release.class_map_fingerprint,
+        "preprocessing_version": release.preprocessing_version,
+        "calibration_version": (release.calibration or {}).get("version"),
         "policy_version": release.policy_version,
         "notice": release_notice(release),
     }
 
 
+def _frame_status(img: Image, has_prediction: bool) -> str:
+    if img.validation_status == "invalid":
+        return "invalid"
+    if has_prediction:
+        return "completed"
+    return "failed" if img.processing_error else "pending"
+
+
 def batch_summary(session: Session, batch: Batch) -> dict[str, Any]:
+    from wildinbox.storage.models import Prediction
+
     counts = Counter(i.validation_status for i in batch.images)
     events = session.scalars(select(Event.id).where(Event.batch_id == batch.id)).all()
     job = batch.jobs[0] if batch.jobs else None
+    scored = (
+        session.scalar(
+            select(func.count())
+            .select_from(Prediction)
+            .join(Image)
+            .where(Image.batch_id == batch.id, Prediction.model_release_id == job.model_release_id)
+        )
+        if job
+        else 0
+    )
+    to_score = sum(1 for i in batch.images if i.validation_status in ("pending", "valid"))
+    failures = [
+        {
+            "image_id": str(i.id),
+            "filename": i.original_filename,
+            "stage": "validation" if i.validation_status == "invalid" else "inference",
+            "error": i.validation_error or i.processing_error,
+        }
+        for i in batch.images
+        if i.validation_status == "invalid" or i.processing_error
+    ]
     return {
         "id": str(batch.id),
         "workspace": batch.workspace,
@@ -85,13 +121,22 @@ def batch_summary(session: Session, batch: Batch) -> dict[str, Any]:
             "images": len(batch.images),
             **{s: counts.get(s, 0) for s in ("pending", "valid", "invalid", "duplicate")},
             "events": len(events),
+            "processing_failed": sum(1 for i in batch.images if i.processing_error),
         },
+        "progress": {
+            "images_to_score": to_score,
+            "images_scored": int(scored or 0),
+            "images_failed": sum(1 for i in batch.images if i.processing_error),
+            "finished": batch.status in ("completed", "completed_with_errors", "failed"),
+        },
+        "failures": failures,
         "job": _job(job) if job else None,
         "release": _release(job.release) if job else None,
         "links": {
             "self": f"/batches/{batch.id}",
             "images": f"/batches/{batch.id}/images",
             "events": f"/events?batch_id={batch.id}",
+            "export": f"/batches/{batch.id}/export",
             "view": f"/batches/{batch.id}/view",
         },
     }
@@ -110,6 +155,9 @@ def _job(job: Job) -> dict[str, Any]:
         "created_at": job.created_at.isoformat(),
         "started_at": job.started_at.isoformat() if job.started_at else None,
         "finished_at": job.finished_at.isoformat() if job.finished_at else None,
+        "worker_id": job.worker_id,
+        "heartbeat_at": job.heartbeat_at.isoformat() if job.heartbeat_at else None,
+        "next_attempt_at": job.next_attempt_at.isoformat() if job.next_attempt_at else None,
     }
 
 
@@ -128,6 +176,7 @@ def image_row(img: Image) -> dict[str, Any]:
         "sequence_id": img.sequence_id,
         "validation_status": img.validation_status,
         "validation_error": img.validation_error,
+        "processing_error": img.processing_error,
         "duplicate_of": str(img.duplicate_of) if img.duplicate_of else None,
         "event_id": str(img.event_id) if img.event_id else None,
         "original_url": f"/images/{img.id}/original" if img.storage_key else None,
@@ -169,12 +218,14 @@ def event_row(session: Session, event: Event, detail: bool = False) -> dict[str,
         row["images"] = [
             {
                 **image_row(i),
+                "frame_status": _frame_status(i, i.id in preds),
                 "prediction": None
                 if i.id not in preds
                 else {
                     "suggested_label": preds[i.id].suggested_label,
                     "confidence": preds[i.id].confidence,
                     "class_probabilities": preds[i.id].class_probabilities,
+                    "calibrated_probabilities": preds[i.id].calibrated_probabilities,
                     "model_release_id": preds[i.id].model_release_id,
                 },
             }
@@ -244,6 +295,32 @@ def create_app(
         with sessions()() as s:
             s.execute(select(1))
         return {"status": "ok"}
+
+    @app.get("/version")
+    def version() -> dict[str, Any]:
+        """What new batches run: checked after every deploy."""
+        with sessions()() as s:
+            release = s.get(ModelRelease, active_release_id(s, settings))
+            return {
+                "api_version": app.version,
+                "active_release": _release(release) if release else None,
+            }
+
+    @app.get("/releases")
+    def list_releases() -> dict[str, Any]:
+        with sessions()() as s:
+            active = active_release_id(s, settings)
+            return {
+                "active_release_id": active,
+                "releases": [
+                    {
+                        **_release(r),
+                        "active": r.id == active,
+                        "created_at": r.created_at.isoformat(),
+                    }
+                    for r in s.scalars(select(ModelRelease).order_by(ModelRelease.created_at))
+                ],
+            }
 
     @app.get("/", response_class=HTMLResponse)
     def home() -> str:
@@ -362,7 +439,7 @@ def create_app(
                 status="queued",
                 attempts=0,
                 max_attempts=3,
-                model_release_id=settings.active_release,
+                model_release_id=active_release_id(s, settings),  # pinned for all retries
             )
             s.add(job)
             try:
@@ -445,6 +522,48 @@ def create_app(
                 [event_row(s, e) for e in events],
             )
 
+    @app.get("/batches/{batch_id}/export")
+    def export_batch(batch_id: uuid.UUID, format: str = "csv") -> Response:
+        """Current observations with provenance, one row per capture event."""
+        from wildinbox.api import export
+
+        if format not in ("csv", "json"):
+            raise ApiError(400, "invalid_format", "format must be 'csv' or 'json'")
+        with sessions()() as s:
+            batch = _batch(s, batch_id)
+            events = list(
+                s.scalars(
+                    select(Event)
+                    .where(Event.batch_id == batch.id)
+                    .order_by(Event.start_at, Event.id)
+                )
+            )
+            latest = {
+                e.id: d
+                for e in events
+                if (d := max(e.decisions, key=lambda d: d.created_at, default=None)) is not None
+            }
+            releases = {
+                r.id: r
+                for r in s.scalars(
+                    select(ModelRelease).where(
+                        ModelRelease.id.in_({d.model_release_id for d in latest.values()})
+                    )
+                )
+            }
+            data = export.rows(events, latest, releases)
+        name = f"wildinbox-{batch_id}-observations"
+        if format == "json":
+            return JSONResponse(
+                {"batch_id": str(batch_id), "observations": data},
+                headers={"Content-Disposition": f'attachment; filename="{name}.json"'},
+            )
+        return Response(
+            export.to_csv(data),
+            media_type="text/csv",
+            headers={"Content-Disposition": f'attachment; filename="{name}.csv"'},
+        )
+
     @app.get("/jobs/{job_id}")
     def get_job(job_id: uuid.UUID) -> dict[str, Any]:
         with sessions()() as s:
@@ -460,10 +579,15 @@ def create_app(
         batch_id: uuid.UUID | None = None,
         camera_id: str | None = None,
         disposition: str | None = None,
+        label: str | None = None,
+        reason: str | None = None,
+        reviewed: bool | None = None,
         limit: int = 100,
         offset: int = 0,
     ) -> dict[str, Any]:
-        limit = max(1, min(limit, 500))
+        """Events in time order. `label` matches the suggested label; `reason`
+        a review reason; `reviewed` whether any human review exists."""
+        limit, offset = max(1, min(limit, 500)), max(0, offset)
         with sessions()() as s:
             q = select(Event).join(Batch).where(Batch.workspace == settings.workspace)
             if batch_id:
@@ -472,8 +596,22 @@ def create_app(
                 q = q.where(Event.camera_id == camera_id)
             if disposition:
                 q = q.where(Event.decisions.any(Decision.disposition == disposition))
+            if label:
+                q = q.where(Event.decisions.any(Decision.suggested_label == label))
+            if reason:
+                q = q.where(Event.decisions.any(Decision.reasons.contains([reason])))
+            if reviewed is not None:
+                q = q.where(Event.reviews.any() if reviewed else ~Event.reviews.any())
+            total = s.scalar(select(func.count()).select_from(q.subquery())) or 0
             events = s.scalars(q.order_by(Event.start_at, Event.id).limit(limit).offset(offset))
-            return {"events": [event_row(s, e) for e in events], "limit": limit, "offset": offset}
+            nxt = offset + limit if offset + limit < total else None
+            return {
+                "events": [event_row(s, e) for e in events],
+                "total": total,
+                "limit": limit,
+                "offset": offset,
+                "next_offset": nxt,
+            }
 
     def _event(s: Session, event_id: uuid.UUID) -> Event:
         event = s.get(Event, event_id)

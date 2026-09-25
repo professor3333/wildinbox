@@ -29,27 +29,50 @@ cp .env.example .env      # local settings; contains no secrets
 docker compose up -d --build --wait    # Postgres, Redis, SeaweedFS (S3), migrations, API, worker
 open http://localhost:8000             # upload form -> batch status page
 uv run python scripts/smoke.py         # upload -> process -> results, end to end
+
+# Register the trained model as an immutable release and make it the default
+# (weights and policy artifact come from the training machine):
+docker compose run --rm \
+  -v "$PWD/models/finetune-e3-deep-balanced:/app/models/finetune-e3-deep-balanced:ro" \
+  -v "$PWD/reports/calibration:/app/reports/calibration:ro" \
+  worker wildinbox release register --activate
+curl localhost:8000/version            # deploy check: release, weights, preprocessing, policy
+
 docker compose down                    # add -v to delete stored data
 ```
 
 | Endpoint | Purpose |
 |---|---|
 | `POST /batches` | Multipart upload: `files` (JPEG/PNG) plus optional `metadata` JSON (`camera_id`, per-file `camera_id` / `captured_at` / `sequence_id`). Returns `202` with the batch and job id. Send `Idempotency-Key` to make retries safe; identical re-uploads are recognised without it. |
-| `GET /batches/{id}` | Status, counts, job, and model release |
-| `GET /batches/{id}/images` | Every file with its validation status and error |
+| `GET /batches/{id}` | Status, counts, progress, every failed file with its error, job lifecycle, pinned release |
+| `GET /batches/{id}/export` | Current observations with provenance (`?format=csv` or `json`) |
+| `GET /batches/{id}/images` | Every file with its validation and processing status |
 | `GET /batches/{id}/view` | Batch-status page |
-| `GET /jobs/{id}` | Job status, attempts, error |
-| `GET /events?batch_id=&camera_id=&disposition=` | Capture events with decisions |
-| `GET /events/{id}` | Event frames, per-image predictions, review history |
+| `GET /jobs/{id}` | Job status, attempts, lease, next retry, error |
+| `GET /events?batch_id=&camera_id=&disposition=&label=&reason=&reviewed=` | Paginated capture events with decisions, `total`, and `next_offset` |
+| `GET /events/{id}` | Frames with status, raw and calibrated predictions, decision, review history |
 | `POST /events/{id}/reviews` | Record a review (`confirmed` / `corrected` / `unresolved`); reviews are appended, never overwritten |
+| `GET /version`, `GET /releases` | Active release and its versions; all registered releases |
 | `GET /images/{id}/original` | The stored original file |
+
+Full contract, job lifecycle, and recovery rules: [`docs/api.md`](docs/api.md).
+
+**Processing.** Workers score images in bounded chunks under a lease and
+commit progress per chunk; events and decisions are written only when the
+whole batch is scored. A killed worker's job is recovered when its lease
+expires and resumes where it stopped, without duplicates; failures retry with
+backoff up to three attempts, then fail with a recorded error. Each job is
+pinned to the release it was created with. Demonstration with a real worker
+kill: `uv run python scripts/make_sample_batch.py` then
+`uv run python scripts/crash_demo.py` (results:
+[`reports/serving/README.md`](reports/serving/README.md)).
 
 **Limits** (configurable, see `.env.example`): 2,000 files and 1 GiB per batch,
 20 MiB per file. Batches over the limit are rejected whole with `413`.
 Unsupported, empty, oversized, or corrupt files get individual error records
 and the rest of the batch is processed.
 
-**Test predictor.** Until a model is trained, batches use release
+**Test predictor.** Before a trained release is activated, batches use release
 `test-predictor-v0`: pseudo-random scores derived from file hashes, used to
 exercise the pipeline. It is flagged `is_test` in the database, every API
 response and the status page carry a warning, and its policy sends every event
