@@ -22,6 +22,7 @@ from starlette.datastructures import UploadFile
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from wildinbox.api import views
+from wildinbox.api.auth import PUBLIC_PATHS, principal
 from wildinbox.api.uploads import (
     UploadedFile,
     UploadError,
@@ -278,6 +279,11 @@ def create_app(
 ) -> FastAPI:
     settings = settings or Settings()
     cfg = load_config(settings.config_path)
+    if settings.auth == "tokens" and not settings.api_tokens:
+        raise RuntimeError(
+            "WILDINBOX_AUTH=tokens but WILDINBOX_API_TOKENS is empty: create tokens with "
+            "`wildinbox token new NAME`, or set WILDINBOX_AUTH=disabled for local development"
+        )
 
     @asynccontextmanager
     async def lifespan(app: FastAPI) -> AsyncIterator[None]:
@@ -298,17 +304,44 @@ def create_app(
     async def _timing(request: Request, call_next: Any) -> Any:
         start = time.perf_counter()
         status = 500
+        request_id = request.headers.get("x-request-id", "")[:100] or uuid.uuid4().hex
+        who = None
         try:
+            if settings.auth == "tokens":
+                who = principal(request.headers.get("authorization"), settings.api_tokens)
+                if who is None and request.url.path not in PUBLIC_PATHS:
+                    status = 401
+                    response = _error(401, "unauthorized", "send Authorization: Bearer <token>")
+                    response.headers["WWW-Authenticate"] = "Bearer"
+                    response.headers["X-Request-ID"] = request_id
+                    return response
             response = await call_next(request)
             status = response.status_code
+            response.headers["X-Request-ID"] = request_id
             return response
         finally:
+            elapsed = time.perf_counter() - start
             route = request.scope.get("route")
             path = getattr(route, "path", None)
             if path:  # route templates only, so ids do not create unbounded series
                 key = f"{request.method} {path}"
-                latency[key].append(time.perf_counter() - start)
+                latency[key].append(elapsed)
                 statuses[key][f"{status // 100}xx"] += 1
+            if request.url.path not in ("/health", "/ready") or status >= 400:
+                log.info(
+                    "request",
+                    extra={
+                        "fields": {
+                            "request_id": request_id,
+                            "method": request.method,
+                            "route": path or request.url.path,
+                            "status": status,
+                            "duration_ms": round(1000 * elapsed, 1),
+                            "principal": who,
+                            "bytes_in": request.headers.get("content-length"),
+                        }
+                    },
+                )
 
     def latency_summary() -> dict[str, dict[str, float]]:
         out = {}
@@ -342,6 +375,21 @@ def create_app(
         with sessions()() as s:
             s.execute(select(1))
         return {"status": "ok"}
+
+    @app.get("/ready")
+    def ready() -> JSONResponse:
+        """Ready to serve: database, queue, and object store reachable, and the
+        expected model release active and loaded (weights verified)."""
+        from wildinbox.api.readiness import check
+
+        with sessions()() as s:
+            ok, body = check(s, settings, app.state.store)
+        return JSONResponse(body, status_code=200 if ok else 503)
+
+    @app.get("/whoami")
+    def whoami(request: Request) -> dict[str, Any]:
+        who = principal(request.headers.get("authorization"), settings.api_tokens)
+        return {"principal": who, "auth": settings.auth}
 
     @app.get("/version")
     def version() -> dict[str, Any]:
@@ -412,7 +460,7 @@ def create_app(
 
     @app.get("/", response_class=HTMLResponse)
     def home() -> str:
-        return views.upload_page(settings)
+        return views.upload_page(settings, auth_required=settings.auth == "tokens")
 
     # ----------------------------------------------------------------- batches
 

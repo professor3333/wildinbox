@@ -19,8 +19,14 @@ class ApiError(RuntimeError):
 
 
 class ApiClient:
-    def __init__(self, base_url: str, timeout: float = 30) -> None:
-        self.http = httpx.Client(base_url=base_url, timeout=timeout)
+    def __init__(self, base_url: str, timeout: float = 30, token: str | None = None) -> None:
+        headers = {"Authorization": f"Bearer {token}"} if token else None
+        self.http = httpx.Client(base_url=base_url, timeout=timeout, headers=headers)
+
+    def whoami(self) -> dict[str, Any]:
+        """Who the API thinks this client is; raises ApiError(401) without a valid token."""
+        out: dict[str, Any] = self._json(self.http.get("/whoami"))
+        return out
 
     def _json(self, res: httpx.Response) -> Any:
         if res.status_code >= 400:

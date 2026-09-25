@@ -26,6 +26,7 @@ import logging
 import os
 import re
 import socket
+import time
 import uuid
 from collections.abc import Sequence
 from dataclasses import dataclass
@@ -442,11 +443,14 @@ def process_batch(
     if token is None:
         log.info("job %s not claimable (finished, owned, or not yet due)", job_id)
         return "skipped"
+    started = time.perf_counter()
     with factory() as session:
         try:
             job = session.get(Job, job_id)
             assert job is not None
             batch, release = job.batch, job.release  # the release pinned at creation
+            fields = {"job_id": str(job_id), "batch_id": str(batch.id), "release": release.id}
+            log.info("job started", extra={"fields": {**fields, "attempt": job.attempts}})
             _score_images(session, store, batch, release, job_id, token, settings)
             events = _group_events(session, batch)
             _decide(session, events, release, settings)
@@ -460,6 +464,17 @@ def process_batch(
             batch.completed_at = job.finished_at = _now()
             job.status, job.error, job.lease_token = "succeeded", None, None
             session.commit()  # events, decisions, and completion land together
+            log.info(
+                "job succeeded",
+                extra={
+                    "fields": {
+                        **fields,
+                        "images": len(batch.images),
+                        "events": len(events),
+                        "seconds": round(time.perf_counter() - started, 2),
+                    }
+                },
+            )
             return "succeeded"
         except LeaseLost:
             session.rollback()

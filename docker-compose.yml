@@ -11,6 +11,9 @@ x-app-env: &app-env
   WILDINBOX_OBJECT_STORE_ACCESS_KEY: ${OBJECT_STORE_ACCESS_KEY:-wildinbox}
   WILDINBOX_OBJECT_STORE_SECRET_KEY: ${OBJECT_STORE_SECRET_KEY:-wildinbox-local-only}
   WILDINBOX_DISPATCH: rq
+  # Local development only: no access tokens. Staging requires them
+  # (deploy/staging/compose.yml).
+  WILDINBOX_AUTH: disabled
 
 services:
   postgres:

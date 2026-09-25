@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import argparse
 import json
-import logging
 import os
 import sys
 from collections.abc import Sequence
@@ -164,7 +163,13 @@ def _release(args: argparse.Namespace) -> int:
 
 
 def main(argv: Sequence[str] | None = None) -> int:
-    logging.basicConfig(level=logging.INFO, format="%(levelname)s %(message)s")
+    from wildinbox.logs import configure
+
+    # Read directly: a full Settings() would also validate unrelated fields.
+    configure(
+        os.environ.get("WILDINBOX_LOG_FORMAT", "text"),
+        os.environ.get("WILDINBOX_LOG_LEVEL", "INFO"),
+    )
     parser = argparse.ArgumentParser(prog="wildinbox")
     sub = parser.add_subparsers(dest="command", required=True)
 
@@ -357,6 +362,11 @@ def main(argv: Sequence[str] | None = None) -> int:
     p_up.add_argument("--to", dest="policy_name", default="conservative/v2")
     p_up.add_argument("--out", type=Path, required=True)
 
+    p_tok = sub.add_parser("token", help="API access tokens.")
+    tok_sub = p_tok.add_subparsers(dest="token_command", required=True)
+    p_new = tok_sub.add_parser("new", help="Create a token; prints it and its hash.")
+    p_new.add_argument("name", help="Principal name recorded in logs, e.g. 'alice'.")
+
     p_api = sub.add_parser("api", help="Serve the HTTP API.")
     p_api.add_argument("--host", default="127.0.0.1")
     p_api.add_argument("--port", type=int, default=8000)
@@ -525,12 +535,22 @@ def main(argv: Sequence[str] | None = None) -> int:
         )
         print(f"dispatched {len(ids)} due job(s)")
         return 0
+    if args.command == "token":
+        from wildinbox.api.auth import new_token, token_hash
+
+        token = new_token()
+        print(f"token for {args.name} (give it to them; it is not stored anywhere):")
+        print(f"  {token}")
+        print("add this entry to WILDINBOX_API_TOKENS (a JSON object) in the deployment's env:")
+        print(f"  {json.dumps({args.name: token_hash(token)})}")
+        return 0
     if args.command == "api":
         import uvicorn
 
         from wildinbox.api.app import create_app
 
-        uvicorn.run(create_app(), host=args.host, port=args.port)
+        # Logging is already configured; uvicorn's own config would replace it.
+        uvicorn.run(create_app(), host=args.host, port=args.port, log_config=None, access_log=False)
         return 0
     if args.command == "ui":
         import subprocess

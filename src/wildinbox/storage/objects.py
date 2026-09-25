@@ -21,6 +21,9 @@ class ObjectStore(Protocol):
     def put(self, key: str, data: bytes, content_type: str) -> None: ...
     def get(self, key: str) -> bytes: ...
     def exists(self, key: str) -> bool: ...
+    def check(self) -> None:
+        """Raise if the store cannot be reached (readiness)."""
+        ...
 
 
 def original_key(sha256: str) -> str:
@@ -55,15 +58,21 @@ class LocalStore:
     def exists(self, key: str) -> bool:
         return self._path(key).exists()
 
+    def check(self) -> None:
+        self.root.mkdir(parents=True, exist_ok=True)
+
 
 class S3Store:
-    """Any S3-compatible service (SeaweedFS in the local docker compose stack)."""
+    """AWS S3 (staging) or any S3-compatible service (SeaweedFS in the local
+    docker compose stack)."""
 
     def __init__(self, settings: Settings) -> None:
         import boto3
         from botocore.config import Config
 
         self.bucket = settings.object_store_bucket
+        # Path-style addressing for self-hosted services; AWS S3 picks its own.
+        addressing = "path" if settings.object_store_url else "auto"
         self.client: Any = boto3.client(
             "s3",
             endpoint_url=settings.object_store_url,
@@ -71,7 +80,8 @@ class S3Store:
             aws_secret_access_key=settings.object_store_secret_key,
             region_name=settings.object_store_region,
             config=Config(
-                retries={"max_attempts": 5, "mode": "standard"}, s3={"addressing_style": "path"}
+                retries={"max_attempts": 5, "mode": "standard"},
+                s3={"addressing_style": addressing},
             ),
         )
 
@@ -82,6 +92,9 @@ class S3Store:
             self.client.head_bucket(Bucket=self.bucket)
         except ClientError:
             self.client.create_bucket(Bucket=self.bucket)
+
+    def check(self) -> None:
+        self.client.head_bucket(Bucket=self.bucket)
 
     def put(self, key: str, data: bytes, content_type: str) -> None:
         self.client.put_object(Bucket=self.bucket, Key=key, Body=data, ContentType=content_type)
