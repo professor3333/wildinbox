@@ -146,6 +146,7 @@ The demo walk-through, with a real run's output: [`docs/demo.md`](docs/demo.md).
 | Upload | Upload photos with a camera name; follow processing; see unusable files and why. |
 | Export | The observation CSV with provenance. |
 | Monitoring | Alerts, operations, label-free signals, and review-based accuracy. |
+| Study | The timed review study for participants ([guide](docs/review_study.md)). |
 
 ### API (`http://localhost:8000`, schema at `/docs`)
 
@@ -171,6 +172,7 @@ Limits (see `.env.example`): 2,000 files and 1 GiB per batch, 20 MiB per file.
 | Releases | `release register`, `release activate`, `release list` |
 | Update cycle | `snapshot build`, `update gate` |
 | Operations | `api`, `worker`, `ui`, `jobs recover`, `monitoring summary`, `monitoring backfill-quality` |
+| Review study | `study plan`, `study analyze` |
 
 ## Reproduce the data and models
 
@@ -308,8 +310,10 @@ Training the released model: 70 minutes on the M1's GPU (Metal).
   was not adopted; it mostly measures "new camera", not "new species".
 - **Evaluated species were in pretraining:** every unsupported species that
   could be evaluated (except deer) appears in ImageNet-1k.
-- **Reviews in the update cycle were simulated** from ground truth; no timed
-  study with real reviewers has been run yet.
+- **Reviews in the update cycle were simulated** from ground truth. The timed
+  review study is built and pre-registered
+  ([`docs/review_study.md`](docs/review_study.md)) but has not been run with
+  people, so whether suggestions speed up review is not yet measured.
 - **One machine, one worker** measured; the event list is not optimised for very
   large pages.
 - Capture events are not individual animals; nothing here estimates population
