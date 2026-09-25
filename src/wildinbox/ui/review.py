@@ -171,6 +171,7 @@ def _paged(
     classes: list[str],
     key: str,
     empty_message: str,
+    empty_is_good: bool = True,
     **params: Any,
 ) -> None:
     offset = st.session_state.get(f"offset-{key}", 0)
@@ -181,7 +182,7 @@ def _paged(
         return
     total = page["total"]
     if not total:
-        st.success(empty_message)
+        (st.success if empty_is_good else st.info)(empty_message)
         return
     st.caption(f"{total} capture event(s). Capture events are not individual animals.")
     for event in page["events"]:
@@ -237,6 +238,7 @@ def filtered_page(
         "No event has been filtered automatically. The active release "
         f"(`{release.get('id')}`) filters only if its evaluation supported a threshold; "
         "this one sends every event to review.",
+        empty_is_good=False,
         batch_id=batch_id,
         disposition="likely_empty",
     )
@@ -258,6 +260,7 @@ def audit_page(
         "audit",
         "No audit samples waiting. Audits come only from events automation handled; "
         "with automation off, nothing is sampled.",
+        empty_is_good=False,
         batch_id=batch_id,
         audit=True,
         reviewed=False,
