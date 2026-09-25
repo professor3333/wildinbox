@@ -30,7 +30,10 @@ from .conftest import REPO_ROOT
 from .test_uploads import jpeg
 
 DB_URL = os.environ.get("WILDINBOX_TEST_DATABASE_URL")
-TABLES = "reviews, decisions, predictions, images, events, jobs, batches, model_releases"
+TABLES = (
+    "reviews, decisions, predictions, images, events, jobs, batches, "
+    "release_activations, model_releases"
+)
 
 
 @pytest.fixture(scope="session")
@@ -52,12 +55,12 @@ class NoopDispatcher:
     def __init__(self) -> None:
         self.enqueued: list[uuid.UUID] = []
 
-    def enqueue(self, job_id: uuid.UUID) -> None:
+    def enqueue(self, job_id: uuid.UUID, attempt: int = 1) -> None:
         self.enqueued.append(job_id)
 
 
 class BrokenDispatcher:
-    def enqueue(self, job_id: uuid.UUID) -> None:
+    def enqueue(self, job_id: uuid.UUID, attempt: int = 1) -> None:
         raise ConnectionError("redis is down")
 
 
@@ -74,6 +77,7 @@ def settings(database_url: str, tmp_path: Path) -> Settings:
         max_files_per_batch=10,
         max_file_bytes=100_000,
         max_batch_bytes=500_000,
+        retry_backoff_seconds=0,
     )
 
 
@@ -134,6 +138,14 @@ def test_small_batch_travels_from_upload_to_results(client: TestClient) -> None:
         "invalid": 4,
         "duplicate": 0,
         "events": 2,
+        "processing_failed": 0,
+    }
+    assert summary["progress"]["images_scored"] == 3 and summary["progress"]["finished"]
+    assert {f["filename"] for f in summary["failures"]} == {
+        "notes.gif",
+        "empty.jpg",
+        "huge.jpg",
+        "broken.jpg",
     }
 
     images = {
@@ -245,7 +257,7 @@ def test_duplicate_images_are_recorded_not_reprocessed(client: TestClient) -> No
     assert {d["duplicate_of"] for d in dupes} == {first_image["id"]}
 
 
-def test_undispatched_job_stays_queued_and_failures_are_recorded(settings: Settings) -> None:
+def test_undispatched_job_stays_queued_and_failures_retry_then_fail(settings: Settings) -> None:
     with TestClient(create_app(settings, dispatcher=BrokenDispatcher())) as c:
         res = c.post("/batches", files=_files(("a.jpg", jpeg(40))))
         assert res.status_code == 202
@@ -255,13 +267,17 @@ def test_undispatched_job_stays_queued_and_failures_are_recorded(settings: Setti
     with session_factory(settings.database_url)() as s:
         img = s.scalars(select(Image)).one()
         store._path(img.storage_key or "").unlink()  # the original vanished
-    with pytest.raises(KeyError):
-        process_batch(
-            session_factory(settings.database_url), store, uuid.UUID(res.json()["job"]["id"])
-        )
+    job_id = uuid.UUID(res.json()["job"]["id"])
+    factory = session_factory(settings.database_url)
+    # Bounded retries: each attempt fails and is recorded; the last is terminal.
+    assert process_batch(factory, store, job_id, settings) == "queued"
+    assert process_batch(factory, store, job_id, settings) == "queued"
+    assert process_batch(factory, store, job_id, settings) == "failed"
+    assert process_batch(factory, store, job_id, settings) == "skipped"
     with TestClient(create_app(settings, dispatcher=NoopDispatcher())) as c:
         summary = c.get(f"/batches/{res.json()['id']}").json()
     assert summary["status"] == "failed" and summary["job"]["status"] == "failed"
+    assert summary["job"]["attempts"] == 3
     assert "originals/" in summary["job"]["error"]
 
 
