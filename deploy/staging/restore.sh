@@ -8,6 +8,8 @@
 # migrations (a dump from an older release is upgraded); starts everything and
 # waits for readiness. Jobs that were running are recovered by their leases.
 set -euo pipefail
+# cron runs with PATH=/usr/bin:/bin; the AWS CLI is a snap.
+export PATH="/snap/bin:/usr/local/bin:$PATH"
 cd "$(dirname "$0")/../.."
 set -a; source /etc/wildinbox/stack.env; set +a
 wi=deploy/staging/wi

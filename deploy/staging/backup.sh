@@ -6,6 +6,8 @@
 # Originals and model weights already live in the same bucket, which is
 # versioned, so the database dump is the only thing that needs copying.
 set -euo pipefail
+# cron runs with PATH=/usr/bin:/bin; the AWS CLI is a snap.
+export PATH="/snap/bin:/usr/local/bin:$PATH"
 cd "$(dirname "$0")/../.."
 set -a; source /etc/wildinbox/stack.env; set +a
 wi=deploy/staging/wi
