@@ -1,0 +1,3919 @@
+{
+  "model": "finetune-e3-deep-balanced",
+  "rule": "configs/experiments/operating_point.yaml",
+  "code": {
+    "commit": "14f02bbc658d28cbc1565fb84f545dcaee00357d",
+    "dirty": false
+  },
+  "split_version": "cct20-splits-v1-7de740aba75f",
+  "calibration": {
+    "method": "temperature",
+    "temperature": 2.008255,
+    "fit_partition": "calibration",
+    "fit_images": 2032,
+    "summary": {
+      "calibration": {
+        "images": 2641,
+        "supported_images": 2032,
+        "nll": {
+          "raw": 1.713004,
+          "calibrated": 1.440473
+        },
+        "top_label_ece": {
+          "raw": 0.21038,
+          "calibrated": 0.03392
+        },
+        "empty_reliability": {
+          "raw": [
+            {
+              "band": [
+                0.0,
+                0.5
+              ],
+              "images": 2061,
+              "mean_p_empty": 0.095948,
+              "observed_empty": 0.09607,
+              "observed_empty_ci95": [
+                0.084088,
+                0.109554
+              ]
+            },
+            {
+              "band": [
+                0.5,
+                0.7
+              ],
+              "images": 134,
+              "mean_p_empty": 0.59346,
+              "observed_empty": 0.253731,
+              "observed_empty_ci95": [
+                0.187627,
+                0.333562
+              ]
+            },
+            {
+              "band": [
+                0.7,
+                0.8
+              ],
+              "images": 44,
+              "mean_p_empty": 0.74647,
+              "observed_empty": 0.25,
+              "observed_empty_ci95": [
+                0.145741,
+                0.394408
+              ]
+            },
+            {
+              "band": [
+                0.8,
+                0.9
+              ],
+              "images": 24,
+              "mean_p_empty": 0.837354,
+              "observed_empty": 0.291667,
+              "observed_empty_ci95": [
+                0.149145,
+                0.491681
+              ]
+            },
+            {
+              "band": [
+                0.9,
+                0.95
+              ],
+              "images": 33,
+              "mean_p_empty": 0.929282,
+              "observed_empty": 0.666667,
+              "observed_empty_ci95": [
+                0.496076,
+                0.8025
+              ]
+            },
+            {
+              "band": [
+                0.95,
+                0.99
+              ],
+              "images": 180,
+              "mean_p_empty": 0.976097,
+              "observed_empty": 0.555556,
+              "observed_empty_ci95": [
+                0.482555,
+                0.626234
+              ]
+            },
+            {
+              "band": [
+                0.99,
+                1.0
+              ],
+              "images": 165,
+              "mean_p_empty": 0.994981,
+              "observed_empty": 0.624242,
+              "observed_empty_ci95": [
+                0.548306,
+                0.694525
+              ]
+            }
+          ],
+          "calibrated": [
+            {
+              "band": [
+                0.0,
+                0.5
+              ],
+              "images": 2238,
+              "mean_p_empty": 0.129521,
+              "observed_empty": 0.106345,
+              "observed_empty_ci95": [
+                0.09424,
+                0.119799
+              ]
+            },
+            {
+              "band": [
+                0.5,
+                0.7
+              ],
+              "images": 93,
+              "mean_p_empty": 0.62224,
+              "observed_empty": 0.55914,
+              "observed_empty_ci95": [
+                0.45788,
+                0.655708
+              ]
+            },
+            {
+              "band": [
+                0.7,
+                0.8
+              ],
+              "images": 120,
+              "mean_p_empty": 0.747821,
+              "observed_empty": 0.525,
+              "observed_empty_ci95": [
+                0.436268,
+                0.612181
+              ]
+            },
+            {
+              "band": [
+                0.8,
+                0.9
+              ],
+              "images": 145,
+              "mean_p_empty": 0.846287,
+              "observed_empty": 0.613793,
+              "observed_empty_ci95": [
+                0.532582,
+                0.689131
+              ]
+            },
+            {
+              "band": [
+                0.9,
+                0.95
+              ],
+              "images": 42,
+              "mean_p_empty": 0.920037,
+              "observed_empty": 0.738095,
+              "observed_empty_ci95": [
+                0.58931,
+                0.846975
+              ]
+            },
+            {
+              "band": [
+                0.95,
+                0.99
+              ],
+              "images": 3,
+              "mean_p_empty": 0.969771,
+              "observed_empty": 0.666667,
+              "observed_empty_ci95": [
+                0.207655,
+                0.93851
+              ]
+            },
+            {
+              "band": [
+                0.99,
+                1.0
+              ],
+              "images": 0,
+              "mean_p_empty": null,
+              "observed_empty": null,
+              "observed_empty_ci95": null
+            }
+          ]
+        }
+      },
+      "policy_validation": {
+        "images": 2732,
+        "supported_images": 2304,
+        "nll": {
+          "raw": 1.97037,
+          "calibrated": 1.567015
+        },
+        "top_label_ece": {
+          "raw": 0.273696,
+          "calibrated": 0.061895
+        },
+        "empty_reliability": {
+          "raw": [
+            {
+              "band": [
+                0.0,
+                0.5
+              ],
+              "images": 1968,
+              "mean_p_empty": 0.096578,
+              "observed_empty": 0.026931,
+              "observed_empty_ci95": [
+                0.020648,
+                0.035057
+              ]
+            },
+            {
+              "band": [
+                0.5,
+                0.7
+              ],
+              "images": 253,
+              "mean_p_empty": 0.60425,
+              "observed_empty": 0.094862,
+              "observed_empty_ci95": [
+                0.064576,
+                0.137267
+              ]
+            },
+            {
+              "band": [
+                0.7,
+                0.8
+              ],
+              "images": 143,
+              "mean_p_empty": 0.756253,
+              "observed_empty": 0.118881,
+              "observed_empty_ci95": [
+                0.075562,
+                0.182141
+              ]
+            },
+            {
+              "band": [
+                0.8,
+                0.9
+              ],
+              "images": 208,
+              "mean_p_empty": 0.845887,
+              "observed_empty": 0.129808,
+              "observed_empty_ci95": [
+                0.090766,
+                0.182275
+              ]
+            },
+            {
+              "band": [
+                0.9,
+                0.95
+              ],
+              "images": 86,
+              "mean_p_empty": 0.925845,
+              "observed_empty": 0.186047,
+              "observed_empty_ci95": [
+                0.11789,
+                0.281052
+              ]
+            },
+            {
+              "band": [
+                0.95,
+                0.99
+              ],
+              "images": 50,
+              "mean_p_empty": 0.96947,
+              "observed_empty": 0.46,
+              "observed_empty_ci95": [
+                0.329694,
+                0.596014
+              ]
+            },
+            {
+              "band": [
+                0.99,
+                1.0
+              ],
+              "images": 24,
+              "mean_p_empty": 0.995823,
+              "observed_empty": 0.708333,
+              "observed_empty_ci95": [
+                0.508319,
+                0.850855
+              ]
+            }
+          ],
+          "calibrated": [
+            {
+              "band": [
+                0.0,
+                0.5
+              ],
+              "images": 2407,
+              "mean_p_empty": 0.169205,
+              "observed_empty": 0.039468,
+              "observed_empty_ci95": [
+                0.032395,
+                0.048009
+              ]
+            },
+            {
+              "band": [
+                0.5,
+                0.7
+              ],
+              "images": 252,
+              "mean_p_empty": 0.575158,
+              "observed_empty": 0.174603,
+              "observed_empty_ci95": [
+                0.132715,
+                0.226264
+              ]
+            },
+            {
+              "band": [
+                0.7,
+                0.8
+              ],
+              "images": 43,
+              "mean_p_empty": 0.735845,
+              "observed_empty": 0.418605,
+              "observed_empty_ci95": [
+                0.283843,
+                0.566717
+              ]
+            },
+            {
+              "band": [
+                0.8,
+                0.9
+              ],
+              "images": 19,
+              "mean_p_empty": 0.841582,
+              "observed_empty": 0.578947,
+              "observed_empty_ci95": [
+                0.362756,
+                0.768584
+              ]
+            },
+            {
+              "band": [
+                0.9,
+                0.95
+              ],
+              "images": 6,
+              "mean_p_empty": 0.925261,
+              "observed_empty": 0.666667,
+              "observed_empty_ci95": [
+                0.299988,
+                0.903231
+              ]
+            },
+            {
+              "band": [
+                0.95,
+                0.99
+              ],
+              "images": 5,
+              "mean_p_empty": 0.958632,
+              "observed_empty": 1.0,
+              "observed_empty_ci95": [
+                0.565509,
+                1.0
+              ]
+            },
+            {
+              "band": [
+                0.99,
+                1.0
+              ],
+              "images": 0,
+              "mean_p_empty": null,
+              "observed_empty": null,
+              "observed_empty_ci95": null
+            }
+          ]
+        }
+      }
+    }
+  },
+  "operating_point": {
+    "chosen_on": "policy_validation",
+    "empty_filter": 0.65,
+    "species_accept": null,
+    "rule_auto_filter_enabled": true,
+    "rule_auto_accept_enabled": false,
+    "auto_filter_enabled": false,
+    "auto_accept_enabled": false,
+    "deviation": {
+      "disable_auto_filter": true,
+      "disable_auto_accept": false,
+      "reason": "The rule's empty filter (calibrated P(empty) >= 0.65) passed on the policy-validation cameras with a 95% upper bound of 1.99% against a 2% limit, but did not replicate on the other two unseen development cameras: it filters 40 of 724 animal events there (5.5%), 39 of 396 on camera 51 alone (9.8%). It would also remove only 38 of 939 events (4%) from review. Every event stays in review with its suggested label until a threshold holds up on new cameras.",
+      "decided": "2026-09-25"
+    },
+    "targets": {
+      "max_false_empty_rate": 0.02,
+      "min_accepted_precision": 0.95,
+      "interval": "wilson95"
+    },
+    "metrics": {
+      "thresholds": {
+        "empty_filter": 0.65,
+        "species_accept": null
+      },
+      "events": 939,
+      "animal_events": 853,
+      "false_empty": 9,
+      "false_empty_rate": 0.010551,
+      "false_empty_rate_ci95": [
+        0.005561,
+        0.01993
+      ],
+      "animal_event_retention": 0.989449,
+      "filtered": 38,
+      "filtered_true_empty": 29,
+      "filtered_non_animal": 0,
+      "empty_events": 86,
+      "accepted": 0,
+      "accepted_correct": 0,
+      "accepted_precision": null,
+      "accepted_precision_ci95": null,
+      "accepted_wrong_by_true_role": {},
+      "unsupported_events": 123,
+      "unsupported_accepted_as_known": 0,
+      "needs_review": 901,
+      "review_fraction": 0.959531
+    },
+    "metrics_on_fit_partition": {
+      "thresholds": {
+        "empty_filter": 0.65,
+        "species_accept": null
+      },
+      "events": 908,
+      "animal_events": 724,
+      "false_empty": 40,
+      "false_empty_rate": 0.055249,
+      "false_empty_rate_ci95": [
+        0.040833,
+        0.074359
+      ],
+      "animal_event_retention": 0.944751,
+      "filtered": 118,
+      "filtered_true_empty": 78,
+      "filtered_non_animal": 0,
+      "empty_events": 184,
+      "accepted": 0,
+      "accepted_correct": 0,
+      "accepted_precision": null,
+      "accepted_precision_ci95": null,
+      "accepted_wrong_by_true_role": {},
+      "unsupported_events": 203,
+      "unsupported_accepted_as_known": 0,
+      "needs_review": 790,
+      "review_fraction": 0.870044
+    },
+    "per_camera": {
+      "51": {
+        "partition": "calibration",
+        "thresholds": {
+          "empty_filter": 0.65,
+          "species_accept": null
+        },
+        "events": 522,
+        "animal_events": 396,
+        "false_empty": 39,
+        "false_empty_rate": 0.098485,
+        "false_empty_rate_ci95": [
+          0.072882,
+          0.131803
+        ],
+        "animal_event_retention": 0.901515,
+        "filtered": 112,
+        "filtered_true_empty": 73,
+        "filtered_non_animal": 0,
+        "empty_events": 126,
+        "accepted": 0,
+        "accepted_correct": 0,
+        "accepted_precision": null,
+        "accepted_precision_ci95": null,
+        "accepted_wrong_by_true_role": {},
+        "unsupported_events": 81,
+        "unsupported_accepted_as_known": 0,
+        "needs_review": 410,
+        "review_fraction": 0.785441
+      },
+      "108": {
+        "partition": "calibration",
+        "thresholds": {
+          "empty_filter": 0.65,
+          "species_accept": null
+        },
+        "events": 386,
+        "animal_events": 328,
+        "false_empty": 1,
+        "false_empty_rate": 0.003049,
+        "false_empty_rate_ci95": [
+          0.000538,
+          0.017065
+        ],
+        "animal_event_retention": 0.996951,
+        "filtered": 6,
+        "filtered_true_empty": 5,
+        "filtered_non_animal": 0,
+        "empty_events": 58,
+        "accepted": 0,
+        "accepted_correct": 0,
+        "accepted_precision": null,
+        "accepted_precision_ci95": null,
+        "accepted_wrong_by_true_role": {},
+        "unsupported_events": 122,
+        "unsupported_accepted_as_known": 0,
+        "needs_review": 380,
+        "review_fraction": 0.984456
+      },
+      "90": {
+        "partition": "policy_validation",
+        "thresholds": {
+          "empty_filter": 0.65,
+          "species_accept": null
+        },
+        "events": 350,
+        "animal_events": 297,
+        "false_empty": 5,
+        "false_empty_rate": 0.016835,
+        "false_empty_rate_ci95": [
+          0.007212,
+          0.038798
+        ],
+        "animal_event_retention": 0.983165,
+        "filtered": 20,
+        "filtered_true_empty": 15,
+        "filtered_non_animal": 0,
+        "empty_events": 53,
+        "accepted": 0,
+        "accepted_correct": 0,
+        "accepted_precision": null,
+        "accepted_precision_ci95": null,
+        "accepted_wrong_by_true_role": {},
+        "unsupported_events": 99,
+        "unsupported_accepted_as_known": 0,
+        "needs_review": 330,
+        "review_fraction": 0.942857
+      },
+      "125": {
+        "partition": "policy_validation",
+        "thresholds": {
+          "empty_filter": 0.65,
+          "species_accept": null
+        },
+        "events": 589,
+        "animal_events": 556,
+        "false_empty": 4,
+        "false_empty_rate": 0.007194,
+        "false_empty_rate_ci95": [
+          0.002801,
+          0.018351
+        ],
+        "animal_event_retention": 0.992806,
+        "filtered": 18,
+        "filtered_true_empty": 14,
+        "filtered_non_animal": 0,
+        "empty_events": 33,
+        "accepted": 0,
+        "accepted_correct": 0,
+        "accepted_precision": null,
+        "accepted_precision_ci95": null,
+        "accepted_wrong_by_true_role": {},
+        "unsupported_events": 24,
+        "unsupported_accepted_as_known": 0,
+        "needs_review": 571,
+        "review_fraction": 0.96944
+      }
+    }
+  },
+  "sweeps": {
+    "empty_filter": [
+      {
+        "thresholds": {
+          "empty_filter": 0.5,
+          "species_accept": null
+        },
+        "events": 939,
+        "animal_events": 853,
+        "false_empty": 36,
+        "false_empty_rate": 0.042204,
+        "false_empty_rate_ci95": [
+          0.030639,
+          0.057874
+        ],
+        "animal_event_retention": 0.957796,
+        "filtered": 79,
+        "filtered_true_empty": 43,
+        "filtered_non_animal": 0,
+        "empty_events": 86,
+        "accepted": 0,
+        "accepted_correct": 0,
+        "accepted_precision": null,
+        "accepted_precision_ci95": null,
+        "accepted_wrong_by_true_role": {},
+        "unsupported_events": 123,
+        "unsupported_accepted_as_known": 0,
+        "needs_review": 860,
+        "review_fraction": 0.915868,
+        "passes": false
+      },
+      {
+        "thresholds": {
+          "empty_filter": 0.51,
+          "species_accept": null
+        },
+        "events": 939,
+        "animal_events": 853,
+        "false_empty": 35,
+        "false_empty_rate": 0.041032,
+        "false_empty_rate_ci95": [
+          0.029649,
+          0.05653
+        ],
+        "animal_event_retention": 0.958968,
+        "filtered": 78,
+        "filtered_true_empty": 43,
+        "filtered_non_animal": 0,
+        "empty_events": 86,
+        "accepted": 0,
+        "accepted_correct": 0,
+        "accepted_precision": null,
+        "accepted_precision_ci95": null,
+        "accepted_wrong_by_true_role": {},
+        "unsupported_events": 123,
+        "unsupported_accepted_as_known": 0,
+        "needs_review": 861,
+        "review_fraction": 0.916933,
+        "passes": false
+      },
+      {
+        "thresholds": {
+          "empty_filter": 0.52,
+          "species_accept": null
+        },
+        "events": 939,
+        "animal_events": 853,
+        "false_empty": 32,
+        "false_empty_rate": 0.037515,
+        "false_empty_rate_ci95": [
+          0.026697,
+          0.052479
+        ],
+        "animal_event_retention": 0.962485,
+        "filtered": 75,
+        "filtered_true_empty": 43,
+        "filtered_non_animal": 0,
+        "empty_events": 86,
+        "accepted": 0,
+        "accepted_correct": 0,
+        "accepted_precision": null,
+        "accepted_precision_ci95": null,
+        "accepted_wrong_by_true_role": {},
+        "unsupported_events": 123,
+        "unsupported_accepted_as_known": 0,
+        "needs_review": 864,
+        "review_fraction": 0.920128,
+        "passes": false
+      },
+      {
+        "thresholds": {
+          "empty_filter": 0.53,
+          "species_accept": null
+        },
+        "events": 939,
+        "animal_events": 853,
+        "false_empty": 29,
+        "false_empty_rate": 0.033998,
+        "false_empty_rate_ci95": [
+          0.023774,
+          0.0484
+        ],
+        "animal_event_retention": 0.966002,
+        "filtered": 71,
+        "filtered_true_empty": 42,
+        "filtered_non_animal": 0,
+        "empty_events": 86,
+        "accepted": 0,
+        "accepted_correct": 0,
+        "accepted_precision": null,
+        "accepted_precision_ci95": null,
+        "accepted_wrong_by_true_role": {},
+        "unsupported_events": 123,
+        "unsupported_accepted_as_known": 0,
+        "needs_review": 868,
+        "review_fraction": 0.924388,
+        "passes": false
+      },
+      {
+        "thresholds": {
+          "empty_filter": 0.54,
+          "species_accept": null
+        },
+        "events": 939,
+        "animal_events": 853,
+        "false_empty": 24,
+        "false_empty_rate": 0.028136,
+        "false_empty_rate_ci95": [
+          0.018979,
+          0.041524
+        ],
+        "animal_event_retention": 0.971864,
+        "filtered": 65,
+        "filtered_true_empty": 41,
+        "filtered_non_animal": 0,
+        "empty_events": 86,
+        "accepted": 0,
+        "accepted_correct": 0,
+        "accepted_precision": null,
+        "accepted_precision_ci95": null,
+        "accepted_wrong_by_true_role": {},
+        "unsupported_events": 123,
+        "unsupported_accepted_as_known": 0,
+        "needs_review": 874,
+        "review_fraction": 0.930777,
+        "passes": false
+      },
+      {
+        "thresholds": {
+          "empty_filter": 0.55,
+          "species_accept": null
+        },
+        "events": 939,
+        "animal_events": 853,
+        "false_empty": 21,
+        "false_empty_rate": 0.024619,
+        "false_empty_rate_ci95": [
+          0.016158,
+          0.037343
+        ],
+        "animal_event_retention": 0.975381,
+        "filtered": 61,
+        "filtered_true_empty": 40,
+        "filtered_non_animal": 0,
+        "empty_events": 86,
+        "accepted": 0,
+        "accepted_correct": 0,
+        "accepted_precision": null,
+        "accepted_precision_ci95": null,
+        "accepted_wrong_by_true_role": {},
+        "unsupported_events": 123,
+        "unsupported_accepted_as_known": 0,
+        "needs_review": 878,
+        "review_fraction": 0.935037,
+        "passes": false
+      },
+      {
+        "thresholds": {
+          "empty_filter": 0.56,
+          "species_accept": null
+        },
+        "events": 939,
+        "animal_events": 853,
+        "false_empty": 18,
+        "false_empty_rate": 0.021102,
+        "false_empty_rate_ci95": [
+          0.013389,
+          0.033109
+        ],
+        "animal_event_retention": 0.978898,
+        "filtered": 58,
+        "filtered_true_empty": 40,
+        "filtered_non_animal": 0,
+        "empty_events": 86,
+        "accepted": 0,
+        "accepted_correct": 0,
+        "accepted_precision": null,
+        "accepted_precision_ci95": null,
+        "accepted_wrong_by_true_role": {},
+        "unsupported_events": 123,
+        "unsupported_accepted_as_known": 0,
+        "needs_review": 881,
+        "review_fraction": 0.938232,
+        "passes": false
+      },
+      {
+        "thresholds": {
+          "empty_filter": 0.57,
+          "species_accept": null
+        },
+        "events": 939,
+        "animal_events": 853,
+        "false_empty": 14,
+        "false_empty_rate": 0.016413,
+        "false_empty_rate_ci95": [
+          0.009801,
+          0.02736
+        ],
+        "animal_event_retention": 0.983587,
+        "filtered": 53,
+        "filtered_true_empty": 39,
+        "filtered_non_animal": 0,
+        "empty_events": 86,
+        "accepted": 0,
+        "accepted_correct": 0,
+        "accepted_precision": null,
+        "accepted_precision_ci95": null,
+        "accepted_wrong_by_true_role": {},
+        "unsupported_events": 123,
+        "unsupported_accepted_as_known": 0,
+        "needs_review": 886,
+        "review_fraction": 0.943557,
+        "passes": false
+      },
+      {
+        "thresholds": {
+          "empty_filter": 0.58,
+          "species_accept": null
+        },
+        "events": 939,
+        "animal_events": 853,
+        "false_empty": 13,
+        "false_empty_rate": 0.01524,
+        "false_empty_rate_ci95": [
+          0.008928,
+          0.0259
+        ],
+        "animal_event_retention": 0.98476,
+        "filtered": 51,
+        "filtered_true_empty": 38,
+        "filtered_non_animal": 0,
+        "empty_events": 86,
+        "accepted": 0,
+        "accepted_correct": 0,
+        "accepted_precision": null,
+        "accepted_precision_ci95": null,
+        "accepted_wrong_by_true_role": {},
+        "unsupported_events": 123,
+        "unsupported_accepted_as_known": 0,
+        "needs_review": 888,
+        "review_fraction": 0.945687,
+        "passes": false
+      },
+      {
+        "thresholds": {
+          "empty_filter": 0.59,
+          "species_accept": null
+        },
+        "events": 939,
+        "animal_events": 853,
+        "false_empty": 13,
+        "false_empty_rate": 0.01524,
+        "false_empty_rate_ci95": [
+          0.008928,
+          0.0259
+        ],
+        "animal_event_retention": 0.98476,
+        "filtered": 50,
+        "filtered_true_empty": 37,
+        "filtered_non_animal": 0,
+        "empty_events": 86,
+        "accepted": 0,
+        "accepted_correct": 0,
+        "accepted_precision": null,
+        "accepted_precision_ci95": null,
+        "accepted_wrong_by_true_role": {},
+        "unsupported_events": 123,
+        "unsupported_accepted_as_known": 0,
+        "needs_review": 889,
+        "review_fraction": 0.946752,
+        "passes": false
+      },
+      {
+        "thresholds": {
+          "empty_filter": 0.6,
+          "species_accept": null
+        },
+        "events": 939,
+        "animal_events": 853,
+        "false_empty": 13,
+        "false_empty_rate": 0.01524,
+        "false_empty_rate_ci95": [
+          0.008928,
+          0.0259
+        ],
+        "animal_event_retention": 0.98476,
+        "filtered": 50,
+        "filtered_true_empty": 37,
+        "filtered_non_animal": 0,
+        "empty_events": 86,
+        "accepted": 0,
+        "accepted_correct": 0,
+        "accepted_precision": null,
+        "accepted_precision_ci95": null,
+        "accepted_wrong_by_true_role": {},
+        "unsupported_events": 123,
+        "unsupported_accepted_as_known": 0,
+        "needs_review": 889,
+        "review_fraction": 0.946752,
+        "passes": false
+      },
+      {
+        "thresholds": {
+          "empty_filter": 0.61,
+          "species_accept": null
+        },
+        "events": 939,
+        "animal_events": 853,
+        "false_empty": 13,
+        "false_empty_rate": 0.01524,
+        "false_empty_rate_ci95": [
+          0.008928,
+          0.0259
+        ],
+        "animal_event_retention": 0.98476,
+        "filtered": 49,
+        "filtered_true_empty": 36,
+        "filtered_non_animal": 0,
+        "empty_events": 86,
+        "accepted": 0,
+        "accepted_correct": 0,
+        "accepted_precision": null,
+        "accepted_precision_ci95": null,
+        "accepted_wrong_by_true_role": {},
+        "unsupported_events": 123,
+        "unsupported_accepted_as_known": 0,
+        "needs_review": 890,
+        "review_fraction": 0.947817,
+        "passes": false
+      },
+      {
+        "thresholds": {
+          "empty_filter": 0.62,
+          "species_accept": null
+        },
+        "events": 939,
+        "animal_events": 853,
+        "false_empty": 13,
+        "false_empty_rate": 0.01524,
+        "false_empty_rate_ci95": [
+          0.008928,
+          0.0259
+        ],
+        "animal_event_retention": 0.98476,
+        "filtered": 48,
+        "filtered_true_empty": 35,
+        "filtered_non_animal": 0,
+        "empty_events": 86,
+        "accepted": 0,
+        "accepted_correct": 0,
+        "accepted_precision": null,
+        "accepted_precision_ci95": null,
+        "accepted_wrong_by_true_role": {},
+        "unsupported_events": 123,
+        "unsupported_accepted_as_known": 0,
+        "needs_review": 891,
+        "review_fraction": 0.948882,
+        "passes": false
+      },
+      {
+        "thresholds": {
+          "empty_filter": 0.63,
+          "species_accept": null
+        },
+        "events": 939,
+        "animal_events": 853,
+        "false_empty": 11,
+        "false_empty_rate": 0.012896,
+        "false_empty_rate_ci95": [
+          0.007216,
+          0.022943
+        ],
+        "animal_event_retention": 0.987104,
+        "filtered": 45,
+        "filtered_true_empty": 34,
+        "filtered_non_animal": 0,
+        "empty_events": 86,
+        "accepted": 0,
+        "accepted_correct": 0,
+        "accepted_precision": null,
+        "accepted_precision_ci95": null,
+        "accepted_wrong_by_true_role": {},
+        "unsupported_events": 123,
+        "unsupported_accepted_as_known": 0,
+        "needs_review": 894,
+        "review_fraction": 0.952077,
+        "passes": false
+      },
+      {
+        "thresholds": {
+          "empty_filter": 0.64,
+          "species_accept": null
+        },
+        "events": 939,
+        "animal_events": 853,
+        "false_empty": 11,
+        "false_empty_rate": 0.012896,
+        "false_empty_rate_ci95": [
+          0.007216,
+          0.022943
+        ],
+        "animal_event_retention": 0.987104,
+        "filtered": 43,
+        "filtered_true_empty": 32,
+        "filtered_non_animal": 0,
+        "empty_events": 86,
+        "accepted": 0,
+        "accepted_correct": 0,
+        "accepted_precision": null,
+        "accepted_precision_ci95": null,
+        "accepted_wrong_by_true_role": {},
+        "unsupported_events": 123,
+        "unsupported_accepted_as_known": 0,
+        "needs_review": 896,
+        "review_fraction": 0.954207,
+        "passes": false
+      },
+      {
+        "thresholds": {
+          "empty_filter": 0.65,
+          "species_accept": null
+        },
+        "events": 939,
+        "animal_events": 853,
+        "false_empty": 9,
+        "false_empty_rate": 0.010551,
+        "false_empty_rate_ci95": [
+          0.005561,
+          0.01993
+        ],
+        "animal_event_retention": 0.989449,
+        "filtered": 38,
+        "filtered_true_empty": 29,
+        "filtered_non_animal": 0,
+        "empty_events": 86,
+        "accepted": 0,
+        "accepted_correct": 0,
+        "accepted_precision": null,
+        "accepted_precision_ci95": null,
+        "accepted_wrong_by_true_role": {},
+        "unsupported_events": 123,
+        "unsupported_accepted_as_known": 0,
+        "needs_review": 901,
+        "review_fraction": 0.959531,
+        "passes": true
+      },
+      {
+        "thresholds": {
+          "empty_filter": 0.66,
+          "species_accept": null
+        },
+        "events": 939,
+        "animal_events": 853,
+        "false_empty": 9,
+        "false_empty_rate": 0.010551,
+        "false_empty_rate_ci95": [
+          0.005561,
+          0.01993
+        ],
+        "animal_event_retention": 0.989449,
+        "filtered": 38,
+        "filtered_true_empty": 29,
+        "filtered_non_animal": 0,
+        "empty_events": 86,
+        "accepted": 0,
+        "accepted_correct": 0,
+        "accepted_precision": null,
+        "accepted_precision_ci95": null,
+        "accepted_wrong_by_true_role": {},
+        "unsupported_events": 123,
+        "unsupported_accepted_as_known": 0,
+        "needs_review": 901,
+        "review_fraction": 0.959531,
+        "passes": true
+      },
+      {
+        "thresholds": {
+          "empty_filter": 0.67,
+          "species_accept": null
+        },
+        "events": 939,
+        "animal_events": 853,
+        "false_empty": 9,
+        "false_empty_rate": 0.010551,
+        "false_empty_rate_ci95": [
+          0.005561,
+          0.01993
+        ],
+        "animal_event_retention": 0.989449,
+        "filtered": 38,
+        "filtered_true_empty": 29,
+        "filtered_non_animal": 0,
+        "empty_events": 86,
+        "accepted": 0,
+        "accepted_correct": 0,
+        "accepted_precision": null,
+        "accepted_precision_ci95": null,
+        "accepted_wrong_by_true_role": {},
+        "unsupported_events": 123,
+        "unsupported_accepted_as_known": 0,
+        "needs_review": 901,
+        "review_fraction": 0.959531,
+        "passes": true
+      },
+      {
+        "thresholds": {
+          "empty_filter": 0.68,
+          "species_accept": null
+        },
+        "events": 939,
+        "animal_events": 853,
+        "false_empty": 9,
+        "false_empty_rate": 0.010551,
+        "false_empty_rate_ci95": [
+          0.005561,
+          0.01993
+        ],
+        "animal_event_retention": 0.989449,
+        "filtered": 38,
+        "filtered_true_empty": 29,
+        "filtered_non_animal": 0,
+        "empty_events": 86,
+        "accepted": 0,
+        "accepted_correct": 0,
+        "accepted_precision": null,
+        "accepted_precision_ci95": null,
+        "accepted_wrong_by_true_role": {},
+        "unsupported_events": 123,
+        "unsupported_accepted_as_known": 0,
+        "needs_review": 901,
+        "review_fraction": 0.959531,
+        "passes": true
+      },
+      {
+        "thresholds": {
+          "empty_filter": 0.69,
+          "species_accept": null
+        },
+        "events": 939,
+        "animal_events": 853,
+        "false_empty": 9,
+        "false_empty_rate": 0.010551,
+        "false_empty_rate_ci95": [
+          0.005561,
+          0.01993
+        ],
+        "animal_event_retention": 0.989449,
+        "filtered": 36,
+        "filtered_true_empty": 27,
+        "filtered_non_animal": 0,
+        "empty_events": 86,
+        "accepted": 0,
+        "accepted_correct": 0,
+        "accepted_precision": null,
+        "accepted_precision_ci95": null,
+        "accepted_wrong_by_true_role": {},
+        "unsupported_events": 123,
+        "unsupported_accepted_as_known": 0,
+        "needs_review": 903,
+        "review_fraction": 0.961661,
+        "passes": true
+      },
+      {
+        "thresholds": {
+          "empty_filter": 0.7,
+          "species_accept": null
+        },
+        "events": 939,
+        "animal_events": 853,
+        "false_empty": 7,
+        "false_empty_rate": 0.008206,
+        "false_empty_rate_ci95": [
+          0.003981,
+          0.016842
+        ],
+        "animal_event_retention": 0.991794,
+        "filtered": 33,
+        "filtered_true_empty": 26,
+        "filtered_non_animal": 0,
+        "empty_events": 86,
+        "accepted": 0,
+        "accepted_correct": 0,
+        "accepted_precision": null,
+        "accepted_precision_ci95": null,
+        "accepted_wrong_by_true_role": {},
+        "unsupported_events": 123,
+        "unsupported_accepted_as_known": 0,
+        "needs_review": 906,
+        "review_fraction": 0.964856,
+        "passes": true
+      },
+      {
+        "thresholds": {
+          "empty_filter": 0.71,
+          "species_accept": null
+        },
+        "events": 939,
+        "animal_events": 853,
+        "false_empty": 4,
+        "false_empty_rate": 0.004689,
+        "false_empty_rate_ci95": [
+          0.001825,
+          0.011995
+        ],
+        "animal_event_retention": 0.995311,
+        "filtered": 29,
+        "filtered_true_empty": 25,
+        "filtered_non_animal": 0,
+        "empty_events": 86,
+        "accepted": 0,
+        "accepted_correct": 0,
+        "accepted_precision": null,
+        "accepted_precision_ci95": null,
+        "accepted_wrong_by_true_role": {},
+        "unsupported_events": 123,
+        "unsupported_accepted_as_known": 0,
+        "needs_review": 910,
+        "review_fraction": 0.969116,
+        "passes": true
+      },
+      {
+        "thresholds": {
+          "empty_filter": 0.72,
+          "species_accept": null
+        },
+        "events": 939,
+        "animal_events": 853,
+        "false_empty": 4,
+        "false_empty_rate": 0.004689,
+        "false_empty_rate_ci95": [
+          0.001825,
+          0.011995
+        ],
+        "animal_event_retention": 0.995311,
+        "filtered": 28,
+        "filtered_true_empty": 24,
+        "filtered_non_animal": 0,
+        "empty_events": 86,
+        "accepted": 0,
+        "accepted_correct": 0,
+        "accepted_precision": null,
+        "accepted_precision_ci95": null,
+        "accepted_wrong_by_true_role": {},
+        "unsupported_events": 123,
+        "unsupported_accepted_as_known": 0,
+        "needs_review": 911,
+        "review_fraction": 0.970181,
+        "passes": true
+      },
+      {
+        "thresholds": {
+          "empty_filter": 0.73,
+          "species_accept": null
+        },
+        "events": 939,
+        "animal_events": 853,
+        "false_empty": 3,
+        "false_empty_rate": 0.003517,
+        "false_empty_rate_ci95": [
+          0.001197,
+          0.010289
+        ],
+        "animal_event_retention": 0.996483,
+        "filtered": 25,
+        "filtered_true_empty": 22,
+        "filtered_non_animal": 0,
+        "empty_events": 86,
+        "accepted": 0,
+        "accepted_correct": 0,
+        "accepted_precision": null,
+        "accepted_precision_ci95": null,
+        "accepted_wrong_by_true_role": {},
+        "unsupported_events": 123,
+        "unsupported_accepted_as_known": 0,
+        "needs_review": 914,
+        "review_fraction": 0.973376,
+        "passes": true
+      },
+      {
+        "thresholds": {
+          "empty_filter": 0.74,
+          "species_accept": null
+        },
+        "events": 939,
+        "animal_events": 853,
+        "false_empty": 3,
+        "false_empty_rate": 0.003517,
+        "false_empty_rate_ci95": [
+          0.001197,
+          0.010289
+        ],
+        "animal_event_retention": 0.996483,
+        "filtered": 25,
+        "filtered_true_empty": 22,
+        "filtered_non_animal": 0,
+        "empty_events": 86,
+        "accepted": 0,
+        "accepted_correct": 0,
+        "accepted_precision": null,
+        "accepted_precision_ci95": null,
+        "accepted_wrong_by_true_role": {},
+        "unsupported_events": 123,
+        "unsupported_accepted_as_known": 0,
+        "needs_review": 914,
+        "review_fraction": 0.973376,
+        "passes": true
+      },
+      {
+        "thresholds": {
+          "empty_filter": 0.75,
+          "species_accept": null
+        },
+        "events": 939,
+        "animal_events": 853,
+        "false_empty": 3,
+        "false_empty_rate": 0.003517,
+        "false_empty_rate_ci95": [
+          0.001197,
+          0.010289
+        ],
+        "animal_event_retention": 0.996483,
+        "filtered": 24,
+        "filtered_true_empty": 21,
+        "filtered_non_animal": 0,
+        "empty_events": 86,
+        "accepted": 0,
+        "accepted_correct": 0,
+        "accepted_precision": null,
+        "accepted_precision_ci95": null,
+        "accepted_wrong_by_true_role": {},
+        "unsupported_events": 123,
+        "unsupported_accepted_as_known": 0,
+        "needs_review": 915,
+        "review_fraction": 0.974441,
+        "passes": true
+      },
+      {
+        "thresholds": {
+          "empty_filter": 0.76,
+          "species_accept": null
+        },
+        "events": 939,
+        "animal_events": 853,
+        "false_empty": 3,
+        "false_empty_rate": 0.003517,
+        "false_empty_rate_ci95": [
+          0.001197,
+          0.010289
+        ],
+        "animal_event_retention": 0.996483,
+        "filtered": 24,
+        "filtered_true_empty": 21,
+        "filtered_non_animal": 0,
+        "empty_events": 86,
+        "accepted": 0,
+        "accepted_correct": 0,
+        "accepted_precision": null,
+        "accepted_precision_ci95": null,
+        "accepted_wrong_by_true_role": {},
+        "unsupported_events": 123,
+        "unsupported_accepted_as_known": 0,
+        "needs_review": 915,
+        "review_fraction": 0.974441,
+        "passes": true
+      },
+      {
+        "thresholds": {
+          "empty_filter": 0.77,
+          "species_accept": null
+        },
+        "events": 939,
+        "animal_events": 853,
+        "false_empty": 2,
+        "false_empty_rate": 0.002345,
+        "false_empty_rate_ci95": [
+          0.000643,
+          0.008509
+        ],
+        "animal_event_retention": 0.997655,
+        "filtered": 23,
+        "filtered_true_empty": 21,
+        "filtered_non_animal": 0,
+        "empty_events": 86,
+        "accepted": 0,
+        "accepted_correct": 0,
+        "accepted_precision": null,
+        "accepted_precision_ci95": null,
+        "accepted_wrong_by_true_role": {},
+        "unsupported_events": 123,
+        "unsupported_accepted_as_known": 0,
+        "needs_review": 916,
+        "review_fraction": 0.975506,
+        "passes": true
+      },
+      {
+        "thresholds": {
+          "empty_filter": 0.78,
+          "species_accept": null
+        },
+        "events": 939,
+        "animal_events": 853,
+        "false_empty": 2,
+        "false_empty_rate": 0.002345,
+        "false_empty_rate_ci95": [
+          0.000643,
+          0.008509
+        ],
+        "animal_event_retention": 0.997655,
+        "filtered": 23,
+        "filtered_true_empty": 21,
+        "filtered_non_animal": 0,
+        "empty_events": 86,
+        "accepted": 0,
+        "accepted_correct": 0,
+        "accepted_precision": null,
+        "accepted_precision_ci95": null,
+        "accepted_wrong_by_true_role": {},
+        "unsupported_events": 123,
+        "unsupported_accepted_as_known": 0,
+        "needs_review": 916,
+        "review_fraction": 0.975506,
+        "passes": true
+      },
+      {
+        "thresholds": {
+          "empty_filter": 0.79,
+          "species_accept": null
+        },
+        "events": 939,
+        "animal_events": 853,
+        "false_empty": 2,
+        "false_empty_rate": 0.002345,
+        "false_empty_rate_ci95": [
+          0.000643,
+          0.008509
+        ],
+        "animal_event_retention": 0.997655,
+        "filtered": 22,
+        "filtered_true_empty": 20,
+        "filtered_non_animal": 0,
+        "empty_events": 86,
+        "accepted": 0,
+        "accepted_correct": 0,
+        "accepted_precision": null,
+        "accepted_precision_ci95": null,
+        "accepted_wrong_by_true_role": {},
+        "unsupported_events": 123,
+        "unsupported_accepted_as_known": 0,
+        "needs_review": 917,
+        "review_fraction": 0.976571,
+        "passes": true
+      },
+      {
+        "thresholds": {
+          "empty_filter": 0.8,
+          "species_accept": null
+        },
+        "events": 939,
+        "animal_events": 853,
+        "false_empty": 2,
+        "false_empty_rate": 0.002345,
+        "false_empty_rate_ci95": [
+          0.000643,
+          0.008509
+        ],
+        "animal_event_retention": 0.997655,
+        "filtered": 20,
+        "filtered_true_empty": 18,
+        "filtered_non_animal": 0,
+        "empty_events": 86,
+        "accepted": 0,
+        "accepted_correct": 0,
+        "accepted_precision": null,
+        "accepted_precision_ci95": null,
+        "accepted_wrong_by_true_role": {},
+        "unsupported_events": 123,
+        "unsupported_accepted_as_known": 0,
+        "needs_review": 919,
+        "review_fraction": 0.978701,
+        "passes": true
+      },
+      {
+        "thresholds": {
+          "empty_filter": 0.81,
+          "species_accept": null
+        },
+        "events": 939,
+        "animal_events": 853,
+        "false_empty": 1,
+        "false_empty_rate": 0.001172,
+        "false_empty_rate_ci95": [
+          0.000207,
+          0.006611
+        ],
+        "animal_event_retention": 0.998828,
+        "filtered": 19,
+        "filtered_true_empty": 18,
+        "filtered_non_animal": 0,
+        "empty_events": 86,
+        "accepted": 0,
+        "accepted_correct": 0,
+        "accepted_precision": null,
+        "accepted_precision_ci95": null,
+        "accepted_wrong_by_true_role": {},
+        "unsupported_events": 123,
+        "unsupported_accepted_as_known": 0,
+        "needs_review": 920,
+        "review_fraction": 0.979766,
+        "passes": true
+      },
+      {
+        "thresholds": {
+          "empty_filter": 0.82,
+          "species_accept": null
+        },
+        "events": 939,
+        "animal_events": 853,
+        "false_empty": 1,
+        "false_empty_rate": 0.001172,
+        "false_empty_rate_ci95": [
+          0.000207,
+          0.006611
+        ],
+        "animal_event_retention": 0.998828,
+        "filtered": 18,
+        "filtered_true_empty": 17,
+        "filtered_non_animal": 0,
+        "empty_events": 86,
+        "accepted": 0,
+        "accepted_correct": 0,
+        "accepted_precision": null,
+        "accepted_precision_ci95": null,
+        "accepted_wrong_by_true_role": {},
+        "unsupported_events": 123,
+        "unsupported_accepted_as_known": 0,
+        "needs_review": 921,
+        "review_fraction": 0.980831,
+        "passes": true
+      },
+      {
+        "thresholds": {
+          "empty_filter": 0.83,
+          "species_accept": null
+        },
+        "events": 939,
+        "animal_events": 853,
+        "false_empty": 1,
+        "false_empty_rate": 0.001172,
+        "false_empty_rate_ci95": [
+          0.000207,
+          0.006611
+        ],
+        "animal_event_retention": 0.998828,
+        "filtered": 16,
+        "filtered_true_empty": 15,
+        "filtered_non_animal": 0,
+        "empty_events": 86,
+        "accepted": 0,
+        "accepted_correct": 0,
+        "accepted_precision": null,
+        "accepted_precision_ci95": null,
+        "accepted_wrong_by_true_role": {},
+        "unsupported_events": 123,
+        "unsupported_accepted_as_known": 0,
+        "needs_review": 923,
+        "review_fraction": 0.982961,
+        "passes": true
+      },
+      {
+        "thresholds": {
+          "empty_filter": 0.84,
+          "species_accept": null
+        },
+        "events": 939,
+        "animal_events": 853,
+        "false_empty": 1,
+        "false_empty_rate": 0.001172,
+        "false_empty_rate_ci95": [
+          0.000207,
+          0.006611
+        ],
+        "animal_event_retention": 0.998828,
+        "filtered": 16,
+        "filtered_true_empty": 15,
+        "filtered_non_animal": 0,
+        "empty_events": 86,
+        "accepted": 0,
+        "accepted_correct": 0,
+        "accepted_precision": null,
+        "accepted_precision_ci95": null,
+        "accepted_wrong_by_true_role": {},
+        "unsupported_events": 123,
+        "unsupported_accepted_as_known": 0,
+        "needs_review": 923,
+        "review_fraction": 0.982961,
+        "passes": true
+      },
+      {
+        "thresholds": {
+          "empty_filter": 0.85,
+          "species_accept": null
+        },
+        "events": 939,
+        "animal_events": 853,
+        "false_empty": 1,
+        "false_empty_rate": 0.001172,
+        "false_empty_rate_ci95": [
+          0.000207,
+          0.006611
+        ],
+        "animal_event_retention": 0.998828,
+        "filtered": 14,
+        "filtered_true_empty": 13,
+        "filtered_non_animal": 0,
+        "empty_events": 86,
+        "accepted": 0,
+        "accepted_correct": 0,
+        "accepted_precision": null,
+        "accepted_precision_ci95": null,
+        "accepted_wrong_by_true_role": {},
+        "unsupported_events": 123,
+        "unsupported_accepted_as_known": 0,
+        "needs_review": 925,
+        "review_fraction": 0.985091,
+        "passes": true
+      },
+      {
+        "thresholds": {
+          "empty_filter": 0.86,
+          "species_accept": null
+        },
+        "events": 939,
+        "animal_events": 853,
+        "false_empty": 1,
+        "false_empty_rate": 0.001172,
+        "false_empty_rate_ci95": [
+          0.000207,
+          0.006611
+        ],
+        "animal_event_retention": 0.998828,
+        "filtered": 14,
+        "filtered_true_empty": 13,
+        "filtered_non_animal": 0,
+        "empty_events": 86,
+        "accepted": 0,
+        "accepted_correct": 0,
+        "accepted_precision": null,
+        "accepted_precision_ci95": null,
+        "accepted_wrong_by_true_role": {},
+        "unsupported_events": 123,
+        "unsupported_accepted_as_known": 0,
+        "needs_review": 925,
+        "review_fraction": 0.985091,
+        "passes": true
+      },
+      {
+        "thresholds": {
+          "empty_filter": 0.87,
+          "species_accept": null
+        },
+        "events": 939,
+        "animal_events": 853,
+        "false_empty": 1,
+        "false_empty_rate": 0.001172,
+        "false_empty_rate_ci95": [
+          0.000207,
+          0.006611
+        ],
+        "animal_event_retention": 0.998828,
+        "filtered": 14,
+        "filtered_true_empty": 13,
+        "filtered_non_animal": 0,
+        "empty_events": 86,
+        "accepted": 0,
+        "accepted_correct": 0,
+        "accepted_precision": null,
+        "accepted_precision_ci95": null,
+        "accepted_wrong_by_true_role": {},
+        "unsupported_events": 123,
+        "unsupported_accepted_as_known": 0,
+        "needs_review": 925,
+        "review_fraction": 0.985091,
+        "passes": true
+      },
+      {
+        "thresholds": {
+          "empty_filter": 0.88,
+          "species_accept": null
+        },
+        "events": 939,
+        "animal_events": 853,
+        "false_empty": 1,
+        "false_empty_rate": 0.001172,
+        "false_empty_rate_ci95": [
+          0.000207,
+          0.006611
+        ],
+        "animal_event_retention": 0.998828,
+        "filtered": 13,
+        "filtered_true_empty": 12,
+        "filtered_non_animal": 0,
+        "empty_events": 86,
+        "accepted": 0,
+        "accepted_correct": 0,
+        "accepted_precision": null,
+        "accepted_precision_ci95": null,
+        "accepted_wrong_by_true_role": {},
+        "unsupported_events": 123,
+        "unsupported_accepted_as_known": 0,
+        "needs_review": 926,
+        "review_fraction": 0.986155,
+        "passes": true
+      },
+      {
+        "thresholds": {
+          "empty_filter": 0.89,
+          "species_accept": null
+        },
+        "events": 939,
+        "animal_events": 853,
+        "false_empty": 1,
+        "false_empty_rate": 0.001172,
+        "false_empty_rate_ci95": [
+          0.000207,
+          0.006611
+        ],
+        "animal_event_retention": 0.998828,
+        "filtered": 13,
+        "filtered_true_empty": 12,
+        "filtered_non_animal": 0,
+        "empty_events": 86,
+        "accepted": 0,
+        "accepted_correct": 0,
+        "accepted_precision": null,
+        "accepted_precision_ci95": null,
+        "accepted_wrong_by_true_role": {},
+        "unsupported_events": 123,
+        "unsupported_accepted_as_known": 0,
+        "needs_review": 926,
+        "review_fraction": 0.986155,
+        "passes": true
+      },
+      {
+        "thresholds": {
+          "empty_filter": 0.9,
+          "species_accept": null
+        },
+        "events": 939,
+        "animal_events": 853,
+        "false_empty": 0,
+        "false_empty_rate": 0.0,
+        "false_empty_rate_ci95": [
+          0.0,
+          0.004483
+        ],
+        "animal_event_retention": 1.0,
+        "filtered": 9,
+        "filtered_true_empty": 9,
+        "filtered_non_animal": 0,
+        "empty_events": 86,
+        "accepted": 0,
+        "accepted_correct": 0,
+        "accepted_precision": null,
+        "accepted_precision_ci95": null,
+        "accepted_wrong_by_true_role": {},
+        "unsupported_events": 123,
+        "unsupported_accepted_as_known": 0,
+        "needs_review": 930,
+        "review_fraction": 0.990415,
+        "passes": true
+      },
+      {
+        "thresholds": {
+          "empty_filter": 0.91,
+          "species_accept": null
+        },
+        "events": 939,
+        "animal_events": 853,
+        "false_empty": 0,
+        "false_empty_rate": 0.0,
+        "false_empty_rate_ci95": [
+          0.0,
+          0.004483
+        ],
+        "animal_event_retention": 1.0,
+        "filtered": 9,
+        "filtered_true_empty": 9,
+        "filtered_non_animal": 0,
+        "empty_events": 86,
+        "accepted": 0,
+        "accepted_correct": 0,
+        "accepted_precision": null,
+        "accepted_precision_ci95": null,
+        "accepted_wrong_by_true_role": {},
+        "unsupported_events": 123,
+        "unsupported_accepted_as_known": 0,
+        "needs_review": 930,
+        "review_fraction": 0.990415,
+        "passes": true
+      },
+      {
+        "thresholds": {
+          "empty_filter": 0.92,
+          "species_accept": null
+        },
+        "events": 939,
+        "animal_events": 853,
+        "false_empty": 0,
+        "false_empty_rate": 0.0,
+        "false_empty_rate_ci95": [
+          0.0,
+          0.004483
+        ],
+        "animal_event_retention": 1.0,
+        "filtered": 8,
+        "filtered_true_empty": 8,
+        "filtered_non_animal": 0,
+        "empty_events": 86,
+        "accepted": 0,
+        "accepted_correct": 0,
+        "accepted_precision": null,
+        "accepted_precision_ci95": null,
+        "accepted_wrong_by_true_role": {},
+        "unsupported_events": 123,
+        "unsupported_accepted_as_known": 0,
+        "needs_review": 931,
+        "review_fraction": 0.99148,
+        "passes": true
+      },
+      {
+        "thresholds": {
+          "empty_filter": 0.93,
+          "species_accept": null
+        },
+        "events": 939,
+        "animal_events": 853,
+        "false_empty": 0,
+        "false_empty_rate": 0.0,
+        "false_empty_rate_ci95": [
+          0.0,
+          0.004483
+        ],
+        "animal_event_retention": 1.0,
+        "filtered": 8,
+        "filtered_true_empty": 8,
+        "filtered_non_animal": 0,
+        "empty_events": 86,
+        "accepted": 0,
+        "accepted_correct": 0,
+        "accepted_precision": null,
+        "accepted_precision_ci95": null,
+        "accepted_wrong_by_true_role": {},
+        "unsupported_events": 123,
+        "unsupported_accepted_as_known": 0,
+        "needs_review": 931,
+        "review_fraction": 0.99148,
+        "passes": true
+      },
+      {
+        "thresholds": {
+          "empty_filter": 0.94,
+          "species_accept": null
+        },
+        "events": 939,
+        "animal_events": 853,
+        "false_empty": 0,
+        "false_empty_rate": 0.0,
+        "false_empty_rate_ci95": [
+          0.0,
+          0.004483
+        ],
+        "animal_event_retention": 1.0,
+        "filtered": 6,
+        "filtered_true_empty": 6,
+        "filtered_non_animal": 0,
+        "empty_events": 86,
+        "accepted": 0,
+        "accepted_correct": 0,
+        "accepted_precision": null,
+        "accepted_precision_ci95": null,
+        "accepted_wrong_by_true_role": {},
+        "unsupported_events": 123,
+        "unsupported_accepted_as_known": 0,
+        "needs_review": 933,
+        "review_fraction": 0.99361,
+        "passes": true
+      },
+      {
+        "thresholds": {
+          "empty_filter": 0.95,
+          "species_accept": null
+        },
+        "events": 939,
+        "animal_events": 853,
+        "false_empty": 0,
+        "false_empty_rate": 0.0,
+        "false_empty_rate_ci95": [
+          0.0,
+          0.004483
+        ],
+        "animal_event_retention": 1.0,
+        "filtered": 5,
+        "filtered_true_empty": 5,
+        "filtered_non_animal": 0,
+        "empty_events": 86,
+        "accepted": 0,
+        "accepted_correct": 0,
+        "accepted_precision": null,
+        "accepted_precision_ci95": null,
+        "accepted_wrong_by_true_role": {},
+        "unsupported_events": 123,
+        "unsupported_accepted_as_known": 0,
+        "needs_review": 934,
+        "review_fraction": 0.994675,
+        "passes": true
+      },
+      {
+        "thresholds": {
+          "empty_filter": 0.96,
+          "species_accept": null
+        },
+        "events": 939,
+        "animal_events": 853,
+        "false_empty": 0,
+        "false_empty_rate": 0.0,
+        "false_empty_rate_ci95": [
+          0.0,
+          0.004483
+        ],
+        "animal_event_retention": 1.0,
+        "filtered": 2,
+        "filtered_true_empty": 2,
+        "filtered_non_animal": 0,
+        "empty_events": 86,
+        "accepted": 0,
+        "accepted_correct": 0,
+        "accepted_precision": null,
+        "accepted_precision_ci95": null,
+        "accepted_wrong_by_true_role": {},
+        "unsupported_events": 123,
+        "unsupported_accepted_as_known": 0,
+        "needs_review": 937,
+        "review_fraction": 0.99787,
+        "passes": true
+      },
+      {
+        "thresholds": {
+          "empty_filter": 0.97,
+          "species_accept": null
+        },
+        "events": 939,
+        "animal_events": 853,
+        "false_empty": 0,
+        "false_empty_rate": 0.0,
+        "false_empty_rate_ci95": [
+          0.0,
+          0.004483
+        ],
+        "animal_event_retention": 1.0,
+        "filtered": 0,
+        "filtered_true_empty": 0,
+        "filtered_non_animal": 0,
+        "empty_events": 86,
+        "accepted": 0,
+        "accepted_correct": 0,
+        "accepted_precision": null,
+        "accepted_precision_ci95": null,
+        "accepted_wrong_by_true_role": {},
+        "unsupported_events": 123,
+        "unsupported_accepted_as_known": 0,
+        "needs_review": 939,
+        "review_fraction": 1.0,
+        "passes": true
+      },
+      {
+        "thresholds": {
+          "empty_filter": 0.98,
+          "species_accept": null
+        },
+        "events": 939,
+        "animal_events": 853,
+        "false_empty": 0,
+        "false_empty_rate": 0.0,
+        "false_empty_rate_ci95": [
+          0.0,
+          0.004483
+        ],
+        "animal_event_retention": 1.0,
+        "filtered": 0,
+        "filtered_true_empty": 0,
+        "filtered_non_animal": 0,
+        "empty_events": 86,
+        "accepted": 0,
+        "accepted_correct": 0,
+        "accepted_precision": null,
+        "accepted_precision_ci95": null,
+        "accepted_wrong_by_true_role": {},
+        "unsupported_events": 123,
+        "unsupported_accepted_as_known": 0,
+        "needs_review": 939,
+        "review_fraction": 1.0,
+        "passes": true
+      },
+      {
+        "thresholds": {
+          "empty_filter": 0.99,
+          "species_accept": null
+        },
+        "events": 939,
+        "animal_events": 853,
+        "false_empty": 0,
+        "false_empty_rate": 0.0,
+        "false_empty_rate_ci95": [
+          0.0,
+          0.004483
+        ],
+        "animal_event_retention": 1.0,
+        "filtered": 0,
+        "filtered_true_empty": 0,
+        "filtered_non_animal": 0,
+        "empty_events": 86,
+        "accepted": 0,
+        "accepted_correct": 0,
+        "accepted_precision": null,
+        "accepted_precision_ci95": null,
+        "accepted_wrong_by_true_role": {},
+        "unsupported_events": 123,
+        "unsupported_accepted_as_known": 0,
+        "needs_review": 939,
+        "review_fraction": 1.0,
+        "passes": true
+      },
+      {
+        "thresholds": {
+          "empty_filter": 0.995,
+          "species_accept": null
+        },
+        "events": 939,
+        "animal_events": 853,
+        "false_empty": 0,
+        "false_empty_rate": 0.0,
+        "false_empty_rate_ci95": [
+          0.0,
+          0.004483
+        ],
+        "animal_event_retention": 1.0,
+        "filtered": 0,
+        "filtered_true_empty": 0,
+        "filtered_non_animal": 0,
+        "empty_events": 86,
+        "accepted": 0,
+        "accepted_correct": 0,
+        "accepted_precision": null,
+        "accepted_precision_ci95": null,
+        "accepted_wrong_by_true_role": {},
+        "unsupported_events": 123,
+        "unsupported_accepted_as_known": 0,
+        "needs_review": 939,
+        "review_fraction": 1.0,
+        "passes": true
+      },
+      {
+        "thresholds": {
+          "empty_filter": 0.999,
+          "species_accept": null
+        },
+        "events": 939,
+        "animal_events": 853,
+        "false_empty": 0,
+        "false_empty_rate": 0.0,
+        "false_empty_rate_ci95": [
+          0.0,
+          0.004483
+        ],
+        "animal_event_retention": 1.0,
+        "filtered": 0,
+        "filtered_true_empty": 0,
+        "filtered_non_animal": 0,
+        "empty_events": 86,
+        "accepted": 0,
+        "accepted_correct": 0,
+        "accepted_precision": null,
+        "accepted_precision_ci95": null,
+        "accepted_wrong_by_true_role": {},
+        "unsupported_events": 123,
+        "unsupported_accepted_as_known": 0,
+        "needs_review": 939,
+        "review_fraction": 1.0,
+        "passes": true
+      }
+    ],
+    "species_accept": [
+      {
+        "thresholds": {
+          "empty_filter": 0.65,
+          "species_accept": 0.5
+        },
+        "events": 939,
+        "animal_events": 853,
+        "false_empty": 9,
+        "false_empty_rate": 0.010551,
+        "false_empty_rate_ci95": [
+          0.005561,
+          0.01993
+        ],
+        "animal_event_retention": 0.989449,
+        "filtered": 38,
+        "filtered_true_empty": 29,
+        "filtered_non_animal": 0,
+        "empty_events": 86,
+        "accepted": 219,
+        "accepted_correct": 149,
+        "accepted_precision": 0.680365,
+        "accepted_precision_ci95": [
+          0.615948,
+          0.738564
+        ],
+        "accepted_wrong_by_true_role": {
+          "other_supported_species": 41,
+          "unsupported_animal": 21,
+          "mixed_species": 7,
+          "empty": 1
+        },
+        "unsupported_events": 123,
+        "unsupported_accepted_as_known": 21,
+        "needs_review": 682,
+        "review_fraction": 0.726305,
+        "passes": false
+      },
+      {
+        "thresholds": {
+          "empty_filter": 0.65,
+          "species_accept": 0.51
+        },
+        "events": 939,
+        "animal_events": 853,
+        "false_empty": 9,
+        "false_empty_rate": 0.010551,
+        "false_empty_rate_ci95": [
+          0.005561,
+          0.01993
+        ],
+        "animal_event_retention": 0.989449,
+        "filtered": 38,
+        "filtered_true_empty": 29,
+        "filtered_non_animal": 0,
+        "empty_events": 86,
+        "accepted": 210,
+        "accepted_correct": 145,
+        "accepted_precision": 0.690476,
+        "accepted_precision_ci95": [
+          0.624997,
+          0.749112
+        ],
+        "accepted_wrong_by_true_role": {
+          "other_supported_species": 38,
+          "unsupported_animal": 20,
+          "mixed_species": 6,
+          "empty": 1
+        },
+        "unsupported_events": 123,
+        "unsupported_accepted_as_known": 20,
+        "needs_review": 691,
+        "review_fraction": 0.735889,
+        "passes": false
+      },
+      {
+        "thresholds": {
+          "empty_filter": 0.65,
+          "species_accept": 0.52
+        },
+        "events": 939,
+        "animal_events": 853,
+        "false_empty": 9,
+        "false_empty_rate": 0.010551,
+        "false_empty_rate_ci95": [
+          0.005561,
+          0.01993
+        ],
+        "animal_event_retention": 0.989449,
+        "filtered": 38,
+        "filtered_true_empty": 29,
+        "filtered_non_animal": 0,
+        "empty_events": 86,
+        "accepted": 199,
+        "accepted_correct": 136,
+        "accepted_precision": 0.683417,
+        "accepted_precision_ci95": [
+          0.615837,
+          0.74405
+        ],
+        "accepted_wrong_by_true_role": {
+          "other_supported_species": 36,
+          "unsupported_animal": 20,
+          "mixed_species": 6,
+          "empty": 1
+        },
+        "unsupported_events": 123,
+        "unsupported_accepted_as_known": 20,
+        "needs_review": 702,
+        "review_fraction": 0.747604,
+        "passes": false
+      },
+      {
+        "thresholds": {
+          "empty_filter": 0.65,
+          "species_accept": 0.53
+        },
+        "events": 939,
+        "animal_events": 853,
+        "false_empty": 9,
+        "false_empty_rate": 0.010551,
+        "false_empty_rate_ci95": [
+          0.005561,
+          0.01993
+        ],
+        "animal_event_retention": 0.989449,
+        "filtered": 38,
+        "filtered_true_empty": 29,
+        "filtered_non_animal": 0,
+        "empty_events": 86,
+        "accepted": 192,
+        "accepted_correct": 135,
+        "accepted_precision": 0.703125,
+        "accepted_precision_ci95": [
+          0.635027,
+          0.763254
+        ],
+        "accepted_wrong_by_true_role": {
+          "other_supported_species": 32,
+          "unsupported_animal": 18,
+          "mixed_species": 6,
+          "empty": 1
+        },
+        "unsupported_events": 123,
+        "unsupported_accepted_as_known": 18,
+        "needs_review": 709,
+        "review_fraction": 0.755059,
+        "passes": false
+      },
+      {
+        "thresholds": {
+          "empty_filter": 0.65,
+          "species_accept": 0.54
+        },
+        "events": 939,
+        "animal_events": 853,
+        "false_empty": 9,
+        "false_empty_rate": 0.010551,
+        "false_empty_rate_ci95": [
+          0.005561,
+          0.01993
+        ],
+        "animal_event_retention": 0.989449,
+        "filtered": 38,
+        "filtered_true_empty": 29,
+        "filtered_non_animal": 0,
+        "empty_events": 86,
+        "accepted": 188,
+        "accepted_correct": 133,
+        "accepted_precision": 0.707447,
+        "accepted_precision_ci95": [
+          0.638781,
+          0.767804
+        ],
+        "accepted_wrong_by_true_role": {
+          "other_supported_species": 31,
+          "unsupported_animal": 18,
+          "mixed_species": 5,
+          "empty": 1
+        },
+        "unsupported_events": 123,
+        "unsupported_accepted_as_known": 18,
+        "needs_review": 713,
+        "review_fraction": 0.759318,
+        "passes": false
+      },
+      {
+        "thresholds": {
+          "empty_filter": 0.65,
+          "species_accept": 0.55
+        },
+        "events": 939,
+        "animal_events": 853,
+        "false_empty": 9,
+        "false_empty_rate": 0.010551,
+        "false_empty_rate_ci95": [
+          0.005561,
+          0.01993
+        ],
+        "animal_event_retention": 0.989449,
+        "filtered": 38,
+        "filtered_true_empty": 29,
+        "filtered_non_animal": 0,
+        "empty_events": 86,
+        "accepted": 182,
+        "accepted_correct": 130,
+        "accepted_precision": 0.714286,
+        "accepted_precision_ci95": [
+          0.644754,
+          0.774958
+        ],
+        "accepted_wrong_by_true_role": {
+          "other_supported_species": 28,
+          "unsupported_animal": 18,
+          "mixed_species": 5,
+          "empty": 1
+        },
+        "unsupported_events": 123,
+        "unsupported_accepted_as_known": 18,
+        "needs_review": 719,
+        "review_fraction": 0.765708,
+        "passes": false
+      },
+      {
+        "thresholds": {
+          "empty_filter": 0.65,
+          "species_accept": 0.56
+        },
+        "events": 939,
+        "animal_events": 853,
+        "false_empty": 9,
+        "false_empty_rate": 0.010551,
+        "false_empty_rate_ci95": [
+          0.005561,
+          0.01993
+        ],
+        "animal_event_retention": 0.989449,
+        "filtered": 38,
+        "filtered_true_empty": 29,
+        "filtered_non_animal": 0,
+        "empty_events": 86,
+        "accepted": 173,
+        "accepted_correct": 126,
+        "accepted_precision": 0.728324,
+        "accepted_precision_ci95": [
+          0.657614,
+          0.789113
+        ],
+        "accepted_wrong_by_true_role": {
+          "other_supported_species": 26,
+          "unsupported_animal": 15,
+          "mixed_species": 5,
+          "empty": 1
+        },
+        "unsupported_events": 123,
+        "unsupported_accepted_as_known": 15,
+        "needs_review": 728,
+        "review_fraction": 0.775293,
+        "passes": false
+      },
+      {
+        "thresholds": {
+          "empty_filter": 0.65,
+          "species_accept": 0.57
+        },
+        "events": 939,
+        "animal_events": 853,
+        "false_empty": 9,
+        "false_empty_rate": 0.010551,
+        "false_empty_rate_ci95": [
+          0.005561,
+          0.01993
+        ],
+        "animal_event_retention": 0.989449,
+        "filtered": 38,
+        "filtered_true_empty": 29,
+        "filtered_non_animal": 0,
+        "empty_events": 86,
+        "accepted": 166,
+        "accepted_correct": 122,
+        "accepted_precision": 0.73494,
+        "accepted_precision_ci95": [
+          0.663034,
+          0.796217
+        ],
+        "accepted_wrong_by_true_role": {
+          "other_supported_species": 25,
+          "unsupported_animal": 14,
+          "mixed_species": 5
+        },
+        "unsupported_events": 123,
+        "unsupported_accepted_as_known": 14,
+        "needs_review": 735,
+        "review_fraction": 0.782748,
+        "passes": false
+      },
+      {
+        "thresholds": {
+          "empty_filter": 0.65,
+          "species_accept": 0.58
+        },
+        "events": 939,
+        "animal_events": 853,
+        "false_empty": 9,
+        "false_empty_rate": 0.010551,
+        "false_empty_rate_ci95": [
+          0.005561,
+          0.01993
+        ],
+        "animal_event_retention": 0.989449,
+        "filtered": 38,
+        "filtered_true_empty": 29,
+        "filtered_non_animal": 0,
+        "empty_events": 86,
+        "accepted": 159,
+        "accepted_correct": 117,
+        "accepted_precision": 0.735849,
+        "accepted_precision_ci95": [
+          0.662341,
+          0.79823
+        ],
+        "accepted_wrong_by_true_role": {
+          "other_supported_species": 24,
+          "unsupported_animal": 13,
+          "mixed_species": 5
+        },
+        "unsupported_events": 123,
+        "unsupported_accepted_as_known": 13,
+        "needs_review": 742,
+        "review_fraction": 0.790202,
+        "passes": false
+      },
+      {
+        "thresholds": {
+          "empty_filter": 0.65,
+          "species_accept": 0.59
+        },
+        "events": 939,
+        "animal_events": 853,
+        "false_empty": 9,
+        "false_empty_rate": 0.010551,
+        "false_empty_rate_ci95": [
+          0.005561,
+          0.01993
+        ],
+        "animal_event_retention": 0.989449,
+        "filtered": 38,
+        "filtered_true_empty": 29,
+        "filtered_non_animal": 0,
+        "empty_events": 86,
+        "accepted": 157,
+        "accepted_correct": 116,
+        "accepted_precision": 0.738854,
+        "accepted_precision_ci95": [
+          0.665024,
+          0.801274
+        ],
+        "accepted_wrong_by_true_role": {
+          "other_supported_species": 23,
+          "unsupported_animal": 13,
+          "mixed_species": 5
+        },
+        "unsupported_events": 123,
+        "unsupported_accepted_as_known": 13,
+        "needs_review": 744,
+        "review_fraction": 0.792332,
+        "passes": false
+      },
+      {
+        "thresholds": {
+          "empty_filter": 0.65,
+          "species_accept": 0.6
+        },
+        "events": 939,
+        "animal_events": 853,
+        "false_empty": 9,
+        "false_empty_rate": 0.010551,
+        "false_empty_rate_ci95": [
+          0.005561,
+          0.01993
+        ],
+        "animal_event_retention": 0.989449,
+        "filtered": 38,
+        "filtered_true_empty": 29,
+        "filtered_non_animal": 0,
+        "empty_events": 86,
+        "accepted": 150,
+        "accepted_correct": 112,
+        "accepted_precision": 0.746667,
+        "accepted_precision_ci95": [
+          0.671504,
+          0.80951
+        ],
+        "accepted_wrong_by_true_role": {
+          "other_supported_species": 23,
+          "unsupported_animal": 10,
+          "mixed_species": 5
+        },
+        "unsupported_events": 123,
+        "unsupported_accepted_as_known": 10,
+        "needs_review": 751,
+        "review_fraction": 0.799787,
+        "passes": false
+      },
+      {
+        "thresholds": {
+          "empty_filter": 0.65,
+          "species_accept": 0.61
+        },
+        "events": 939,
+        "animal_events": 853,
+        "false_empty": 9,
+        "false_empty_rate": 0.010551,
+        "false_empty_rate_ci95": [
+          0.005561,
+          0.01993
+        ],
+        "animal_event_retention": 0.989449,
+        "filtered": 38,
+        "filtered_true_empty": 29,
+        "filtered_non_animal": 0,
+        "empty_events": 86,
+        "accepted": 141,
+        "accepted_correct": 105,
+        "accepted_precision": 0.744681,
+        "accepted_precision_ci95": [
+          0.666883,
+          0.8095
+        ],
+        "accepted_wrong_by_true_role": {
+          "other_supported_species": 21,
+          "unsupported_animal": 10,
+          "mixed_species": 5
+        },
+        "unsupported_events": 123,
+        "unsupported_accepted_as_known": 10,
+        "needs_review": 760,
+        "review_fraction": 0.809372,
+        "passes": false
+      },
+      {
+        "thresholds": {
+          "empty_filter": 0.65,
+          "species_accept": 0.62
+        },
+        "events": 939,
+        "animal_events": 853,
+        "false_empty": 9,
+        "false_empty_rate": 0.010551,
+        "false_empty_rate_ci95": [
+          0.005561,
+          0.01993
+        ],
+        "animal_event_retention": 0.989449,
+        "filtered": 38,
+        "filtered_true_empty": 29,
+        "filtered_non_animal": 0,
+        "empty_events": 86,
+        "accepted": 135,
+        "accepted_correct": 103,
+        "accepted_precision": 0.762963,
+        "accepted_precision_ci95": [
+          0.684575,
+          0.826799
+        ],
+        "accepted_wrong_by_true_role": {
+          "other_supported_species": 19,
+          "unsupported_animal": 9,
+          "mixed_species": 4
+        },
+        "unsupported_events": 123,
+        "unsupported_accepted_as_known": 9,
+        "needs_review": 766,
+        "review_fraction": 0.815761,
+        "passes": false
+      },
+      {
+        "thresholds": {
+          "empty_filter": 0.65,
+          "species_accept": 0.63
+        },
+        "events": 939,
+        "animal_events": 853,
+        "false_empty": 9,
+        "false_empty_rate": 0.010551,
+        "false_empty_rate_ci95": [
+          0.005561,
+          0.01993
+        ],
+        "animal_event_retention": 0.989449,
+        "filtered": 38,
+        "filtered_true_empty": 29,
+        "filtered_non_animal": 0,
+        "empty_events": 86,
+        "accepted": 129,
+        "accepted_correct": 97,
+        "accepted_precision": 0.751938,
+        "accepted_precision_ci95": [
+          0.670847,
+          0.818457
+        ],
+        "accepted_wrong_by_true_role": {
+          "other_supported_species": 19,
+          "unsupported_animal": 9,
+          "mixed_species": 4
+        },
+        "unsupported_events": 123,
+        "unsupported_accepted_as_known": 9,
+        "needs_review": 772,
+        "review_fraction": 0.822151,
+        "passes": false
+      },
+      {
+        "thresholds": {
+          "empty_filter": 0.65,
+          "species_accept": 0.64
+        },
+        "events": 939,
+        "animal_events": 853,
+        "false_empty": 9,
+        "false_empty_rate": 0.010551,
+        "false_empty_rate_ci95": [
+          0.005561,
+          0.01993
+        ],
+        "animal_event_retention": 0.989449,
+        "filtered": 38,
+        "filtered_true_empty": 29,
+        "filtered_non_animal": 0,
+        "empty_events": 86,
+        "accepted": 124,
+        "accepted_correct": 93,
+        "accepted_precision": 0.75,
+        "accepted_precision_ci95": [
+          0.667051,
+          0.817925
+        ],
+        "accepted_wrong_by_true_role": {
+          "other_supported_species": 18,
+          "unsupported_animal": 9,
+          "mixed_species": 4
+        },
+        "unsupported_events": 123,
+        "unsupported_accepted_as_known": 9,
+        "needs_review": 777,
+        "review_fraction": 0.827476,
+        "passes": false
+      },
+      {
+        "thresholds": {
+          "empty_filter": 0.65,
+          "species_accept": 0.65
+        },
+        "events": 939,
+        "animal_events": 853,
+        "false_empty": 9,
+        "false_empty_rate": 0.010551,
+        "false_empty_rate_ci95": [
+          0.005561,
+          0.01993
+        ],
+        "animal_event_retention": 0.989449,
+        "filtered": 38,
+        "filtered_true_empty": 29,
+        "filtered_non_animal": 0,
+        "empty_events": 86,
+        "accepted": 115,
+        "accepted_correct": 89,
+        "accepted_precision": 0.773913,
+        "accepted_precision_ci95": [
+          0.689333,
+          0.840785
+        ],
+        "accepted_wrong_by_true_role": {
+          "other_supported_species": 16,
+          "unsupported_animal": 6,
+          "mixed_species": 4
+        },
+        "unsupported_events": 123,
+        "unsupported_accepted_as_known": 6,
+        "needs_review": 786,
+        "review_fraction": 0.837061,
+        "passes": false
+      },
+      {
+        "thresholds": {
+          "empty_filter": 0.65,
+          "species_accept": 0.66
+        },
+        "events": 939,
+        "animal_events": 853,
+        "false_empty": 9,
+        "false_empty_rate": 0.010551,
+        "false_empty_rate_ci95": [
+          0.005561,
+          0.01993
+        ],
+        "animal_event_retention": 0.989449,
+        "filtered": 38,
+        "filtered_true_empty": 29,
+        "filtered_non_animal": 0,
+        "empty_events": 86,
+        "accepted": 110,
+        "accepted_correct": 88,
+        "accepted_precision": 0.8,
+        "accepted_precision_ci95": [
+          0.715703,
+          0.86405
+        ],
+        "accepted_wrong_by_true_role": {
+          "other_supported_species": 14,
+          "unsupported_animal": 4,
+          "mixed_species": 4
+        },
+        "unsupported_events": 123,
+        "unsupported_accepted_as_known": 4,
+        "needs_review": 791,
+        "review_fraction": 0.842386,
+        "passes": false
+      },
+      {
+        "thresholds": {
+          "empty_filter": 0.65,
+          "species_accept": 0.67
+        },
+        "events": 939,
+        "animal_events": 853,
+        "false_empty": 9,
+        "false_empty_rate": 0.010551,
+        "false_empty_rate_ci95": [
+          0.005561,
+          0.01993
+        ],
+        "animal_event_retention": 0.989449,
+        "filtered": 38,
+        "filtered_true_empty": 29,
+        "filtered_non_animal": 0,
+        "empty_events": 86,
+        "accepted": 106,
+        "accepted_correct": 85,
+        "accepted_precision": 0.801887,
+        "accepted_precision_ci95": [
+          0.716045,
+          0.866612
+        ],
+        "accepted_wrong_by_true_role": {
+          "other_supported_species": 13,
+          "unsupported_animal": 4,
+          "mixed_species": 4
+        },
+        "unsupported_events": 123,
+        "unsupported_accepted_as_known": 4,
+        "needs_review": 795,
+        "review_fraction": 0.846645,
+        "passes": false
+      },
+      {
+        "thresholds": {
+          "empty_filter": 0.65,
+          "species_accept": 0.68
+        },
+        "events": 939,
+        "animal_events": 853,
+        "false_empty": 9,
+        "false_empty_rate": 0.010551,
+        "false_empty_rate_ci95": [
+          0.005561,
+          0.01993
+        ],
+        "animal_event_retention": 0.989449,
+        "filtered": 38,
+        "filtered_true_empty": 29,
+        "filtered_non_animal": 0,
+        "empty_events": 86,
+        "accepted": 101,
+        "accepted_correct": 82,
+        "accepted_precision": 0.811881,
+        "accepted_precision_ci95": [
+          0.724777,
+          0.87613
+        ],
+        "accepted_wrong_by_true_role": {
+          "other_supported_species": 12,
+          "unsupported_animal": 4,
+          "mixed_species": 3
+        },
+        "unsupported_events": 123,
+        "unsupported_accepted_as_known": 4,
+        "needs_review": 800,
+        "review_fraction": 0.85197,
+        "passes": false
+      },
+      {
+        "thresholds": {
+          "empty_filter": 0.65,
+          "species_accept": 0.69
+        },
+        "events": 939,
+        "animal_events": 853,
+        "false_empty": 9,
+        "false_empty_rate": 0.010551,
+        "false_empty_rate_ci95": [
+          0.005561,
+          0.01993
+        ],
+        "animal_event_retention": 0.989449,
+        "filtered": 38,
+        "filtered_true_empty": 29,
+        "filtered_non_animal": 0,
+        "empty_events": 86,
+        "accepted": 93,
+        "accepted_correct": 75,
+        "accepted_precision": 0.806452,
+        "accepted_precision_ci95": [
+          0.714673,
+          0.873917
+        ],
+        "accepted_wrong_by_true_role": {
+          "other_supported_species": 11,
+          "unsupported_animal": 4,
+          "mixed_species": 3
+        },
+        "unsupported_events": 123,
+        "unsupported_accepted_as_known": 4,
+        "needs_review": 808,
+        "review_fraction": 0.86049,
+        "passes": false
+      },
+      {
+        "thresholds": {
+          "empty_filter": 0.65,
+          "species_accept": 0.7
+        },
+        "events": 939,
+        "animal_events": 853,
+        "false_empty": 9,
+        "false_empty_rate": 0.010551,
+        "false_empty_rate_ci95": [
+          0.005561,
+          0.01993
+        ],
+        "animal_event_retention": 0.989449,
+        "filtered": 38,
+        "filtered_true_empty": 29,
+        "filtered_non_animal": 0,
+        "empty_events": 86,
+        "accepted": 85,
+        "accepted_correct": 68,
+        "accepted_precision": 0.8,
+        "accepted_precision_ci95": [
+          0.702844,
+          0.871211
+        ],
+        "accepted_wrong_by_true_role": {
+          "other_supported_species": 11,
+          "unsupported_animal": 4,
+          "mixed_species": 2
+        },
+        "unsupported_events": 123,
+        "unsupported_accepted_as_known": 4,
+        "needs_review": 816,
+        "review_fraction": 0.86901,
+        "passes": false
+      },
+      {
+        "thresholds": {
+          "empty_filter": 0.65,
+          "species_accept": 0.71
+        },
+        "events": 939,
+        "animal_events": 853,
+        "false_empty": 9,
+        "false_empty_rate": 0.010551,
+        "false_empty_rate_ci95": [
+          0.005561,
+          0.01993
+        ],
+        "animal_event_retention": 0.989449,
+        "filtered": 38,
+        "filtered_true_empty": 29,
+        "filtered_non_animal": 0,
+        "empty_events": 86,
+        "accepted": 83,
+        "accepted_correct": 67,
+        "accepted_precision": 0.807229,
+        "accepted_precision_ci95": [
+          0.709564,
+          0.877712
+        ],
+        "accepted_wrong_by_true_role": {
+          "other_supported_species": 11,
+          "unsupported_animal": 4,
+          "mixed_species": 1
+        },
+        "unsupported_events": 123,
+        "unsupported_accepted_as_known": 4,
+        "needs_review": 818,
+        "review_fraction": 0.87114,
+        "passes": false
+      },
+      {
+        "thresholds": {
+          "empty_filter": 0.65,
+          "species_accept": 0.72
+        },
+        "events": 939,
+        "animal_events": 853,
+        "false_empty": 9,
+        "false_empty_rate": 0.010551,
+        "false_empty_rate_ci95": [
+          0.005561,
+          0.01993
+        ],
+        "animal_event_retention": 0.989449,
+        "filtered": 38,
+        "filtered_true_empty": 29,
+        "filtered_non_animal": 0,
+        "empty_events": 86,
+        "accepted": 79,
+        "accepted_correct": 63,
+        "accepted_precision": 0.797468,
+        "accepted_precision_ci95": [
+          0.696038,
+          0.87131
+        ],
+        "accepted_wrong_by_true_role": {
+          "other_supported_species": 11,
+          "unsupported_animal": 4,
+          "mixed_species": 1
+        },
+        "unsupported_events": 123,
+        "unsupported_accepted_as_known": 4,
+        "needs_review": 822,
+        "review_fraction": 0.875399,
+        "passes": false
+      },
+      {
+        "thresholds": {
+          "empty_filter": 0.65,
+          "species_accept": 0.73
+        },
+        "events": 939,
+        "animal_events": 853,
+        "false_empty": 9,
+        "false_empty_rate": 0.010551,
+        "false_empty_rate_ci95": [
+          0.005561,
+          0.01993
+        ],
+        "animal_event_retention": 0.989449,
+        "filtered": 38,
+        "filtered_true_empty": 29,
+        "filtered_non_animal": 0,
+        "empty_events": 86,
+        "accepted": 73,
+        "accepted_correct": 57,
+        "accepted_precision": 0.780822,
+        "accepted_precision_ci95": [
+          0.673225,
+          0.86034
+        ],
+        "accepted_wrong_by_true_role": {
+          "other_supported_species": 11,
+          "unsupported_animal": 4,
+          "mixed_species": 1
+        },
+        "unsupported_events": 123,
+        "unsupported_accepted_as_known": 4,
+        "needs_review": 828,
+        "review_fraction": 0.881789,
+        "passes": false
+      },
+      {
+        "thresholds": {
+          "empty_filter": 0.65,
+          "species_accept": 0.74
+        },
+        "events": 939,
+        "animal_events": 853,
+        "false_empty": 9,
+        "false_empty_rate": 0.010551,
+        "false_empty_rate_ci95": [
+          0.005561,
+          0.01993
+        ],
+        "animal_event_retention": 0.989449,
+        "filtered": 38,
+        "filtered_true_empty": 29,
+        "filtered_non_animal": 0,
+        "empty_events": 86,
+        "accepted": 69,
+        "accepted_correct": 53,
+        "accepted_precision": 0.768116,
+        "accepted_precision_ci95": [
+          0.656029,
+          0.851922
+        ],
+        "accepted_wrong_by_true_role": {
+          "other_supported_species": 11,
+          "unsupported_animal": 4,
+          "mixed_species": 1
+        },
+        "unsupported_events": 123,
+        "unsupported_accepted_as_known": 4,
+        "needs_review": 832,
+        "review_fraction": 0.886049,
+        "passes": false
+      },
+      {
+        "thresholds": {
+          "empty_filter": 0.65,
+          "species_accept": 0.75
+        },
+        "events": 939,
+        "animal_events": 853,
+        "false_empty": 9,
+        "false_empty_rate": 0.010551,
+        "false_empty_rate_ci95": [
+          0.005561,
+          0.01993
+        ],
+        "animal_event_retention": 0.989449,
+        "filtered": 38,
+        "filtered_true_empty": 29,
+        "filtered_non_animal": 0,
+        "empty_events": 86,
+        "accepted": 66,
+        "accepted_correct": 50,
+        "accepted_precision": 0.757576,
+        "accepted_precision_ci95": [
+          0.641906,
+          0.844909
+        ],
+        "accepted_wrong_by_true_role": {
+          "other_supported_species": 11,
+          "unsupported_animal": 4,
+          "mixed_species": 1
+        },
+        "unsupported_events": 123,
+        "unsupported_accepted_as_known": 4,
+        "needs_review": 835,
+        "review_fraction": 0.889244,
+        "passes": false
+      },
+      {
+        "thresholds": {
+          "empty_filter": 0.65,
+          "species_accept": 0.76
+        },
+        "events": 939,
+        "animal_events": 853,
+        "false_empty": 9,
+        "false_empty_rate": 0.010551,
+        "false_empty_rate_ci95": [
+          0.005561,
+          0.01993
+        ],
+        "animal_event_retention": 0.989449,
+        "filtered": 38,
+        "filtered_true_empty": 29,
+        "filtered_non_animal": 0,
+        "empty_events": 86,
+        "accepted": 62,
+        "accepted_correct": 48,
+        "accepted_precision": 0.774194,
+        "accepted_precision_ci95": [
+          0.655941,
+          0.860449
+        ],
+        "accepted_wrong_by_true_role": {
+          "other_supported_species": 10,
+          "unsupported_animal": 3,
+          "mixed_species": 1
+        },
+        "unsupported_events": 123,
+        "unsupported_accepted_as_known": 3,
+        "needs_review": 839,
+        "review_fraction": 0.893504,
+        "passes": false
+      },
+      {
+        "thresholds": {
+          "empty_filter": 0.65,
+          "species_accept": 0.77
+        },
+        "events": 939,
+        "animal_events": 853,
+        "false_empty": 9,
+        "false_empty_rate": 0.010551,
+        "false_empty_rate_ci95": [
+          0.005561,
+          0.01993
+        ],
+        "animal_event_retention": 0.989449,
+        "filtered": 38,
+        "filtered_true_empty": 29,
+        "filtered_non_animal": 0,
+        "empty_events": 86,
+        "accepted": 54,
+        "accepted_correct": 42,
+        "accepted_precision": 0.777778,
+        "accepted_precision_ci95": [
+          0.650611,
+          0.868047
+        ],
+        "accepted_wrong_by_true_role": {
+          "other_supported_species": 8,
+          "unsupported_animal": 3,
+          "mixed_species": 1
+        },
+        "unsupported_events": 123,
+        "unsupported_accepted_as_known": 3,
+        "needs_review": 847,
+        "review_fraction": 0.902023,
+        "passes": false
+      },
+      {
+        "thresholds": {
+          "empty_filter": 0.65,
+          "species_accept": 0.78
+        },
+        "events": 939,
+        "animal_events": 853,
+        "false_empty": 9,
+        "false_empty_rate": 0.010551,
+        "false_empty_rate_ci95": [
+          0.005561,
+          0.01993
+        ],
+        "animal_event_retention": 0.989449,
+        "filtered": 38,
+        "filtered_true_empty": 29,
+        "filtered_non_animal": 0,
+        "empty_events": 86,
+        "accepted": 47,
+        "accepted_correct": 38,
+        "accepted_precision": 0.808511,
+        "accepted_precision_ci95": [
+          0.674557,
+          0.895842
+        ],
+        "accepted_wrong_by_true_role": {
+          "other_supported_species": 7,
+          "unsupported_animal": 2
+        },
+        "unsupported_events": 123,
+        "unsupported_accepted_as_known": 2,
+        "needs_review": 854,
+        "review_fraction": 0.909478,
+        "passes": false
+      },
+      {
+        "thresholds": {
+          "empty_filter": 0.65,
+          "species_accept": 0.79
+        },
+        "events": 939,
+        "animal_events": 853,
+        "false_empty": 9,
+        "false_empty_rate": 0.010551,
+        "false_empty_rate_ci95": [
+          0.005561,
+          0.01993
+        ],
+        "animal_event_retention": 0.989449,
+        "filtered": 38,
+        "filtered_true_empty": 29,
+        "filtered_non_animal": 0,
+        "empty_events": 86,
+        "accepted": 42,
+        "accepted_correct": 33,
+        "accepted_precision": 0.785714,
+        "accepted_precision_ci95": [
+          0.640599,
+          0.882943
+        ],
+        "accepted_wrong_by_true_role": {
+          "other_supported_species": 7,
+          "unsupported_animal": 2
+        },
+        "unsupported_events": 123,
+        "unsupported_accepted_as_known": 2,
+        "needs_review": 859,
+        "review_fraction": 0.914803,
+        "passes": false
+      },
+      {
+        "thresholds": {
+          "empty_filter": 0.65,
+          "species_accept": 0.8
+        },
+        "events": 939,
+        "animal_events": 853,
+        "false_empty": 9,
+        "false_empty_rate": 0.010551,
+        "false_empty_rate_ci95": [
+          0.005561,
+          0.01993
+        ],
+        "animal_event_retention": 0.989449,
+        "filtered": 38,
+        "filtered_true_empty": 29,
+        "filtered_non_animal": 0,
+        "empty_events": 86,
+        "accepted": 35,
+        "accepted_correct": 28,
+        "accepted_precision": 0.8,
+        "accepted_precision_ci95": [
+          0.641081,
+          0.899577
+        ],
+        "accepted_wrong_by_true_role": {
+          "other_supported_species": 6,
+          "unsupported_animal": 1
+        },
+        "unsupported_events": 123,
+        "unsupported_accepted_as_known": 1,
+        "needs_review": 866,
+        "review_fraction": 0.922258,
+        "passes": false
+      },
+      {
+        "thresholds": {
+          "empty_filter": 0.65,
+          "species_accept": 0.81
+        },
+        "events": 939,
+        "animal_events": 853,
+        "false_empty": 9,
+        "false_empty_rate": 0.010551,
+        "false_empty_rate_ci95": [
+          0.005561,
+          0.01993
+        ],
+        "animal_event_retention": 0.989449,
+        "filtered": 38,
+        "filtered_true_empty": 29,
+        "filtered_non_animal": 0,
+        "empty_events": 86,
+        "accepted": 33,
+        "accepted_correct": 26,
+        "accepted_precision": 0.787879,
+        "accepted_precision_ci95": [
+          0.62248,
+          0.893241
+        ],
+        "accepted_wrong_by_true_role": {
+          "other_supported_species": 6,
+          "unsupported_animal": 1
+        },
+        "unsupported_events": 123,
+        "unsupported_accepted_as_known": 1,
+        "needs_review": 868,
+        "review_fraction": 0.924388,
+        "passes": false
+      },
+      {
+        "thresholds": {
+          "empty_filter": 0.65,
+          "species_accept": 0.82
+        },
+        "events": 939,
+        "animal_events": 853,
+        "false_empty": 9,
+        "false_empty_rate": 0.010551,
+        "false_empty_rate_ci95": [
+          0.005561,
+          0.01993
+        ],
+        "animal_event_retention": 0.989449,
+        "filtered": 38,
+        "filtered_true_empty": 29,
+        "filtered_non_animal": 0,
+        "empty_events": 86,
+        "accepted": 30,
+        "accepted_correct": 24,
+        "accepted_precision": 0.8,
+        "accepted_precision_ci95": [
+          0.62694,
+          0.90495
+        ],
+        "accepted_wrong_by_true_role": {
+          "other_supported_species": 5,
+          "unsupported_animal": 1
+        },
+        "unsupported_events": 123,
+        "unsupported_accepted_as_known": 1,
+        "needs_review": 871,
+        "review_fraction": 0.927583,
+        "passes": false
+      },
+      {
+        "thresholds": {
+          "empty_filter": 0.65,
+          "species_accept": 0.83
+        },
+        "events": 939,
+        "animal_events": 853,
+        "false_empty": 9,
+        "false_empty_rate": 0.010551,
+        "false_empty_rate_ci95": [
+          0.005561,
+          0.01993
+        ],
+        "animal_event_retention": 0.989449,
+        "filtered": 38,
+        "filtered_true_empty": 29,
+        "filtered_non_animal": 0,
+        "empty_events": 86,
+        "accepted": 28,
+        "accepted_correct": 23,
+        "accepted_precision": 0.821429,
+        "accepted_precision_ci95": [
+          0.644082,
+          0.921216
+        ],
+        "accepted_wrong_by_true_role": {
+          "other_supported_species": 5
+        },
+        "unsupported_events": 123,
+        "unsupported_accepted_as_known": 0,
+        "needs_review": 873,
+        "review_fraction": 0.929712,
+        "passes": false
+      },
+      {
+        "thresholds": {
+          "empty_filter": 0.65,
+          "species_accept": 0.84
+        },
+        "events": 939,
+        "animal_events": 853,
+        "false_empty": 9,
+        "false_empty_rate": 0.010551,
+        "false_empty_rate_ci95": [
+          0.005561,
+          0.01993
+        ],
+        "animal_event_retention": 0.989449,
+        "filtered": 38,
+        "filtered_true_empty": 29,
+        "filtered_non_animal": 0,
+        "empty_events": 86,
+        "accepted": 24,
+        "accepted_correct": 20,
+        "accepted_precision": 0.833333,
+        "accepted_precision_ci95": [
+          0.641465,
+          0.933214
+        ],
+        "accepted_wrong_by_true_role": {
+          "other_supported_species": 4
+        },
+        "unsupported_events": 123,
+        "unsupported_accepted_as_known": 0,
+        "needs_review": 877,
+        "review_fraction": 0.933972,
+        "passes": false
+      },
+      {
+        "thresholds": {
+          "empty_filter": 0.65,
+          "species_accept": 0.85
+        },
+        "events": 939,
+        "animal_events": 853,
+        "false_empty": 9,
+        "false_empty_rate": 0.010551,
+        "false_empty_rate_ci95": [
+          0.005561,
+          0.01993
+        ],
+        "animal_event_retention": 0.989449,
+        "filtered": 38,
+        "filtered_true_empty": 29,
+        "filtered_non_animal": 0,
+        "empty_events": 86,
+        "accepted": 20,
+        "accepted_correct": 18,
+        "accepted_precision": 0.9,
+        "accepted_precision_ci95": [
+          0.698962,
+          0.972134
+        ],
+        "accepted_wrong_by_true_role": {
+          "other_supported_species": 2
+        },
+        "unsupported_events": 123,
+        "unsupported_accepted_as_known": 0,
+        "needs_review": 881,
+        "review_fraction": 0.938232,
+        "passes": false
+      },
+      {
+        "thresholds": {
+          "empty_filter": 0.65,
+          "species_accept": 0.86
+        },
+        "events": 939,
+        "animal_events": 853,
+        "false_empty": 9,
+        "false_empty_rate": 0.010551,
+        "false_empty_rate_ci95": [
+          0.005561,
+          0.01993
+        ],
+        "animal_event_retention": 0.989449,
+        "filtered": 38,
+        "filtered_true_empty": 29,
+        "filtered_non_animal": 0,
+        "empty_events": 86,
+        "accepted": 20,
+        "accepted_correct": 18,
+        "accepted_precision": 0.9,
+        "accepted_precision_ci95": [
+          0.698962,
+          0.972134
+        ],
+        "accepted_wrong_by_true_role": {
+          "other_supported_species": 2
+        },
+        "unsupported_events": 123,
+        "unsupported_accepted_as_known": 0,
+        "needs_review": 881,
+        "review_fraction": 0.938232,
+        "passes": false
+      },
+      {
+        "thresholds": {
+          "empty_filter": 0.65,
+          "species_accept": 0.87
+        },
+        "events": 939,
+        "animal_events": 853,
+        "false_empty": 9,
+        "false_empty_rate": 0.010551,
+        "false_empty_rate_ci95": [
+          0.005561,
+          0.01993
+        ],
+        "animal_event_retention": 0.989449,
+        "filtered": 38,
+        "filtered_true_empty": 29,
+        "filtered_non_animal": 0,
+        "empty_events": 86,
+        "accepted": 16,
+        "accepted_correct": 15,
+        "accepted_precision": 0.9375,
+        "accepted_precision_ci95": [
+          0.716707,
+          0.988881
+        ],
+        "accepted_wrong_by_true_role": {
+          "other_supported_species": 1
+        },
+        "unsupported_events": 123,
+        "unsupported_accepted_as_known": 0,
+        "needs_review": 885,
+        "review_fraction": 0.942492,
+        "passes": false
+      },
+      {
+        "thresholds": {
+          "empty_filter": 0.65,
+          "species_accept": 0.88
+        },
+        "events": 939,
+        "animal_events": 853,
+        "false_empty": 9,
+        "false_empty_rate": 0.010551,
+        "false_empty_rate_ci95": [
+          0.005561,
+          0.01993
+        ],
+        "animal_event_retention": 0.989449,
+        "filtered": 38,
+        "filtered_true_empty": 29,
+        "filtered_non_animal": 0,
+        "empty_events": 86,
+        "accepted": 13,
+        "accepted_correct": 12,
+        "accepted_precision": 0.923077,
+        "accepted_precision_ci95": [
+          0.666855,
+          0.98629
+        ],
+        "accepted_wrong_by_true_role": {
+          "other_supported_species": 1
+        },
+        "unsupported_events": 123,
+        "unsupported_accepted_as_known": 0,
+        "needs_review": 888,
+        "review_fraction": 0.945687,
+        "passes": false
+      },
+      {
+        "thresholds": {
+          "empty_filter": 0.65,
+          "species_accept": 0.89
+        },
+        "events": 939,
+        "animal_events": 853,
+        "false_empty": 9,
+        "false_empty_rate": 0.010551,
+        "false_empty_rate_ci95": [
+          0.005561,
+          0.01993
+        ],
+        "animal_event_retention": 0.989449,
+        "filtered": 38,
+        "filtered_true_empty": 29,
+        "filtered_non_animal": 0,
+        "empty_events": 86,
+        "accepted": 12,
+        "accepted_correct": 11,
+        "accepted_precision": 0.916667,
+        "accepted_precision_ci95": [
+          0.646114,
+          0.985135
+        ],
+        "accepted_wrong_by_true_role": {
+          "other_supported_species": 1
+        },
+        "unsupported_events": 123,
+        "unsupported_accepted_as_known": 0,
+        "needs_review": 889,
+        "review_fraction": 0.946752,
+        "passes": false
+      },
+      {
+        "thresholds": {
+          "empty_filter": 0.65,
+          "species_accept": 0.9
+        },
+        "events": 939,
+        "animal_events": 853,
+        "false_empty": 9,
+        "false_empty_rate": 0.010551,
+        "false_empty_rate_ci95": [
+          0.005561,
+          0.01993
+        ],
+        "animal_event_retention": 0.989449,
+        "filtered": 38,
+        "filtered_true_empty": 29,
+        "filtered_non_animal": 0,
+        "empty_events": 86,
+        "accepted": 7,
+        "accepted_correct": 7,
+        "accepted_precision": 1.0,
+        "accepted_precision_ci95": [
+          0.645661,
+          1.0
+        ],
+        "accepted_wrong_by_true_role": {},
+        "unsupported_events": 123,
+        "unsupported_accepted_as_known": 0,
+        "needs_review": 894,
+        "review_fraction": 0.952077,
+        "passes": false
+      },
+      {
+        "thresholds": {
+          "empty_filter": 0.65,
+          "species_accept": 0.91
+        },
+        "events": 939,
+        "animal_events": 853,
+        "false_empty": 9,
+        "false_empty_rate": 0.010551,
+        "false_empty_rate_ci95": [
+          0.005561,
+          0.01993
+        ],
+        "animal_event_retention": 0.989449,
+        "filtered": 38,
+        "filtered_true_empty": 29,
+        "filtered_non_animal": 0,
+        "empty_events": 86,
+        "accepted": 6,
+        "accepted_correct": 6,
+        "accepted_precision": 1.0,
+        "accepted_precision_ci95": [
+          0.609657,
+          1.0
+        ],
+        "accepted_wrong_by_true_role": {},
+        "unsupported_events": 123,
+        "unsupported_accepted_as_known": 0,
+        "needs_review": 895,
+        "review_fraction": 0.953142,
+        "passes": false
+      },
+      {
+        "thresholds": {
+          "empty_filter": 0.65,
+          "species_accept": 0.92
+        },
+        "events": 939,
+        "animal_events": 853,
+        "false_empty": 9,
+        "false_empty_rate": 0.010551,
+        "false_empty_rate_ci95": [
+          0.005561,
+          0.01993
+        ],
+        "animal_event_retention": 0.989449,
+        "filtered": 38,
+        "filtered_true_empty": 29,
+        "filtered_non_animal": 0,
+        "empty_events": 86,
+        "accepted": 6,
+        "accepted_correct": 6,
+        "accepted_precision": 1.0,
+        "accepted_precision_ci95": [
+          0.609657,
+          1.0
+        ],
+        "accepted_wrong_by_true_role": {},
+        "unsupported_events": 123,
+        "unsupported_accepted_as_known": 0,
+        "needs_review": 895,
+        "review_fraction": 0.953142,
+        "passes": false
+      },
+      {
+        "thresholds": {
+          "empty_filter": 0.65,
+          "species_accept": 0.93
+        },
+        "events": 939,
+        "animal_events": 853,
+        "false_empty": 9,
+        "false_empty_rate": 0.010551,
+        "false_empty_rate_ci95": [
+          0.005561,
+          0.01993
+        ],
+        "animal_event_retention": 0.989449,
+        "filtered": 38,
+        "filtered_true_empty": 29,
+        "filtered_non_animal": 0,
+        "empty_events": 86,
+        "accepted": 4,
+        "accepted_correct": 4,
+        "accepted_precision": 1.0,
+        "accepted_precision_ci95": [
+          0.5101,
+          1.0
+        ],
+        "accepted_wrong_by_true_role": {},
+        "unsupported_events": 123,
+        "unsupported_accepted_as_known": 0,
+        "needs_review": 897,
+        "review_fraction": 0.955272,
+        "passes": false
+      },
+      {
+        "thresholds": {
+          "empty_filter": 0.65,
+          "species_accept": 0.94
+        },
+        "events": 939,
+        "animal_events": 853,
+        "false_empty": 9,
+        "false_empty_rate": 0.010551,
+        "false_empty_rate_ci95": [
+          0.005561,
+          0.01993
+        ],
+        "animal_event_retention": 0.989449,
+        "filtered": 38,
+        "filtered_true_empty": 29,
+        "filtered_non_animal": 0,
+        "empty_events": 86,
+        "accepted": 3,
+        "accepted_correct": 3,
+        "accepted_precision": 1.0,
+        "accepted_precision_ci95": [
+          0.438494,
+          1.0
+        ],
+        "accepted_wrong_by_true_role": {},
+        "unsupported_events": 123,
+        "unsupported_accepted_as_known": 0,
+        "needs_review": 898,
+        "review_fraction": 0.956337,
+        "passes": false
+      },
+      {
+        "thresholds": {
+          "empty_filter": 0.65,
+          "species_accept": 0.95
+        },
+        "events": 939,
+        "animal_events": 853,
+        "false_empty": 9,
+        "false_empty_rate": 0.010551,
+        "false_empty_rate_ci95": [
+          0.005561,
+          0.01993
+        ],
+        "animal_event_retention": 0.989449,
+        "filtered": 38,
+        "filtered_true_empty": 29,
+        "filtered_non_animal": 0,
+        "empty_events": 86,
+        "accepted": 2,
+        "accepted_correct": 2,
+        "accepted_precision": 1.0,
+        "accepted_precision_ci95": [
+          0.342372,
+          1.0
+        ],
+        "accepted_wrong_by_true_role": {},
+        "unsupported_events": 123,
+        "unsupported_accepted_as_known": 0,
+        "needs_review": 899,
+        "review_fraction": 0.957401,
+        "passes": false
+      },
+      {
+        "thresholds": {
+          "empty_filter": 0.65,
+          "species_accept": 0.96
+        },
+        "events": 939,
+        "animal_events": 853,
+        "false_empty": 9,
+        "false_empty_rate": 0.010551,
+        "false_empty_rate_ci95": [
+          0.005561,
+          0.01993
+        ],
+        "animal_event_retention": 0.989449,
+        "filtered": 38,
+        "filtered_true_empty": 29,
+        "filtered_non_animal": 0,
+        "empty_events": 86,
+        "accepted": 2,
+        "accepted_correct": 2,
+        "accepted_precision": 1.0,
+        "accepted_precision_ci95": [
+          0.342372,
+          1.0
+        ],
+        "accepted_wrong_by_true_role": {},
+        "unsupported_events": 123,
+        "unsupported_accepted_as_known": 0,
+        "needs_review": 899,
+        "review_fraction": 0.957401,
+        "passes": false
+      },
+      {
+        "thresholds": {
+          "empty_filter": 0.65,
+          "species_accept": 0.97
+        },
+        "events": 939,
+        "animal_events": 853,
+        "false_empty": 9,
+        "false_empty_rate": 0.010551,
+        "false_empty_rate_ci95": [
+          0.005561,
+          0.01993
+        ],
+        "animal_event_retention": 0.989449,
+        "filtered": 38,
+        "filtered_true_empty": 29,
+        "filtered_non_animal": 0,
+        "empty_events": 86,
+        "accepted": 1,
+        "accepted_correct": 1,
+        "accepted_precision": 1.0,
+        "accepted_precision_ci95": [
+          0.206543,
+          1.0
+        ],
+        "accepted_wrong_by_true_role": {},
+        "unsupported_events": 123,
+        "unsupported_accepted_as_known": 0,
+        "needs_review": 900,
+        "review_fraction": 0.958466,
+        "passes": false
+      },
+      {
+        "thresholds": {
+          "empty_filter": 0.65,
+          "species_accept": 0.98
+        },
+        "events": 939,
+        "animal_events": 853,
+        "false_empty": 9,
+        "false_empty_rate": 0.010551,
+        "false_empty_rate_ci95": [
+          0.005561,
+          0.01993
+        ],
+        "animal_event_retention": 0.989449,
+        "filtered": 38,
+        "filtered_true_empty": 29,
+        "filtered_non_animal": 0,
+        "empty_events": 86,
+        "accepted": 0,
+        "accepted_correct": 0,
+        "accepted_precision": null,
+        "accepted_precision_ci95": null,
+        "accepted_wrong_by_true_role": {},
+        "unsupported_events": 123,
+        "unsupported_accepted_as_known": 0,
+        "needs_review": 901,
+        "review_fraction": 0.959531,
+        "passes": false
+      },
+      {
+        "thresholds": {
+          "empty_filter": 0.65,
+          "species_accept": 0.99
+        },
+        "events": 939,
+        "animal_events": 853,
+        "false_empty": 9,
+        "false_empty_rate": 0.010551,
+        "false_empty_rate_ci95": [
+          0.005561,
+          0.01993
+        ],
+        "animal_event_retention": 0.989449,
+        "filtered": 38,
+        "filtered_true_empty": 29,
+        "filtered_non_animal": 0,
+        "empty_events": 86,
+        "accepted": 0,
+        "accepted_correct": 0,
+        "accepted_precision": null,
+        "accepted_precision_ci95": null,
+        "accepted_wrong_by_true_role": {},
+        "unsupported_events": 123,
+        "unsupported_accepted_as_known": 0,
+        "needs_review": 901,
+        "review_fraction": 0.959531,
+        "passes": false
+      },
+      {
+        "thresholds": {
+          "empty_filter": 0.65,
+          "species_accept": 0.995
+        },
+        "events": 939,
+        "animal_events": 853,
+        "false_empty": 9,
+        "false_empty_rate": 0.010551,
+        "false_empty_rate_ci95": [
+          0.005561,
+          0.01993
+        ],
+        "animal_event_retention": 0.989449,
+        "filtered": 38,
+        "filtered_true_empty": 29,
+        "filtered_non_animal": 0,
+        "empty_events": 86,
+        "accepted": 0,
+        "accepted_correct": 0,
+        "accepted_precision": null,
+        "accepted_precision_ci95": null,
+        "accepted_wrong_by_true_role": {},
+        "unsupported_events": 123,
+        "unsupported_accepted_as_known": 0,
+        "needs_review": 901,
+        "review_fraction": 0.959531,
+        "passes": false
+      },
+      {
+        "thresholds": {
+          "empty_filter": 0.65,
+          "species_accept": 0.999
+        },
+        "events": 939,
+        "animal_events": 853,
+        "false_empty": 9,
+        "false_empty_rate": 0.010551,
+        "false_empty_rate_ci95": [
+          0.005561,
+          0.01993
+        ],
+        "animal_event_retention": 0.989449,
+        "filtered": 38,
+        "filtered_true_empty": 29,
+        "filtered_non_animal": 0,
+        "empty_events": 86,
+        "accepted": 0,
+        "accepted_correct": 0,
+        "accepted_precision": null,
+        "accepted_precision_ci95": null,
+        "accepted_wrong_by_true_role": {},
+        "unsupported_events": 123,
+        "unsupported_accepted_as_known": 0,
+        "needs_review": 901,
+        "review_fraction": 0.959531,
+        "passes": false
+      }
+    ]
+  }
+}
