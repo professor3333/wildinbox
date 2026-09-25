@@ -10,6 +10,7 @@ from __future__ import annotations
 import os
 import time
 from datetime import date, datetime
+from typing import Any
 
 import streamlit as st
 
@@ -46,6 +47,19 @@ def when(ts: str | None) -> str:
     if not ts:
         return "time unknown"
     return datetime.fromisoformat(ts).strftime("%a %d %b %Y, %H:%M:%S")
+
+
+def batch_label(b: dict[str, Any]) -> str:
+    return f"{b['created_at'][:16].replace('T', ' ')} · {b['images']} files · {b['events']} events"
+
+
+def _focus_batch(api: ApiClient, batch_id: str) -> None:
+    """Select a batch everywhere and open its review queue (runs before the rerun)."""
+    for b in api.batches():
+        if b["id"] == batch_id:
+            st.session_state["batch"] = batch_label(b)
+            st.session_state["page"] = "Review queue"
+            return
 
 
 # ------------------------------------------------------------------ sidebar
@@ -85,12 +99,7 @@ def sidebar(api: ApiClient) -> tuple[str, str | None, str, list[str]]:
             release.get("notice") or "TEST predictor: suggestions are not model output."
         )
     st.sidebar.caption(f"Release `{release.get('id')}`  \nPolicy `{release.get('policy_version')}`")
-    options = {"All batches": None} | {
-        f"{b['created_at'][:16].replace('T', ' ')} · {b['images']} files · {b['events']} events": b[
-            "id"
-        ]
-        for b in batches
-    }
+    options = {"All batches": None} | {batch_label(b): b["id"] for b in batches}
     label = st.sidebar.selectbox("Batch", list(options), key="batch")
     return page, options[label], reviewer.strip(), list(release.get("class_names") or [])
 
@@ -181,6 +190,13 @@ def upload_page(api: ApiClient) -> None:
         time.sleep(1)
     s = api.batch(batch_id)
     st.success(f"{s['counts']['events']} capture events ready for review.")
+    st.button(
+        "Review this batch",
+        type="primary",
+        key="review-uploaded",
+        on_click=_focus_batch,
+        args=(api, batch_id),
+    )
     if s["failures"]:
         st.warning(f"{len(s['failures'])} file(s) could not be used:")
         st.dataframe(
