@@ -56,7 +56,7 @@ def client() -> ApiClient | None:
             st.error("That token was not accepted.")
             return None
         st.session_state["client"] = api
-        st.session_state.setdefault("reviewer", who.get("principal") or "")
+        st.session_state["principal"] = who.get("principal")
         st.rerun()
     st.caption("Ask the person who runs this deployment for an access token.")
     return None
@@ -110,7 +110,12 @@ def sidebar(api: ApiClient) -> tuple[str, str | None, str, list[str]]:
         index=3,
         key="page",
     )
-    reviewer = st.sidebar.text_input("Your name (recorded with reviews)", key="reviewer")
+    principal = st.session_state.get("principal")
+    if principal:  # token access: reviews are recorded under the signed-in identity
+        st.sidebar.markdown(f"Signed in as **{principal}** (recorded with reviews)")
+        reviewer = principal
+    else:
+        reviewer = st.sidebar.text_input("Your name (recorded with reviews)", key="reviewer")
     try:
         version = api.version()
         batches = api.batches()

@@ -6,6 +6,7 @@ from __future__ import annotations
 import json
 import logging
 from collections.abc import Iterator
+from typing import Any
 
 import pytest
 from fastapi.testclient import TestClient
@@ -165,3 +166,83 @@ def test_token_new_prints_tokens_and_a_ready_env_line(capsys: pytest.CaptureFixt
     assert [token_hash(t) for t in tokens] == list(hashes.values())
     assert Settings(api_tokens=hashes).api_tokens == hashes  # the line parses as settings
     assert main(["token", "new", "a", "a"]) == 2
+
+
+# ------------------------------------------------ reviewer identity (review fix)
+
+
+@pytest.fixture
+def reviewing(settings: Settings) -> Iterator[tuple[TestClient, dict[str, str], str]]:  # noqa: F811
+    """Token access with three principals, one of them an authorized delegate,
+    and one processed event to review."""
+    tokens = {name: new_token() for name in ("ordinary-reviewer", "importer", "other")}
+    s = settings.model_copy(
+        update={
+            "auth": "tokens",
+            "api_tokens": {n: token_hash(t) for n, t in tokens.items()},
+            "review_delegates": ["importer"],
+        }
+    )
+    with TestClient(create_app(s)) as c:  # inline dispatch: processed on upload
+        auth = {"Authorization": f"Bearer {tokens['ordinary-reviewer']}"}
+        batch = c.post(
+            "/batches", files=[("files", ("a.jpg", jpeg(9), "image/jpeg"))], headers=auth
+        ).json()
+        (event,) = c.get("/events", params={"batch_id": batch["id"]}, headers=auth).json()["events"]
+        yield c, tokens, event["id"]
+
+
+def _review(c: TestClient, token: str, event_id: str, **body: Any) -> Any:
+    return c.post(
+        f"/events/{event_id}/reviews",
+        json={"outcome": "unresolved", **body},
+        headers={"Authorization": f"Bearer {token}"},
+    )
+
+
+def test_a_reviewer_cannot_record_a_review_under_another_name(
+    reviewing: tuple[TestClient, dict[str, str], str],
+) -> None:
+    """External review, issue 4: ordinary-reviewer's token recorded a review as
+    simulated-ground-truth, which snapshots treat as approved."""
+    c, tokens, event_id = reviewing
+    res = _review(c, tokens["ordinary-reviewer"], event_id, reviewer="simulated-ground-truth")
+    assert res.status_code == 403 and res.json()["error"] == "reviewer_mismatch"
+    history = c.get(
+        f"/events/{event_id}", headers={"Authorization": f"Bearer {tokens['other']}"}
+    ).json()["reviews"]
+    assert history == []
+
+
+def test_the_reviewer_is_the_authenticated_principal(
+    reviewing: tuple[TestClient, dict[str, str], str],
+) -> None:
+    c, tokens, event_id = reviewing
+    omitted = _review(c, tokens["ordinary-reviewer"], event_id).json()
+    assert (omitted["reviewer"], omitted["recorded_by"]) == ("ordinary-reviewer",) * 2
+    same = _review(c, tokens["other"], event_id, reviewer="other").json()
+    assert (same["reviewer"], same["recorded_by"]) == ("other", "other")
+
+
+def test_an_authorized_delegate_records_both_identities(
+    reviewing: tuple[TestClient, dict[str, str], str],
+) -> None:
+    c, tokens, event_id = reviewing
+    res = _review(c, tokens["importer"], event_id, reviewer="simulated-ground-truth")
+    assert res.status_code == 201
+    assert (res.json()["reviewer"], res.json()["recorded_by"]) == (
+        "simulated-ground-truth",
+        "importer",
+    )
+
+
+def test_without_authentication_the_claimed_reviewer_is_kept_and_required(
+    settings: Settings,  # noqa: F811
+) -> None:
+    with TestClient(create_app(settings)) as c:  # auth disabled, inline processing
+        batch = c.post("/batches", files=[("files", ("a.jpg", jpeg(10), "image/jpeg"))]).json()
+        (event,) = c.get("/events", params={"batch_id": batch["id"]}).json()["events"]
+        url = f"/events/{event['id']}/reviews"
+        assert c.post(url, json={"outcome": "unresolved"}).status_code == 422
+        res = c.post(url, json={"outcome": "unresolved", "reviewer": "alice"}).json()
+        assert (res["reviewer"], res["recorded_by"]) == ("alice", None)

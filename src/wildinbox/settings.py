@@ -51,6 +51,9 @@ class Settings(BaseSettings):
     # with `wildinbox token new NAME`). "disabled" is for local development only.
     auth: Literal["tokens", "disabled"] = "tokens"
     api_tokens: dict[str, str] = Field(default_factory=dict)
+    # Principals allowed to record a review under another reviewer's name (for
+    # example an annotation importer). Everyone else reviews as themselves.
+    review_delegates: list[str] = Field(default_factory=list)
 
     # Logs: "json" (one object per line, for staging) or "text".
     log_format: Literal["json", "text"] = "text"
