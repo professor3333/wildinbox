@@ -17,7 +17,7 @@ done
 set -a; source /etc/wildinbox/stack.env; source /etc/wildinbox/secrets.env; set +a
 
 echo "== build $(git rev-parse --short HEAD) ($(git describe --tags --always))"
-$wi build
+$wi build migrate
 $wi up -d --wait postgres redis
 $wi run --rm migrate
 

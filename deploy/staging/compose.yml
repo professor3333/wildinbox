@@ -36,9 +36,11 @@ x-app-env: &app-env
   WILDINBOX_MAX_FILE_BYTES: ${WILDINBOX_MAX_FILE_BYTES:-20971520}
   WILDINBOX_MAX_BATCH_BYTES: ${WILDINBOX_MAX_BATCH_BYTES:-1073741824}
 
+# One image for every app service, built once (by `migrate`) from the
+# checked-out tag; the others only reuse it, so builds never race.
 x-app: &app
-  image: wildinbox-staging:latest   # built from the checked-out tag (see deploy.sh)
-  build: {context: ../..}
+  image: wildinbox-staging:latest
+  pull_policy: never
   environment: *app-env
   logging: *logging
 
@@ -68,6 +70,7 @@ services:
 
   migrate:
     <<: *app
+    build: {context: ../..}
     command: ["alembic", "upgrade", "head"]
     depends_on:
       postgres: {condition: service_healthy}
