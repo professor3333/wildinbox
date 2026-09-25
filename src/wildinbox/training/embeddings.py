@@ -17,19 +17,15 @@ from pathlib import Path
 
 import numpy as np
 import torch
-from PIL import Image
 from torch import nn
 from torch.utils.data import DataLoader, Dataset
 
 from wildinbox.config import PreprocessingConfig
 from wildinbox.preprocessing import build_eval_transform, load_image
+from wildinbox.quality import image_stats
 from wildinbox.training.spec import BackboneSpec
 
 log = logging.getLogger(__name__)
-
-# Infrared night frames are grayscale: channels differ by less than this on average.
-NIGHT_CHANNEL_DIFF = 2.0
-_STATS_WIDTH = 256
 
 
 class Backbone(nn.Module):
@@ -47,21 +43,6 @@ class Backbone(nn.Module):
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         return torch.flatten(self.pool(self.features(x)), 1)
-
-
-def image_stats(img: Image.Image) -> tuple[bool, float]:
-    """(looks like an infrared night frame, variance-of-Laplacian sharpness)."""
-    small = img.resize((_STATS_WIDTH, max(1, round(img.height * _STATS_WIDTH / img.width))))
-    arr = np.asarray(small, dtype=np.float32)
-    channel_diff = (
-        float(np.abs(arr[..., 0] - arr[..., 1]).mean() + np.abs(arr[..., 1] - arr[..., 2]).mean())
-        / 2
-    )
-    gray = arr.mean(axis=2)
-    lap = (
-        -4 * gray[1:-1, 1:-1] + gray[:-2, 1:-1] + gray[2:, 1:-1] + gray[1:-1, :-2] + gray[1:-1, 2:]
-    )
-    return channel_diff < NIGHT_CHANNEL_DIFF, float(lap.var())
 
 
 class _Images(Dataset[tuple[torch.Tensor, int, bool, float]]):

@@ -17,6 +17,7 @@ class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_prefix="WILDINBOX_", env_file=".env", extra="ignore")
 
     config_path: Path = Path("configs/example.yaml")
+    monitoring_config: Path = Path("configs/monitoring/monitoring.yaml")
     data_dir: Path = Path("data")
     database_url: str = "postgresql+psycopg://wildinbox:wildinbox@localhost:5432/wildinbox"
     redis_url: str = "redis://localhost:6379/0"

@@ -1,0 +1,27 @@
+# Monitoring thresholds (GET /monitoring, GET /metrics, the UI's Monitoring page).
+# An alert is raised when a value crosses its limit.
+
+operations:
+  window_days: 7                     # processing-time window for rates and throughput
+  max_queue_age_seconds: 900         # oldest job waiting to run
+  max_stale_leases: 0                # running jobs whose worker stopped renewing its lease
+  max_failed_jobs: 0                 # terminal failures in the window
+  max_processing_error_rate: 0.02    # failed frames / images scored
+  max_unreadable_rate: 0.05          # undecodable or unsupported files / files uploaded
+
+# Signals that need NO labels, per camera: the camera's most recent events
+# (by capture time) against its earlier events. They can flag that something
+# changed; they cannot say whether accuracy changed.
+drift:
+  recent_events: 100
+  min_events: 50                     # both windows need at least this many events
+  max_label_psi: 0.25                # population stability index, suggested labels
+  max_confidence_psi: 0.25           # PSI of event confidence (calibrated)
+  max_uncertainty_change: 0.10       # absolute change in the share of low-confidence events
+  max_night_share_change: 0.20       # absolute change in the share of night frames
+  max_blur_change: 0.50              # relative change in median sharpness
+
+# Accuracy measured from human reviews only. Unreviewed events have unknown accuracy.
+accuracy:
+  min_reviewed: 30                   # below this, no rate is reported for a camera
+  max_correction_rate: 0.50          # alert when the 95% lower bound exceeds this
