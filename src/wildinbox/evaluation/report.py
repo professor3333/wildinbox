@@ -214,9 +214,9 @@ def write_report(
         "",
         (
             meta.get("description")
-            or "Frozen EfficientNet-B0 (ImageNet) embeddings + class-weighted logistic regression."
-        )
-        + " Development partitions only; **the locked final test was not opened.**",
+            or "Frozen EfficientNet-B0 (ImageNet) embeddings + class-weighted logistic regression"
+        ).rstrip(".")
+        + ". Development partitions only; **the locked final test was not opened.**",
         "",
         "## Headline (unseen cameras: calibration + policy validation)",
         "",
@@ -505,7 +505,7 @@ def write_report(
                 "Pretrained weights",
                 f"{meta['pretrained_weights']['enum']} "
                 f"({meta['pretrained_weights']['pretraining']}; not wildlife-specific, so no "
-                "overlap with CCT20) {meta['pretrained_weights']['url']}",
+                f"overlap with CCT20) {meta['pretrained_weights']['url']}",
             ],
             [
                 "Fine-tuning",
