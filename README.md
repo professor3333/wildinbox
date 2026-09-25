@@ -177,15 +177,15 @@ open http://localhost:8501             # review interface (API: http://localhost
 
 Without a registered model the deployment uses the clearly labeled **test
 predictor** (pseudo-random scores that exercise the pipeline, flagged on every
-response). To serve the trained model, register it once as a release (weights
-and policy artifact come from the training machine, see Reproduce below):
+response). To serve the trained model, register it once as a release. The
+weights and policy are published with the
+[v1.5.0 release](https://github.com/professor3333/wildinbox/releases/tag/v1.5.0)
+(15 MB, SHA-256 checked; no GitHub account needed):
 
 ```bash
-docker compose run --rm \
-  -v "$PWD/models/finetune-e3-deep-balanced:/app/models/finetune-e3-deep-balanced:ro" \
-  -v "$PWD/reports/policy:/app/reports/policy:ro" \
-  worker wildinbox release register --activate \
-    --policy reports/policy/finetune-e3-deep-balanced-v2/policy.json
+deploy/fetch_release.sh                # download the trained release (v1.5.0 asset), verify, unpack
+docker compose run --rm -v "$PWD/dist/release:/release:ro" worker \
+  wildinbox release register --activate --model-dir /release/model --policy /release/policy.json
 curl localhost:8000/version            # deploy check: release, weights, preprocessing, calibration, policy
 ```
 

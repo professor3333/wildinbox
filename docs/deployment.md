@@ -33,7 +33,7 @@ as written for the Stage 12 staging deployment; the measurements are in
 | AWS account | permission to create a CloudFormation stack with an IAM role (`CAPABILITY_IAM`), EC2, and S3 |
 | AWS CLI v2 and `jq` | the CLI configured for the account (`aws sts get-caller-identity` works) |
 | An SSH key pair | e.g. `~/.ssh/id_ed25519`; imported into EC2 below |
-| The release bundle | `wildinbox-release-finetune-e3-deep-balanced-7a25aea97c76.tar.gz` (see [Release bundle](#release-bundle)) |
+| The release bundle | `wildinbox-release-finetune-e3-deep-balanced-7a25aea97c76.tar.gz`, published with [v1.5.0](https://github.com/professor3333/wildinbox/releases/tag/v1.5.0) (see [Release bundle](#release-bundle)) |
 | This repository | checked out at the tag you deploy, on your machine (for the template and scripts) |
 
 ## 1. Create the stack
@@ -120,10 +120,12 @@ Removing an entry revokes that token.
 
 ## 3. Deploy the release
 
-Copy the release bundle to the VM and run the deploy script:
+Download the release bundle (on your machine or directly on the VM), check
+it, and run the deploy script:
 
 ```bash
-scp wildinbox-release-finetune-e3-deep-balanced-7a25aea97c76.tar.gz wildinbox-staging:/tmp/
+B=https://github.com/professor3333/wildinbox/releases/download/v1.5.0/wildinbox-release-finetune-e3-deep-balanced-7a25aea97c76.tar.gz
+ssh wildinbox-staging "cd /tmp && curl -fsSLO $B && curl -fsSLO $B.sha256 && sha256sum -c *.sha256"
 ssh wildinbox-staging 'cd /opt/wildinbox && deploy/staging/deploy.sh /tmp/wildinbox-release-*.tar.gz'
 ```
 
@@ -250,7 +252,16 @@ A bundle is exactly what `wildinbox release register` reads, plus checksums:
 model/meta.json  model/model.pt  policy.json  SHA256SUMS
 ```
 
-Built on the training machine with
+The released bundle is attached to the
+[v1.5.0 GitHub release](https://github.com/professor3333/wildinbox/releases/tag/v1.5.0)
+with its SHA-256 (`dbb53f0d…`); `deploy/fetch_release.sh` downloads and
+verifies it (archive checksum, then every file). `deploy.sh` checks
+`SHA256SUMS` again on the VM. The weights are the EfficientNet-B0 fine-tune
+described in the [model card](model_card.md): started from torchvision's
+ImageNet-1k weights and trained on Caltech Camera Traps images
+(CDLA-Permissive-1.0, whose terms leave trained models free to share).
+
+It was built on the training machine with
 
 ```bash
 deploy/release_bundle.sh models/finetune-e3-deep-balanced \

@@ -34,15 +34,13 @@ docker compose up -d --build --wait
 
 Without a registered model the deployment runs the clearly labeled **test
 predictor** (pseudo-random suggestions that exercise the pipeline). To use the
-trained model, register it once (weights and policy come from the training
-machine):
+trained model, register it once. The weights and policy are published with the
+[v1.5.0 release](https://github.com/professor3333/wildinbox/releases/tag/v1.5.0):
 
 ```bash
-docker compose run --rm \
-  -v "$PWD/models/finetune-e3-deep-balanced:/app/models/finetune-e3-deep-balanced:ro" \
-  -v "$PWD/reports/policy:/app/reports/policy:ro" \
-  worker wildinbox release register --activate \
-    --policy reports/policy/finetune-e3-deep-balanced-v2/policy.json
+deploy/fetch_release.sh                # download the trained release (v1.5.0 asset), verify, unpack
+docker compose run --rm -v "$PWD/dist/release:/release:ro" worker \
+  wildinbox release register --activate --model-dir /release/model --policy /release/policy.json
 curl localhost:8000/version
 ```
 
