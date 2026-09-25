@@ -26,8 +26,8 @@ cp .env.example .env      # local settings; contains no secrets
 ## Run the application
 
 ```bash
-docker compose up -d --build --wait    # Postgres, Redis, SeaweedFS (S3), migrations, API, worker
-open http://localhost:8000             # upload form -> batch status page
+docker compose up -d --build --wait    # Postgres, Redis, SeaweedFS (S3), migrations, API, worker, UI
+open http://localhost:8501             # review interface (API: http://localhost:8000)
 uv run python scripts/smoke.py         # upload -> process -> results, end to end
 
 # Register the trained model as an immutable release and make it the default
@@ -56,6 +56,17 @@ docker compose down                    # add -v to delete stored data
 | `GET /images/{id}/original` | The stored original file |
 
 Full contract, job lifecycle, and recovery rules: [`docs/api.md`](docs/api.md).
+
+**Review interface** (`http://localhost:8501`, or `uv run wildinbox ui` against a
+running API). It talks only to the API, so every review takes the same
+validated, append-only path.
+
+| Page | What it does |
+|---|---|
+| Review queue | Events with their frames, suggestion, confidence, and why they need review. Accept the suggestion in one click, pick another label, type an unsupported species, or mark "can't tell"; the review outcome (confirmed / corrected / unresolved) follows from the choice. |
+| Last night's visitors | The representative frame of every animal event in one night (18:00-06:00, camera time), opening on the newest night with activity. Unreviewed labels are marked as suggestions. |
+| Upload | Upload a memory card's photos with a camera name and follow processing live; files that could not be used are listed with their errors. |
+| Export | Download the observation CSV with provenance. |
 
 **Processing.** Workers score images in bounded chunks under a lease and
 commit progress per chunk; events and decisions are written only when the
@@ -115,13 +126,13 @@ src/wildinbox/
   datasets/          events, event labels, splits, leakage checks
   api/               FastAPI app, upload validation, HTML pages
   workers/           batch processing and job dispatch (Redis/RQ)
+  ui/                review interface (Streamlit, talks to the API)
   inference/         model releases; the test predictor
   policy/            decision policies
   storage/           PostgreSQL models, object storage
   training/          frozen-embedding baseline, EfficientNet-B0 fine-tuning
   evaluation/        evaluation reports, experiment comparison, calibration
   monitoring/        later stage
-ui/                  review interface
 configs/             run configurations (YAML)
 tests/
 migrations/          Alembic database migrations

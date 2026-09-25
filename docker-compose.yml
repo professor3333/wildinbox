@@ -1,4 +1,5 @@
-# Local deployment: `docker compose up -d --build --wait`, then open http://localhost:8000
+# Local deployment: `docker compose up -d --build --wait`, then open http://localhost:8501 (review UI)
+# or http://localhost:8000 (API)
 # Credentials below are local-development defaults only; override via .env for
 # anything reachable by others.
 x-app-env: &app-env
@@ -75,6 +76,18 @@ services:
       migrate: {condition: service_completed_successfully}
       redis: {condition: service_healthy}
       objects: {condition: service_healthy}
+
+  ui:
+    build: .
+    command: ["wildinbox", "ui", "--host", "0.0.0.0", "--port", "8501", "--api-url", "http://api:8000"]
+    restart: unless-stopped
+    ports: ["127.0.0.1:8501:8501"]
+    depends_on:
+      api: {condition: service_healthy}
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8501/_stcore/health')"]
+      interval: 3s
+      retries: 40
 
 volumes:
   postgres:
