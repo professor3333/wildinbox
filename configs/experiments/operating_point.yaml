@@ -1,0 +1,32 @@
+# Calibration and operating-point rule, fixed BEFORE any calibrated
+# policy-validation result was computed. Applied by: uv run wildinbox calibrate
+#
+# Known prior exposure: uncalibrated event sweeps on the combined development
+# cameras (calibration + policy validation) at thresholds 0.5-0.99 were already
+# published in the Stage 7 reports. The final test has never been opened.
+model: models/finetune-e3-deep-balanced   # selected by configs/experiments/selection.yaml
+
+calibration:
+  method: temperature                      # one parameter; preserves the predicted class
+  fit_partition: calibration               # cameras 51, 108; nothing else is used to fit
+  objective: nll
+
+operating_point:
+  choose_on: policy_validation             # cameras 90, 125
+  policy: conservative                     # src/wildinbox/policy/conservative.py
+  interval: wilson95                       # the worst case of the 95% interval must pass
+  # Empty filter: the LOWEST threshold (most filtering) whose false-empty rate
+  # (animal-containing events filtered / animal-containing events, any species,
+  # supported or not) has a 95% upper bound <= max_false_empty_rate.
+  # None passes -> automatic filtering stays disabled.
+  max_false_empty_rate: 0.02
+  # Species acceptance, evaluated at the chosen empty threshold (or with no
+  # filtering if filtering is disabled): the LOWEST threshold whose accepted-label
+  # precision (supported species with the right label / accepted; unsupported
+  # animals count as wrong) has a 95% lower bound >= min_accepted_precision.
+  # None passes -> automatic acceptance stays disabled.
+  min_accepted_precision: 0.95
+  empty_grid: {start: 0.50, stop: 0.99, step: 0.01, extra: [0.995, 0.999]}
+  species_grid: {start: 0.50, stop: 0.99, step: 0.01, extra: [0.995, 0.999]}
+# Picking the lowest passing threshold from a grid on the same data is mildly
+# optimistic; the locked final test measures the frozen operating point once.
