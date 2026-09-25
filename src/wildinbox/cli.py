@@ -306,6 +306,20 @@ def main(argv: Sequence[str] | None = None) -> int:
     )
     p_sb.add_argument("--out", type=Path, default=Path("data/snapshots"))
 
+    p_upd = sub.add_parser(
+        "update", help="Update cycle: compare a candidate with the deployed model."
+    )
+    upd_sub = p_upd.add_subparsers(dest="update_command", required=True)
+    p_gate = upd_sub.add_parser("gate", help="Apply the pre-registered promotion gate.")
+    p_gate.add_argument(
+        "--protocol", type=Path, default=Path("configs/experiments/update_cycle.yaml")
+    )
+    p_gate.add_argument("--candidate", type=Path, default=Path("models/finetune-e3-update1"))
+    p_gate.add_argument("--config", type=Path, default=Path("configs/experiments/baseline.yaml"))
+    p_gate.add_argument(
+        "--report-dir", type=Path, default=Path("reports/update/finetune-e3-update1")
+    )
+
     p_api = sub.add_parser("api", help="Serve the HTTP API.")
     p_api.add_argument("--host", default="127.0.0.1")
     p_api.add_argument("--port", type=int, default=8000)
@@ -408,6 +422,16 @@ def main(argv: Sequence[str] | None = None) -> int:
         print(f"snapshot {summary['version']} -> {out}")
         print(f"  train: {summary['train']}")
         print(f"  holdout: {summary['holdout']}; cutoffs {summary['cutoffs']}")
+        return 0
+    if args.command == "update":
+        from wildinbox.training.gate import run as run_gate
+
+        verdict = run_gate(args.protocol, args.candidate, args.config, args.report_dir)
+        for name, check in verdict["checks"].items():
+            print(f"{'pass' if check['pass'] else 'FAIL'}  {name}: {check['value']}")
+        decision = "PROMOTE" if verdict["promote"] else "DO NOT PROMOTE"
+        print(f"{decision} {verdict['candidate_release']}")
+        print(f"report -> {args.report_dir / 'README.md'}")
         return 0
     if args.command == "release":
         return _release(args)
