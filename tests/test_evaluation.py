@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 from pathlib import Path
 from typing import Any
 
@@ -231,3 +232,49 @@ def test_compare_applies_tolerances() -> None:
     problems = compare(_metrics(0.72, 0.80, 0.010), ref, tol)
     assert len(problems) == 1 and "macro-F1" in problems[0]
     assert compare(_metrics(0.70, 0.83, 0.02), ref, tol) != []
+
+
+def test_compare_to_reads_the_reference_before_the_report_is_overwritten(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """`evaluate --compare-to <committed metrics.json>` must compare against the
+    committed numbers, not the file this run just rewrote."""
+    import argparse
+
+    from wildinbox.evaluation import run as run_module
+
+    committed = {
+        "groups": {
+            "g": {
+                "image": {"macro_f1": 0.40, "per_class": {"cat": {"recall": 0.5}}},
+                "event_empty_sweep": [],
+            }
+        }
+    }
+    report = tmp_path / "metrics.json"
+    report.write_text(json.dumps(committed))
+    fresh = json.loads(json.dumps(committed))
+    fresh["groups"]["g"]["image"]["macro_f1"] = 0.30  # a real regression
+
+    def fake_evaluate(*_: object, **__: object) -> dict[str, object]:
+        report.write_text(json.dumps(fresh))  # the run overwrites the report
+        return {
+            **fresh,
+            "groups": {
+                **fresh["groups"],
+                "unseen_cameras": {
+                    "image": {"macro_f1": 0.3, "min_species_recall": 0.1},
+                    "event_reference": {"false_empty_rate": 0.0},
+                },
+            },
+        }
+
+    monkeypatch.setattr(run_module, "evaluate", fake_evaluate)
+    args = argparse.Namespace(
+        model=tmp_path,
+        config=REPO_ROOT / "configs/experiments/baseline.yaml",
+        report_dir=tmp_path,
+        no_benchmark=True,
+        compare_to=report,
+    )
+    assert run_module.evaluate_cli(args) == 1

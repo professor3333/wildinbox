@@ -121,8 +121,19 @@ def run(rule_path: Path, config_path: Path, report_dir: Path) -> dict[str, Any]:
     meta = json.loads((rule.model / "meta.json").read_text())
     predictor = FinetunedPredictor(ctx, rule.model, meta["device"])
     classes = list(predictor.classes)
-    calibration = json.loads((rule.model / "calibration.json").read_text())
-    temperature = float(calibration["temperature"])
+    # The same temperature `wildinbox calibrate` fits (same function, same
+    # partition), computed here so this command does not depend on it.
+    from wildinbox.evaluation.calibration import fit_temperature
+
+    fit_scored = [
+        s
+        for s in _score(predictor, load_rows(ctx.split_dir, [Partition.CALIBRATION])[0])
+        if s.supported
+    ]
+    temperature = fit_temperature(
+        np.array([[s.probs[c] for c in classes] for s in fit_scored]),
+        np.array([classes.index(s.row.image_label or "") for s in fit_scored]),
+    )
 
     fit_part, check_part = Partition(rule.fit_on), Partition(rule.check_on)
     rows, _ = load_rows(ctx.split_dir, [Partition.TRAIN, fit_part, check_part])

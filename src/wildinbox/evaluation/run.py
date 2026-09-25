@@ -382,6 +382,9 @@ def _log_mlflow(meta: dict[str, Any], metrics: dict[str, Any], report_dir: Path)
 def evaluate_cli(args: argparse.Namespace) -> int:
     from wildinbox.training.spec import load_baseline_config
 
+    # Read the reference BEFORE evaluating: it is usually the committed report
+    # that this run is about to overwrite.
+    ref = json.loads(Path(args.compare_to).read_text()) if args.compare_to else None
     metrics = evaluate(args.model, args.config, args.report_dir, benchmark=not args.no_benchmark)
     u = metrics["groups"][UNSEEN]
     print(
@@ -390,8 +393,7 @@ def evaluate_cli(args: argparse.Namespace) -> int:
         f"{u['event_reference']['false_empty_rate']:.4f} at reference thresholds"
     )
     print(f"report -> {args.report_dir / 'README.md'}")
-    if args.compare_to:
-        ref = json.loads(Path(args.compare_to).read_text())
+    if ref is not None:
         tol = load_baseline_config(args.config).reproducibility
         problems = compare(_round(metrics), ref, tol)
         if problems:
