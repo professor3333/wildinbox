@@ -21,6 +21,10 @@ Errors are JSON: `{"error": "<code>", "detail": "<message>"}`.
 | `GET /jobs/{id}` | Job lifecycle only. |
 | `GET /version` | The active release's id, weights SHA-256, preprocessing, calibration, and policy versions. The deploy check. |
 | `GET /releases` | Every registered release and which one is active. |
+| `GET /monitoring` | Operations, label-free signals per camera, review-based accuracy, and alerts (thresholds: `configs/monitoring.yaml`). |
+| `GET /metrics` | The same in Prometheus text format, for scraping and alerting. |
+| `GET /batches` | Recent batches. |
+| `GET /images/{id}/thumbnail` | A JPEG thumbnail (`size` 64-1024), generated once and kept in object storage. |
 | `GET /health` | Database reachable. |
 
 ### Uploading

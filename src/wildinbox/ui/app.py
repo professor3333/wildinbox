@@ -334,9 +334,11 @@ def monitoring_page(api: ApiClient) -> None:
     if not m["alerts"]:
         st.success("No alerts.")
     for a in m["alerts"]:
-        where = f" · camera {a['camera']}" if a.get("camera") else ""
+        parts = [a["area"]] if a["area"] != "signal" else []
+        if a.get("camera"):
+            parts.append(f"camera {a['camera']}")
         text = (
-            f"**{LEVEL[a['level']]}** ({a['area']}{where}): {a['message']} "
+            f"**{LEVEL[a['level']]}** ({' · '.join(parts)}): {a['message']} "
             f"({a['value']} vs limit {a['limit']})"
         )
         {"critical": st.error, "warning": st.warning}.get(a["level"], st.info)(text)
@@ -381,6 +383,7 @@ def monitoring_page(api: ApiClient) -> None:
         "whether suggestions got better or worse. That needs reviews, below."
     )
     rows = []
+    few = "too few events"
     for cam, s in m["signals"].items():
         cmp = s["comparison"] or {}
         rows.append(
@@ -390,10 +393,10 @@ def monitoring_page(api: ApiClient) -> None:
                 "needs review": _pct(s["needs_review_share"]),
                 "low confidence": _pct(s["low_confidence_share"]),
                 "night frames": _pct(s["night_share"]),
-                "label shift (PSI)": None if not cmp else round(cmp["label_psi"], 3),
-                "confidence shift (PSI)": None if not cmp else round(cmp["confidence_psi"], 3),
-                "low-confidence change": None if not cmp else f"{cmp['uncertainty_change']:+.0%}",
-                "release changed": None if not cmp else ("yes" if cmp["release_changed"] else "no"),
+                "label shift (PSI)": few if not cmp else f"{cmp['label_psi']:.3f}",
+                "confidence shift (PSI)": few if not cmp else f"{cmp['confidence_psi']:.3f}",
+                "low-confidence change": few if not cmp else f"{cmp['uncertainty_change']:+.0%}",
+                "release changed": few if not cmp else ("yes" if cmp["release_changed"] else "no"),
             }
         )
     st.dataframe(rows, hide_index=True)

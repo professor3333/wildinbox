@@ -293,6 +293,22 @@ macro-F1 0.447 [0.435, 0.458] vs 0.285 for the frozen-embedding baseline (0.747
 on held-out sequences from training cameras); as released, every event goes to
 review; the 50% review-reduction target is not met.
 
+## Monitoring
+
+`GET /monitoring` (JSON), `GET /metrics` (Prometheus text), and the UI's
+Monitoring page, with thresholds in [`configs/monitoring.yaml`](configs/monitoring.yaml).
+Three separate views, because they answer different questions:
+
+| View | Needs labels? | Shows |
+|---|---|---|
+| Operations | no | queue depth and oldest waiting job, stale leases, failed and retrying jobs, unusable files, failed frames, throughput, seconds per 1,000 images per release, API latency |
+| Signals per camera | no | share of events needing review and of low-confidence events, night share and sharpness (recorded per image by workers), and shifts (PSI) between a camera's earlier and recent events, noting when the release also changed. Can flag that something changed, **not** whether accuracy changed |
+| Accuracy from reviews | yes | review coverage and correction rates with 95% intervals, per camera and per release; unreviewed events have unknown accuracy |
+
+`wildinbox monitoring backfill-quality` records image quality for images scored
+before workers recorded it. A snapshot of the live deployment:
+[`reports/monitoring/README.md`](reports/monitoring/README.md).
+
 ## Update cycle
 
 ```bash
