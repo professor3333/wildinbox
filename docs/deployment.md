@@ -46,7 +46,7 @@ repository at `GitRef` into `/opt/wildinbox`, and writes the stack's
 non-secret facts to `/etc/wildinbox/stack.env`.
 
 ```bash
-export AWS_REGION=us-east-1 TAG=v1.4.0
+export AWS_REGION=us-east-1 TAG=v1.4.1
 aws ec2 import-key-pair --key-name wildinbox-staging \
   --public-key-material fileb://$HOME/.ssh/id_ed25519.pub
 aws cloudformation deploy --stack-name wildinbox-staging \
