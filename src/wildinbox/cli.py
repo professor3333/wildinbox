@@ -359,13 +359,17 @@ def main(argv: Sequence[str] | None = None) -> int:
     p_sp.add_argument("--batch-id", action="append", required=True)
     p_sp.add_argument("--truth", type=Path, required=True, help="truth.csv of the study batch")
     p_sp.add_argument(
-        "--api-url", default=os.environ.get("WILDINBOX_API_URL", "http://localhost:8000")
+        "--api-url",
+        default=os.environ.get("WILDINBOX_API_URL", "http://localhost:8000"),
+        help="sends WILDINBOX_TOKEN as a bearer token when set",
     )
     p_sa = study_sub.add_parser("analyze", help="Apply the pre-registered analysis.")
     p_sa.add_argument("--plan-id", required=True)
     p_sa.add_argument("--out", type=Path, required=True)
     p_sa.add_argument(
-        "--api-url", default=os.environ.get("WILDINBOX_API_URL", "http://localhost:8000")
+        "--api-url",
+        default=os.environ.get("WILDINBOX_API_URL", "http://localhost:8000"),
+        help="sends WILDINBOX_TOKEN as a bearer token when set",
     )
 
     p_pol = sub.add_parser("policy", help="Decision-policy artifacts.")
@@ -502,11 +506,12 @@ def main(argv: Sequence[str] | None = None) -> int:
         print(f"report -> {args.report_dir / 'README.md'}")
         return 0
     if args.command == "snapshot":
-        from wildinbox.training.snapshot import SnapshotAPIError, build
+        from wildinbox.api_client import APIError
+        from wildinbox.training.snapshot import build
 
         try:
             out = build(args.protocol, args.api_url, args.out)
-        except SnapshotAPIError as e:
+        except APIError as e:
             print(f"error: {e}", file=sys.stderr)
             return 1
         summary = json.loads((out / "snapshot.json").read_text())
@@ -557,15 +562,20 @@ def main(argv: Sequence[str] | None = None) -> int:
         print(f"  decisions whose outcome or reasons changed: {up['decisions_changed']}")
         return 0
     if args.command == "study":
+        from wildinbox.api_client import APIError
         from wildinbox.study.cli import create_plan, write_analysis
 
-        if args.study_command == "plan":
-            plan_id = create_plan(args.api_url, args.name, args.batch_id, args.truth)
-            print(f"study plan {plan_id}: participants join it on the review UI's Study page")
-        else:
-            result = write_analysis(args.api_url, args.plan_id, args.out)
-            print(result["summary"]["verdict"])
-            print(f"report -> {args.out / 'README.md'}")
+        try:
+            if args.study_command == "plan":
+                plan_id = create_plan(args.api_url, args.name, args.batch_id, args.truth)
+                print(f"study plan {plan_id}: participants join it on the review UI's Study page")
+            else:
+                result = write_analysis(args.api_url, args.plan_id, args.out)
+                print(result["summary"]["verdict"])
+                print(f"report -> {args.out / 'README.md'}")
+        except APIError as e:
+            print(f"error: {e}", file=sys.stderr)
+            return 1
         return 0
     if args.command == "release":
         return _release(args)
