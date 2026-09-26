@@ -92,19 +92,24 @@ sent. It never reads an error response as data.
   This matches exact bytes only. A copy that has been re-encoded, or whose EXIF
   was edited, has a different SHA-256. It is not caught, except for dataset
   frames, which are also matched by source file name.
-- **Only usable frames are ML inputs.** An event keeps every member, but only
-  a frame that decoded and was scored without error enters `train.jsonl` or
-  `holdout.jsonl`. These members are withheld:
+- **An event is used with all of its evidence, or not at all.** Each member
+  gets a status, recorded with its reason under `members` in `labels.jsonl`:
+  - `usable`: decoded and scored. It is an ML input.
+  - `duplicate_resolved`: the same bytes as an earlier upload whose prediction
+    the API shows for it, i.e. the evidence the reviewer saw. It is an ML input,
+    listed once per event.
   - `invalid`: rejected at upload or on decoding, such as zero-byte or corrupt
-    files;
-  - `duplicate`: a repeat of another file's bytes;
-  - `processing_failed`: inference failed on it;
-  - `unprocessed`: not yet scored.
+    files. It has no content, so it is withheld and counted under
+    `withheld_frames`.
+  - `duplicate_unresolved`, `processing_failed`, `unprocessed`: content that
+    cannot be used as is. These **exclude the whole event**
+    (`member_<status>`). Keeping the event's other frames under its reviewed
+    label could score, or fit, an empty frame as the animal the reviewer saw in
+    the missing one.
 
-  An event with no usable frame is excluded (`no_usable_frames`).
-  `snapshot.json` counts the withheld members of kept events under
-  `withheld_frames`. Duplicates and failed frames still count as content for the
-  separation checks above. Rejected files, and copies of their bytes, do not.
+  An event with no ML-input frame is excluded (`no_usable_frames`). Duplicates
+  and failed frames still count as content for the separation checks above.
+  Rejected files, and copies of their bytes, do not.
   Each downloaded original must match its SHA-256 and decode, and training
   checks each file's SHA-256 again before loading it.
 - **Provenance**: `labels.jsonl` has one row per considered event:
@@ -133,9 +138,20 @@ added:
 uv run wildinbox finetune train --config configs/experiments/finetune-e3-update1.yaml
 ```
 
-Before training starts, it validates the snapshot. It refuses an unknown
-schema, missing approved reviewers or train counts, a missing `train.jsonl`,
-or a `labels.jsonl` whose SHA-256 differs from the summary. The model's
+Before training starts, it validates the snapshot. The gate and the builder's
+own read-back use the same check. It refuses:
+
+- an unknown schema;
+- missing approved reviewers or train counts;
+- a missing `train.jsonl` or `holdout.jsonl`;
+- a `labels.jsonl` whose SHA-256 differs from the summary;
+- **manifests that are not the recorded snapshot**: the version is recomputed
+  from the bytes of `train.jsonl` and `holdout.jsonl`. The summary's counts,
+  and each event's reviewed label and frames in `labels.jsonl`, must also match
+  the manifests.
+
+A changed label, frame, or event membership therefore fails before any model
+work begins. The model's
 `meta.json` records `trained_on.snapshot` with the version, schema, approved
 reviewers, and provenance SHA-256. It also records the model's **training
 lineage**: `train_sha256`, every snapshot frame it was fit on, and the

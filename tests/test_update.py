@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+from collections import Counter
 from pathlib import Path
 from typing import Any
 
@@ -54,18 +55,6 @@ def _snapshot(tmp_path: Path) -> Path:
     (d / "images").mkdir(parents=True)
     (d / "images" / f"{AA}.jpg").write_bytes(FRAME_A)
     (d / "images" / f"{BB}.jpg").write_bytes(FRAME_B)
-    (d / "labels.jsonl").write_text('{"event_id": "e1"}\n')
-    summary = {
-        "schema": SNAPSHOT_SCHEMA,
-        "version": "abc123",
-        "approved_reviewers": ["ranger"],
-        "train": {"images": 2, "events": 2},
-        "provenance": {
-            "file": "labels.jsonl",
-            "sha256": hashlib.sha256((d / "labels.jsonl").read_bytes()).hexdigest(),
-        },
-    }
-    (d / "snapshot.json").write_text(json.dumps(summary))
     (d / "train.jsonl").write_text(
         json.dumps({"sha256": AA, "label": "empty", "event_id": "e1", "camera_id": "cct-90"})
         + "\n"
@@ -103,7 +92,53 @@ def _snapshot(tmp_path: Path) -> Path:
         },
     ]
     (d / "holdout.jsonl").write_text("".join(json.dumps(h) + "\n" for h in holdout))
+    _seal(d)
     return d
+
+
+def _seal(d: Path) -> str:
+    """Write the summary and provenance a builder would for these manifests;
+    returns the version (a hash of the manifests)."""
+    train_text, hold_text = (d / "train.jsonl").read_text(), (d / "holdout.jsonl").read_text()
+    train = [json.loads(x) for x in train_text.splitlines()]
+    hold = [json.loads(x) for x in hold_text.splitlines()]
+    events: dict[str, dict[str, Any]] = {}
+    for r in train:
+        e = events.setdefault(r["event_id"], {"use": "train", "label": r["label"], "frames": []})
+        e["frames"].append(r["sha256"])
+    for h in hold:
+        frames = [f["sha256"] for f in h["frames"]]
+        events[h["event_id"]] = {"use": "holdout", "label": h["label"], "frames": frames}
+    labels = "".join(
+        json.dumps({"event_id": k, **v, "frames": sorted(v["frames"])}) + "\n"
+        for k, v in events.items()
+    )
+    (d / "labels.jsonl").write_text(labels)
+    version = hashlib.sha256((train_text + hold_text).encode()).hexdigest()[:12]
+    summary = {
+        "schema": SNAPSHOT_SCHEMA,
+        "version": version,
+        "approved_reviewers": ["ranger"],
+        "train": {
+            "images": len(train),
+            "events": len({r["event_id"] for r in train}),
+            "per_class": dict(sorted(Counter(r["label"] for r in train).items())),
+        },
+        "holdout": {
+            "events": len(hold),
+            "by_kind": {
+                k: sum(1 for h in hold if h["kind"] == k)
+                for k in ("supported", "unsupported", "unresolved")
+            },
+        },
+        "provenance": {
+            "file": "labels.jsonl",
+            "sha256": hashlib.sha256(labels.encode()).hexdigest(),
+            "events": len(events),
+        },
+    }
+    (d / "snapshot.json").write_text(json.dumps(summary))
+    return version
 
 
 def test_snapshot_rows_are_fit_rows_with_reviewed_labels(tmp_path: Path) -> None:
@@ -113,7 +148,7 @@ def test_snapshot_rows_are_fit_rows_with_reviewed_labels(tmp_path: Path) -> None
         ("cat", "supported_species", True),
     ]
     assert all(r.source_id.startswith("snapshot:") for r in rows)
-    assert sources[rows[0].storage_path].name == f"{AA}.jpg" and summary["version"] == "abc123"
+    assert sources[rows[0].storage_path].name == f"{AA}.jpg" and len(summary["version"]) == 12
 
 
 def test_gate_scores_events_by_the_policy_suggestion(tmp_path: Path) -> None:
@@ -411,10 +446,6 @@ def test_snapshot_separates_content_whatever_its_name_camera_or_time(
         ids["d-early.jpg"]: "train_frame_in_holdout",  # its bytes are in camera 125's holdout
         ids["seq-a.jpg"]: "train_frame_in_holdout",  # one duplicated frame drops the event
         ids["renamed-train-image.jpg"]: "holdout_frame_in_training_partition",
-        # Same-workspace re-uploads are stored as duplicates, not ML inputs, but
-        # their content still counts for separation (d-early above).
-        ids["d-late.jpg"]: "no_usable_frames",
-        ids["seq-b-again.jpg"]: "no_usable_frames",
     }
     train = [json.loads(x) for x in (out / "train.jsonl").read_text().splitlines()]
     hold = [json.loads(x) for x in (out / "holdout.jsonl").read_text().splitlines()]
@@ -423,6 +454,8 @@ def test_snapshot_separates_content_whatever_its_name_camera_or_time(
     hold_shas = {f["sha256"] for h in hold for f in h["frames"]}
     assert not train_shas & (hold_shas | {sha(dup), sha(seq_dup), sha(old), sha(fit_img)})
     assert sha(fit_img) not in hold_shas and sha(old) not in hold_shas
+    # Re-uploads of scored originals (stored as duplicates) keep their evidence.
+    assert {sha(dup), sha(seq_dup)} <= hold_shas
     assert leakage(out, {}, training={sha(fit_img)}, earlier_holdouts={sha(old)}) == {}
 
 
@@ -596,18 +629,18 @@ def test_mixed_valid_and_unusable_members_give_a_valid_snapshot(
         return hashlib.sha256(data).hexdigest()
 
     summary = json.loads((out / "snapshot.json").read_text())
-    assert summary["excluded"]["by_reason"] == {"no_usable_frames": 1}
-    assert summary["withheld_frames"] == {"duplicate": 1, "invalid": 2, "processing_failed": 1}
-    train = [json.loads(x) for x in (out / "train.jsonl").read_text().splitlines()]
-    hold = {
-        h["event_id"]: h for h in map(json.loads, (out / "holdout.jsonl").read_text().splitlines())
+    # Rejected files carry no content and are withheld; a member with content
+    # that cannot be used as is (failed inference, a duplicate whose original
+    # was never scored) excludes the whole event rather than dropping evidence.
+    assert summary["excluded"]["by_reason"] == {
+        "member_processing_failed": 2,  # b (b-fails) and c
+        "member_duplicate_unresolved": 1,  # f (a copy of the corrupt a-corrupt)
     }
+    assert summary["withheld_frames"] == {"invalid": 2}
+    train = [json.loads(x) for x in (out / "train.jsonl").read_text().splitlines()]
     assert [r["sha256"] for r in train] == [sha(good_a)]
-    assert [f["sha256"] for f in hold[by_seq["b"]]["frames"]] == [sha(good_b)]
-    assert by_seq["c"] not in hold
-    assert sorted(p.name for p in (out / "images").iterdir()) == sorted(
-        f"{sha(d)}.jpg" for d in (good_a, good_f, good_b)
-    )
+    assert (out / "holdout.jsonl").read_text() == ""
+    assert [p.name for p in (out / "images").iterdir()] == [f"{sha(good_a)}.jpg"]
     labels = {
         r["event_id"]: r for r in map(json.loads, (out / "labels.jsonl").read_text().splitlines())
     }
@@ -622,7 +655,9 @@ def test_mixed_valid_and_unusable_members_give_a_valid_snapshot(
     assert labels[by_seq["a"]]["frames"] == [sha(good_a)]
     failed = {m["filename"]: m for m in labels[by_seq["b"]]["members"]}["b-fails.jpg"]
     assert failed["status"] == "processing_failed" and "model rejected" in failed["reason"]
-    assert labels[by_seq["c"]]["use"] == "excluded:no_usable_frames"
+    assert labels[by_seq["b"]]["use"] == "excluded:member_processing_failed"
+    assert labels[by_seq["c"]]["use"] == "excluded:member_processing_failed"
+    assert labels[by_seq["f"]]["use"] == "excluded:member_duplicate_unresolved"
     rows, _, _ = snapshot_rows(out)  # the loader's own byte check passes
     assert [r.source_id for r in rows] == [f"snapshot:{sha(good_a)}"]
 
@@ -738,7 +773,7 @@ def test_a_v3_cycle_against_deployed_v2_loads_v2_and_refuses_mismatches_first(
     cand = root / "model-v3"
     meta = json.loads((cand / "meta.json").read_text())
     snap = _snapshot(tmp_path)
-    meta["trained_on"] = {"snapshot": {"version": "abc123", "path": str(snap)}}
+    meta["trained_on"] = {"snapshot": {"version": load_summary(snap)["version"], "path": str(snap)}}
     (cand / "meta.json").write_text(json.dumps(meta))
     splits = tmp_path / "splits"
     splits.mkdir()
@@ -919,7 +954,7 @@ def test_the_gate_refuses_holdouts_either_model_was_fit_on(
         (root / "model-v2/meta.json").write_text(json.dumps(meta))
     cand = root / "model-v3"
     meta = json.loads((cand / "meta.json").read_text())
-    record = {"version": "abc123", "path": str(snap)}
+    record = {"version": load_summary(snap)["version"], "path": str(snap)}
     if candidate_lineage is not None:
         record["train_sha256"] = candidate_lineage
     meta["trained_on"] = {"snapshot": record}
@@ -938,3 +973,116 @@ def test_the_gate_refuses_holdouts_either_model_was_fit_on(
     with pytest.raises(GateError, match=message):
         gate.run(p, cand, tmp_path / "cfg.yaml", tmp_path / "report")
     assert loaded == []  # refused before any model was loaded or scored
+
+
+def _rewrite(path: Path, change: Any) -> None:
+    rows = [json.loads(x) for x in path.read_text().splitlines()]
+    change(rows)
+    path.write_text("".join(json.dumps(r) + "\n" for r in rows))
+
+
+@pytest.mark.parametrize(
+    ("manifest", "change"),
+    [
+        ("train.jsonl", lambda rows: rows[0].update(label="cat")),  # a label
+        ("train.jsonl", lambda rows: rows[1].update(event_id="e1")),  # event membership
+        ("holdout.jsonl", lambda rows: rows[0].update(label="bobcat")),  # a label
+        ("holdout.jsonl", lambda rows: rows[1]["frames"].append({"sha256": "c1"})),  # a frame
+        ("holdout.jsonl", lambda rows: rows.pop(2)),  # an event dropped
+    ],
+)
+def test_changed_manifests_fail_validation_before_any_model_work(
+    tmp_path: Path, manifest: str, change: Any
+) -> None:
+    d = _snapshot(tmp_path)
+    assert load_summary(d)["version"]  # the untouched snapshot is valid
+    _rewrite(d / manifest, change)
+    with pytest.raises(SnapshotError, match="version recomputes to"):
+        load_summary(d)
+    with pytest.raises(SnapshotError, match="do not match the recorded snapshot"):
+        snapshot_rows(d)  # the training loader
+
+
+def test_consistent_but_relabelled_snapshots_are_caught_by_counts_and_provenance(
+    tmp_path: Path,
+) -> None:
+    """Even with the summary's version re-stamped to match edited manifests,
+    the recorded counts and per-event provenance still disagree."""
+    d = _snapshot(tmp_path)
+    _rewrite(d / "train.jsonl", lambda rows: rows[0].update(label="cat"))
+    summary = json.loads((d / "snapshot.json").read_text())
+    text = (d / "train.jsonl").read_text() + (d / "holdout.jsonl").read_text()
+    summary["version"] = hashlib.sha256(text.encode()).hexdigest()[:12]
+    (d / "snapshot.json").write_text(json.dumps(summary))
+    with pytest.raises(SnapshotError) as e:
+        load_summary(d)
+    assert "train.per_class" in str(e.value) and "differs from its provenance" in str(e.value)
+
+
+def test_a_duplicate_of_a_scored_original_stays_in_its_event(
+    settings: Settings,  # noqa: F811
+    tmp_path: Path,
+) -> None:
+    """An event holding a re-upload of an already scored photo plus a fresh one:
+    the API shows both with predictions, and the holdout keeps both, so the
+    event is scored on the evidence the reviewer saw."""
+    from fastapi.testclient import TestClient
+
+    from wildinbox.api.app import create_app
+    from wildinbox.training.snapshot import build
+
+    original = jpeg(1200)
+
+    def upload(c: TestClient, items: list[tuple[str, bytes]], day: int, camera: str) -> str:
+        meta = {
+            "camera_id": camera,
+            "files": {
+                n: {"captured_at": f"2012-01-0{day}T10:00:00", "sequence_id": f"burst-{day}"}
+                for n, _ in items
+            },
+        }
+        batch = c.post(
+            "/batches",
+            files=[("files", (n, d, "image/jpeg")) for n, d in items],
+            data={"metadata": json.dumps(meta)},
+        ).json()
+        (e,) = c.get("/events", params={"batch_id": batch["id"]}).json()["events"]
+        url = f"/events/{e['id']}/reviews"
+        body = {"reviewer": "ranger", "outcome": "corrected", "confirmed_label": "cat"}
+        if c.post(url, json=body).status_code == 422:  # suggested cat already
+            assert c.post(url, json={**body, "outcome": "confirmed"}).status_code == 201
+        return str(e["id"])
+
+    with TestClient(create_app(settings)) as c:
+        upload(c, [("first.jpg", original)], 1, "cct-99")  # another camera: not in the snapshot
+        for day in (2, 3, 4):
+            upload(c, [(f"p{day}.jpg", jpeg(1200 + day))], day, "cct-90")
+        event = upload(c, [("duplicate.jpg", original), ("fresh.jpg", jpeg(1205))], 5, "cct-90")
+        detail = c.get(f"/events/{event}").json()
+        statuses = {i["filename"]: i["validation_status"] for i in detail["images"]}
+        assert statuses == {"duplicate.jpg": "duplicate", "fresh.jpg": "valid"}
+        assert all(i["prediction"] is not None for i in detail["images"])
+        protocol = tmp_path / "protocol.yaml"
+        protocol.write_text(
+            yaml.safe_dump(
+                {
+                    "name": "dup",
+                    "deployed_release": "test-predictor-v0",
+                    "deployment": {"cameras": ["90"], "reviewer": "ranger"},
+                    "protected": {"partitions": [], "snapshot_holdouts": []},
+                }
+            )
+        )
+        out = build(protocol, "http://testserver", tmp_path / "snaps", client=c, root=tmp_path)
+
+    hold = {
+        h["event_id"]: h for h in map(json.loads, (out / "holdout.jsonl").read_text().splitlines())
+    }
+    frames = {f["sha256"] for f in hold[event]["frames"]}
+    assert frames == {hashlib.sha256(original).hexdigest(), hashlib.sha256(jpeg(1205)).hexdigest()}
+    assert (out / "images" / f"{hashlib.sha256(original).hexdigest()}.jpg").read_bytes() == original
+    labels = {
+        r["event_id"]: r for r in map(json.loads, (out / "labels.jsonl").read_text().splitlines())
+    }
+    members = {m["filename"]: m["status"] for m in labels[event]["members"]}
+    assert members == {"duplicate.jpg": "duplicate_resolved", "fresh.jpg": "usable"}
