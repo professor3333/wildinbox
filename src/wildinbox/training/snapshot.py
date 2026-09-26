@@ -99,8 +99,9 @@ def load_summary(snapshot_dir: Path) -> dict[str, Any]:
         isinstance(train, dict) and all(isinstance(train.get(k), int) for k in ("images", "events"))
     ):
         problems.append("train.images/train.events")
-    if not (snapshot_dir / "train.jsonl").is_file():
-        problems.append("train.jsonl")
+    for manifest in ("train.jsonl", "holdout.jsonl"):
+        if not (snapshot_dir / manifest).is_file():
+            problems.append(manifest)
     if schema == SNAPSHOT_SCHEMA:
         prov = summary.get("provenance")
         labels = snapshot_dir / str((prov or {}).get("file", "labels.jsonl"))
@@ -112,7 +113,65 @@ def load_summary(snapshot_dir: Path) -> dict[str, Any]:
             problems.append(f"{labels.name} (SHA-256 differs from the summary)")
     if problems:
         raise SnapshotError(f"{path} ({schema}) is missing or has invalid: {', '.join(problems)}")
+    mismatches = manifest_mismatches(snapshot_dir, summary)
+    if mismatches:
+        raise SnapshotError(
+            f"{snapshot_dir}: the manifests do not match the recorded snapshot: "
+            + "; ".join(mismatches)
+        )
     return summary
+
+
+def manifest_mismatches(snapshot_dir: Path, summary: dict[str, Any]) -> list[str]:
+    """Where `train.jsonl` and `holdout.jsonl` disagree with what the snapshot
+    recorded. The version is recomputed from the manifests' bytes, so a changed
+    label, frame, or event anywhere changes it. The summary's counts are
+    checked, and so is the provenance: each train/holdout event's reviewed label
+    and frame set in `labels.jsonl` must match its manifest rows."""
+    train_text = (snapshot_dir / "train.jsonl").read_text()
+    hold_text = (snapshot_dir / "holdout.jsonl").read_text()
+    out = []
+    version = hashlib.sha256((train_text + hold_text).encode()).hexdigest()[:12]
+    if version != summary["version"]:
+        out.append(f"version recomputes to {version}, recorded {summary['version']}")
+    train = [json.loads(x) for x in train_text.splitlines()]
+    hold = [json.loads(x) for x in hold_text.splitlines()]
+    counts = {
+        "train.images": len(train),
+        "train.events": len({r["event_id"] for r in train}),
+        "train.per_class": dict(sorted(Counter(r["label"] for r in train).items())),
+        "holdout.events": len(hold),
+        "holdout.by_kind": {
+            k: sum(1 for h in hold if h["kind"] == k)
+            for k in ("supported", "unsupported", "unresolved")
+        },
+    }
+    for key, value in counts.items():
+        part, name = key.split(".")
+        recorded = (summary.get(part) or {}).get(name)
+        if recorded is not None and recorded != value:
+            out.append(f"{key} is {value}, recorded {recorded}")
+    prov = summary.get("provenance")
+    if prov:
+        rows = [json.loads(x) for x in (snapshot_dir / prov["file"]).read_text().splitlines()]
+        if len(rows) != prov.get("events", len(rows)):
+            out.append(f"provenance has {len(rows)} events, recorded {prov.get('events')}")
+        manifest: dict[str, dict[str, tuple[Any, set[str]]]] = {"train": {}, "holdout": {}}
+        for r in train:
+            label, frames = manifest["train"].setdefault(r["event_id"], (r["label"], set()))
+            frames.add(r["sha256"])
+        for h in hold:
+            manifest["holdout"][h["event_id"]] = (h["label"], {f["sha256"] for f in h["frames"]})
+        for use, events in manifest.items():
+            recorded_events = {r["event_id"]: r for r in rows if r["use"] == use}
+            if set(recorded_events) != set(events):
+                out.append(f"{use} events differ from the provenance")
+                continue
+            for event_id, (label, frames) in events.items():
+                r = recorded_events[event_id]
+                if r["label"] != label or set(r["frames"]) != frames:
+                    out.append(f"{use} event {event_id} differs from its provenance")
+    return out
 
 
 class SnapshotAPIError(RuntimeError):
@@ -325,14 +384,32 @@ def review_label(event: dict[str, Any]) -> tuple[str | None, str]:
     return review["confirmed_label"], "reviewed"
 
 
+# Members that are ML inputs; `invalid` members carry no content (nothing
+# decoded, so the reviewer saw nothing either) and are simply withheld. Any
+# other status blocks the whole event: using the rest of its frames under the
+# event's reviewed label could score (or fit) an empty frame as the animal the
+# reviewer saw in the missing one.
+ML_INPUT = ("usable", "duplicate_resolved")
+NO_CONTENT = ("invalid",)
+
+
 def frame_status(image: dict[str, Any]) -> tuple[str, str | None]:
-    """(status, reason) of an event member. Only `usable` frames (decoded, and
-    scored without error) become ML inputs; the others stay event members, and
-    in provenance, with the reason they were withheld."""
+    """(status, reason) of an event member:
+
+    - `usable`: decoded and scored without error;
+    - `duplicate_resolved`: the same bytes as an earlier upload whose
+      prediction the API shows for it (its original decoded and was scored),
+      so it is the same evidence the reviewer saw;
+    - `invalid`: rejected at upload or on decoding (no content);
+    - `duplicate_unresolved`, `processing_failed`, `unprocessed`: content
+      that cannot be used as is, which excludes the event."""
     if image["validation_status"] == "invalid":
         return "invalid", image.get("validation_error")
     if image["validation_status"] == "duplicate":
-        return "duplicate", f"duplicate of image {image.get('duplicate_of')}"
+        original = f"duplicate of image {image.get('duplicate_of')}"
+        if image.get("sha256") and image.get("prediction") is not None:
+            return "duplicate_resolved", original
+        return "duplicate_unresolved", f"{original}, which has no prediction"
     if image.get("processing_error"):
         return "processing_failed", image["processing_error"]
     if image["validation_status"] != "valid" or not image.get("sha256"):
@@ -341,11 +418,25 @@ def frame_status(image: dict[str, Any]) -> tuple[str, str | None]:
 
 
 def usable_frames(detail: dict[str, Any]) -> list[dict[str, Any]]:
-    return [
-        {"image_id": i["id"], "sha256": i["sha256"], "filename": i["filename"]}
-        for i in sorted(detail["images"], key=lambda i: i["position"])
-        if frame_status(i)[0] == "usable"
-    ]
+    """The event's ML-input frames, once per distinct content, in upload order."""
+    out: dict[str, dict[str, Any]] = {}
+    for i in sorted(detail["images"], key=lambda i: i["position"]):
+        if frame_status(i)[0] in ML_INPUT and i["sha256"] not in out:
+            out[i["sha256"]] = {
+                "image_id": i["id"],
+                "sha256": i["sha256"],
+                "filename": i["filename"],
+            }
+    return list(out.values())
+
+
+def blocking_member(detail: dict[str, Any]) -> str | None:
+    """The status of the first member that keeps this event out, if any."""
+    for i in sorted(detail["images"], key=lambda i: i["position"]):
+        status, _ = frame_status(i)
+        if status not in ML_INPUT and status not in NO_CONTENT:
+            return status
+    return None
 
 
 def _provenance(event: dict[str, Any], detail: dict[str, Any], use: str) -> dict[str, Any]:
@@ -479,10 +570,13 @@ def build(
             detail = details[e["id"]]
             label, kind = review_label(e)
             frames = usable_frames(detail)
+            if (blocked := blocking_member(detail)) is not None:
+                exclude(e, f"member_{blocked}")
+                continue
             if not frames:
                 exclude(e, "no_usable_frames")
                 continue
-            withheld.update(s for s, _ in map(frame_status, detail["images"]) if s != "usable")
+            withheld.update(s for s, _ in map(frame_status, detail["images"]) if s not in ML_INPUT)
             if rows is train_rows:
                 if label not in classes:
                     # unsupported species and unresolved events are not fit
