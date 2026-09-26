@@ -9,11 +9,15 @@ on the protocol's cameras, their frames, and their originals.
 - **Protected evaluation records are excluded**, with every review on them
   (corrections included): frames of the protected dataset partitions (final
   test, calibration, seen-camera diagnostic by default), matched by SHA-256 or
-  source file name, and events of earlier snapshots' holdouts. Exclusion
-  happens before the time split, so protected events never shape a cutoff.
+  source file name, and earlier snapshots' holdouts, matched by event id or
+  frame SHA-256. Exclusion happens before the time split, so protected events
+  never shape a cutoff.
 - Per camera, events before the median reviewed start time go to `train.jsonl`
   (frames of events whose reviewed label is a supported class); later events
   go to `holdout.jsonl` for the promotion gate and are never trained on.
+- **Content separation** after the split, across cameras and by whole events:
+  a holdout event holding a dataset training-partition frame is excluded, and
+  so is a training event sharing any frame (by SHA-256) with a holdout event.
 - **Provenance**: `labels.jsonl` records, for every considered event, where its
   label came from (review id, reviewer, time, outcome, the suggestion and the
   release that made it, the full review chain) and where it went (train,
@@ -150,6 +154,12 @@ class Protected:
     sha256: set[str] = field(default_factory=set)
     source_ids: set[str] = field(default_factory=set)
     holdout_events: set[str] = field(default_factory=set)
+    # Frame content of earlier holdouts: a re-upload gets a new event id but
+    # keeps its bytes.
+    holdout_sha256: set[str] = field(default_factory=set)
+    # Frames the deployed model (and every candidate) already trained on; they
+    # cannot measure either model, so they never enter a holdout.
+    training_sha256: set[str] = field(default_factory=set)
     description: dict[str, Any] = field(default_factory=dict)
 
     def reason(self, event_id: str, frames: list[dict[str, Any]]) -> str | None:
@@ -160,6 +170,8 @@ class Protected:
                 return "protected_partition_sha256"
             if Path(f["filename"]).stem in self.source_ids:
                 return "protected_partition_filename"
+            if f["sha256"] in self.holdout_sha256:
+                return "earlier_snapshot_holdout_sha256"
         return None
 
 
@@ -177,15 +189,20 @@ def protected_records(protocol: dict[str, Any], root: Path = Path(".")) -> Prote
                     out.sha256.add(row["sha256"])
                     out.source_ids.add(row["source_id"])
                     counts[row["partition"]] = counts.get(row["partition"], 0) + 1
+                elif row["partition"] == "train":
+                    out.training_sha256.add(row["sha256"])
     for path in spec["snapshot_holdouts"]:
         for line in (root / path).read_text().splitlines():
-            out.holdout_events.add(json.loads(line)["event_id"])
+            event = json.loads(line)
+            out.holdout_events.add(event["event_id"])
+            out.holdout_sha256.update(f["sha256"] for f in event.get("frames", []))
     out.description = {
         "splits": spec["splits"] if parts else None,
         "splits_sha256": hashlib.sha256(splits.read_bytes()).hexdigest() if parts else None,
         "partitions": dict(sorted(counts.items())),
         "snapshot_holdouts": list(spec["snapshot_holdouts"]),
         "holdout_events": len(out.holdout_events),
+        "holdout_frames": len(out.holdout_sha256),
     }
     return out
 
@@ -250,76 +267,103 @@ def build(
     not_approved = 0
     cutoffs: dict[str, str] = {}
     to_download: dict[str, str] = {}  # sha256 -> image id
+    details: dict[str, dict[str, Any]] = {}
+    before: list[dict[str, Any]] = []
+    after: list[dict[str, Any]] = []
+
+    def exclude(e: dict[str, Any], why: str) -> None:
+        detail = details[e["id"]]
+        excluded.append(
+            {
+                "event_id": e["id"],
+                "camera_id": e["camera_id"],
+                "reason": why,
+                "review_ids": [r["id"] for r in detail.get("reviews", [])],
+            }
+        )
+        provenance.append(_provenance(e, detail, f"excluded:{why}"))
+
+    def shas(e: dict[str, Any]) -> set[str]:
+        return {i["sha256"] for i in details[e["id"]]["images"]}
+
     for cam in protocol["deployment"]["cameras"]:
         camera_id = f"cct-{cam}"
         events = []
-        details: dict[str, dict[str, Any]] = {}
         for e in _events(api, camera_id):
             if e["latest_review"]["reviewer"] not in approved:
                 not_approved += 1
                 continue
-            detail = api.get(f"/events/{e['id']}").json()
-            why = protected.reason(e["id"], detail["images"])
+            details[e["id"]] = api.get(f"/events/{e['id']}").json()
+            why = protected.reason(e["id"], details[e["id"]]["images"])
             if why is not None:
-                excluded.append(
-                    {
-                        "event_id": e["id"],
-                        "camera_id": camera_id,
-                        "reason": why,
-                        "review_ids": [r["id"] for r in detail.get("reviews", [])],
-                    }
-                )
-                provenance.append(_provenance(e, detail, f"excluded:{why}"))
+                exclude(e, why)
                 continue
-            details[e["id"]] = detail
             events.append(e)
-        before, after, cutoff = split_by_time(events)
-        cutoffs[camera_id] = cutoff
-        for group, rows in ((before, train_rows), (after, holdout_rows)):
-            for e in group:
-                detail = details[e["id"]]
-                label, kind = review_label(e)
-                frames = [
-                    {"image_id": i["id"], "sha256": i["sha256"], "filename": i["filename"]}
-                    for i in detail["images"]
-                ]
-                if rows is train_rows:
-                    if label not in classes:
-                        # unsupported species and unresolved events are not fit
-                        provenance.append(_provenance(e, detail, "not_fit"))
-                        continue
-                    provenance.append(_provenance(e, detail, "train"))
-                    for f in frames:
-                        rows.append(
-                            {
-                                **f,
-                                "label": label,
-                                "event_id": e["id"],
-                                "camera_id": camera_id,
-                                "start_at": e["start_at"],
-                                "review_id": e["latest_review"]["id"],
-                            }
-                        )
-                        to_download[f["sha256"]] = f["image_id"]
-                else:
-                    provenance.append(_provenance(e, detail, "holdout"))
+        cam_before, cam_after, cutoffs[camera_id] = split_by_time(events)
+        before += cam_before
+        after += cam_after
+    # Content separation, whole events at a time, across cameras (the same
+    # bytes can be uploaded again under another camera, time, or file name):
+    # a holdout event may not contain frames any model trained on, and a
+    # training event may not share a frame with any holdout event.
+    holdout_shas = set().union(*map(shas, after))
+    kept_after = []
+    for e in after:
+        if shas(e) & protected.training_sha256:
+            exclude(e, "holdout_frame_in_training_partition")
+        else:
+            kept_after.append(e)
+    kept_before = []
+    for e in before:
+        if shas(e) & holdout_shas:
+            exclude(e, "train_frame_in_holdout")
+        else:
+            kept_before.append(e)
+    for group, rows in ((kept_before, train_rows), (kept_after, holdout_rows)):
+        for e in group:
+            detail = details[e["id"]]
+            label, kind = review_label(e)
+            frames = [
+                {"image_id": i["id"], "sha256": i["sha256"], "filename": i["filename"]}
+                for i in detail["images"]
+            ]
+            if rows is train_rows:
+                if label not in classes:
+                    # unsupported species and unresolved events are not fit
+                    provenance.append(_provenance(e, detail, "not_fit"))
+                    continue
+                provenance.append(_provenance(e, detail, "train"))
+                for f in frames:
                     rows.append(
                         {
-                            "event_id": e["id"],
-                            "camera_id": camera_id,
-                            "start_at": e["start_at"],
+                            **f,
                             "label": label,
-                            "kind": (
-                                kind
-                                if kind == "unresolved"
-                                else ("supported" if label in classes else "unsupported")
-                            ),
-                            "frames": frames,
+                            "event_id": e["id"],
+                            "camera_id": e["camera_id"],
+                            "start_at": e["start_at"],
                             "review_id": e["latest_review"]["id"],
                         }
                     )
-                    for f in frames:
-                        to_download[f["sha256"]] = f["image_id"]
+                    to_download[f["sha256"]] = f["image_id"]
+            else:
+                provenance.append(_provenance(e, detail, "holdout"))
+                rows.append(
+                    {
+                        "event_id": e["id"],
+                        "camera_id": e["camera_id"],
+                        "start_at": e["start_at"],
+                        "label": label,
+                        "kind": (
+                            kind
+                            if kind == "unresolved"
+                            else ("supported" if label in classes else "unsupported")
+                        ),
+                        "frames": frames,
+                        "review_id": e["latest_review"]["id"],
+                    }
+                )
+                for f in frames:
+                    to_download[f["sha256"]] = f["image_id"]
 
     def dumps(rows: list[dict[str, Any]]) -> str:
         return "".join(json.dumps(r, sort_keys=True) + "\n" for r in rows)

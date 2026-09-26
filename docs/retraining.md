@@ -55,9 +55,11 @@ It reads through the API, as an offline training machine would.
   authentication cannot prove who reviewed; build snapshots from one that has it.
 - **Protected evaluation records are excluded, including corrections made to
   them.** An event is dropped, with every review on it, when any frame belongs
-  to a protected partition or the event was in an earlier snapshot's holdout.
-  Frames are matched by SHA-256, or by source file name for re-encoded
-  copies. Protected partitions are the final test, the calibration cameras
+  to a protected partition, or the event or any of its frames was in an
+  earlier snapshot's holdout. Frames are matched by SHA-256, and dataset frames
+  also by source file name (to catch re-encoded copies). Earlier holdouts are
+  matched by frame content as well as event id, so a re-upload that gets a new
+  event id is still caught. Protected partitions are the final test, the calibration cameras
   (temperature fit and regression check), and the seen-camera diagnostic
   (regression check). Exclusion happens before the time split, so a protected
   event cannot even move a cutoff. `snapshot.json` lists every excluded event
@@ -65,6 +67,19 @@ It reads through the API, as an offline training machine would.
 - **Split by time per camera**: events before the camera's median reviewed
   start time go to `train.jsonl` (only supported labels are fit); later events
   go to `holdout.jsonl`, which is never trained on.
+- **Content separation after the split**, across all cameras, whole events at
+  a time. The same bytes can be uploaded again under another name, camera, or
+  time, and get a new event. Two rules apply:
+  - A holdout event with a frame from the dataset's training partition is
+    excluded (`holdout_frame_in_training_partition`), because both models have
+    already seen it.
+  - A training event that shares any frame with a holdout event is excluded
+    (`train_frame_in_holdout`), together with its other frames. The holdout
+    keeps its copy.
+
+  This matches exact bytes only. A copy that has been re-encoded, or whose EXIF
+  was edited, has a different SHA-256. It is not caught, except for dataset
+  frames, which are also matched by source file name.
 - **Provenance**: `labels.jsonl` has one row per considered event:
   - the label, review id, reviewer, time, and outcome;
   - the suggestion, and the release and policy that made it;
@@ -117,9 +132,14 @@ and candidate models are then compared on **development data only**:
 - **The final test is never read.** It was opened once, for the release
   decision, and is spent. Repeated candidate comparisons use the development
   checks above.
-- **Leakage guard**: the gate refuses to run if the snapshot's training or
-  holdout frames include any final-test, calibration, or diagnostic frame,
-  because the regression checks would then be meaningless.
+- **Leakage guard**: the gate re-derives content separation from the snapshot
+  files, without relying on the builder's exclusions. It refuses to run if any
+  of these holds:
+  - a training or holdout frame is a final-test, calibration, or diagnostic
+    frame, or is in an earlier protected holdout;
+  - a training frame's bytes are also in the holdout;
+  - an event is on both sides;
+  - a holdout frame is in the dataset's training partition.
 - **Comparisons are counted.** Every gate run is appended to
   [`reports/update/comparisons.jsonl`](../reports/update/comparisons.jsonl),
   with the candidate, weights, holdout version, gain, and verdict. Trying many
