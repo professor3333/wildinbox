@@ -60,20 +60,26 @@ are never analysed with this plan:
 
 ## Participants
 
-Aim for 8 (a multiple of 4 keeps the arms balanced). Arms are assigned in the
-order people join. Report who took part in general terms, for example
-"volunteers, not trained field reviewers".
+Arms are assigned in the order people join. Report who took part in general
+terms, for example "volunteers, not trained field reviewers".
 
 | # | Participant code | Date | Arm | Notes |
 |---|---|---|---|---|
-| 1 | | | 0 | |
+| 1 | author | 2026-09-26 | 0 | The project's author (knows how the model behaves). Completed: 6 practice, 40 + 40 events, 2 ratings. |
 | 2 | | | 1 | |
 | 3 | | | 2 | |
 | 4 | | | 3 | |
 | 5 | | | 0 | |
-| 6 | | | 1 | |
-| 7 | | | 2 | |
-| 8 | | | 3 | |
+
+**Decided on 2026-09-26, after participant 1 and before anyone looked at any
+timing or accuracy data:**
+- The author took part first. Four volunteers follow, so the study will have 5
+  participants and arm 0 twice.
+- The main result is the pre-registered analysis of all participants, with the
+  author flagged.
+- The same summary without the author is also reported.
+- With fewer than 8 participants, the protocol's verdict is descriptive only.
+  The minimum is not lowered.
 
 ## Analysis (after the last session)
 
