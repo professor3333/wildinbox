@@ -196,6 +196,29 @@ refuse to start (`tests/test_staging.py`).
 The nightly backup also runs under cron's minimal environment (`PATH=/usr/bin:/bin`); see
 [Found and fixed](#found-and-fixed-by-staging).
 
+## Upgrade to v1.5.3
+
+On 2026-09-26 staging was upgraded from `v1.4.1` to `v1.5.3` with the documented
+[upgrade procedure](../../docs/deployment.md#upgrade-and-rollback): check out the tag,
+set `WILDINBOX_GIT_REF`, back up, run `deploy.sh` (no bundle, since the model is
+unchanged). Log: [`upgrade-v1.5.3.log`](upgrade-v1.5.3.log).
+
+| Check | Result |
+|---|---|
+| Before the upgrade | 28 batches, 18,202 images, 6,438 events, 18,178 predictions, 3 reviews, 2 releases; no event with more than one first review |
+| Backup | `backups/postgres/wildinbox-20260926T055748Z.dump`, 9.2 MB, 15 tables |
+| Migrations | `3f1c2a9d7e40` → `4803c5c84b95` (review `recorded_by`) → `9b2d4e71c0a5` (one first review per event); index present |
+| Readiness | `ready`; database, queue, object store, and model checks ok; model `finetune-e3-deep-balanced@7a25aea97c76` loaded |
+| Active release | unchanged: `finetune-e3-deep-balanced@7a25aea97c76`, policy `conservative/v2+378312635a29` |
+| After the upgrade | counts identical to before |
+| Monitoring (new error-rate definition, 7-day window) | 18,178 frames attempted, 18,178 scored, 0 failed; rate 0.0 |
+| Unauthenticated `/version` | 401 (token required, as configured) |
+
+Not yet done after this upgrade: the token-authenticated part of the
+[deploy check](../../docs/deployment.md#deploy-check). That means `/version` with a token,
+and an upload → process → review smoke test (`scripts/smoke.py`). The VM holds only token
+hashes, so these need the owner's token.
+
 ## Cost assumptions
 
 On-demand list prices, us-east-1, from the AWS Price List API on 2026-09-25. Taxes, data

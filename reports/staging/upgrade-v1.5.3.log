@@ -1,0 +1,77 @@
+== build a25d422 (v1.5.3)
+[image build output omitted: 227 lines]
+== start (waits for readiness: expected release active and loaded)
+ Container wildinbox-staging-redis-1  Running
+ Container wildinbox-staging-postgres-1  Running
+ Container wildinbox-staging-migrate-1  Recreate
+ Container wildinbox-staging-migrate-1  Recreated
+ Container wildinbox-staging-api-1  Recreate
+ Container wildinbox-staging-worker-1  Recreate
+ Container wildinbox-staging-worker-2  Recreate
+ Container wildinbox-staging-worker-2  Recreated
+ Container wildinbox-staging-worker-1  Recreated
+ Container wildinbox-staging-api-1  Recreated
+ Container wildinbox-staging-ui-1  Recreate
+ Container wildinbox-staging-ui-1  Recreated
+ Container wildinbox-staging-postgres-1  Waiting
+ Container wildinbox-staging-postgres-1  Healthy
+ Container wildinbox-staging-migrate-1  Starting
+ Container wildinbox-staging-migrate-1  Started
+ Container wildinbox-staging-migrate-1  Waiting
+ Container wildinbox-staging-redis-1  Waiting
+ Container wildinbox-staging-migrate-1  Waiting
+ Container wildinbox-staging-redis-1  Waiting
+ Container wildinbox-staging-redis-1  Healthy
+ Container wildinbox-staging-redis-1  Healthy
+ Container wildinbox-staging-migrate-1  Exited
+ Container wildinbox-staging-worker-2  Starting
+ Container wildinbox-staging-migrate-1  Exited
+ Container wildinbox-staging-api-1  Starting
+ Container wildinbox-staging-worker-2  Started
+ Container wildinbox-staging-worker-1  Starting
+ Container wildinbox-staging-api-1  Started
+ Container wildinbox-staging-api-1  Waiting
+ Container wildinbox-staging-worker-1  Started
+ Container wildinbox-staging-api-1  Healthy
+ Container wildinbox-staging-ui-1  Starting
+ Container wildinbox-staging-ui-1  Started
+ Container wildinbox-staging-postgres-1  Waiting
+ Container wildinbox-staging-redis-1  Waiting
+ Container wildinbox-staging-migrate-1  Waiting
+ Container wildinbox-staging-api-1  Waiting
+ Container wildinbox-staging-worker-2  Waiting
+ Container wildinbox-staging-worker-1  Waiting
+ Container wildinbox-staging-ui-1  Waiting
+ Container wildinbox-staging-postgres-1  Healthy
+ Container wildinbox-staging-migrate-1  Exited
+ Container wildinbox-staging-api-1  Healthy
+ Container wildinbox-staging-worker-2  Healthy
+ Container wildinbox-staging-worker-1  Healthy
+ Container wildinbox-staging-redis-1  Healthy
+ Container wildinbox-staging-ui-1  Healthy
+{
+  "status": "ready",
+  "expected_release": "finetune-e3-deep-balanced@7a25aea97c76",
+  "checks": {
+    "database": {
+      "ok": true,
+      "ms": 0.9
+    },
+    "queue": {
+      "ok": true,
+      "ms": 2.1
+    },
+    "object_store": {
+      "ok": true,
+      "ms": 29.1
+    },
+    "model": {
+      "ok": true,
+      "ms": 2.1,
+      "detail": "finetune-e3-deep-balanced@7a25aea97c76"
+    }
+  }
+}
+* finetune-e3-deep-balanced@7a25aea97c76  finetuned_efficientnet_b0  policy conservative/v2+378312635a29
+  test-predictor-v0  test_predictor  policy review-all/v0
+== deployed
