@@ -12,6 +12,8 @@ import hashlib
 import json
 import logging
 import math
+import os
+import tempfile
 import time
 from collections import Counter
 from concurrent.futures import ProcessPoolExecutor
@@ -119,9 +121,16 @@ def _cache_one(args: tuple[str, str, int]) -> None:
         return
     out.parent.mkdir(parents=True, exist_ok=True)
     img = resize_shorter_side(load_image(src), size)
-    tmp = out.with_suffix(".tmp.jpg")
-    img.save(tmp, "JPEG", quality=95)
-    tmp.replace(out)
+    # A temporary file of its own, so writers never share one (an earlier or
+    # concurrent run may be caching the same file); the rename is atomic.
+    fd, name = tempfile.mkstemp(dir=out.parent, prefix=f".{out.name}.", suffix=".tmp.jpg")
+    tmp = Path(name)
+    try:
+        with os.fdopen(fd, "wb") as f:
+            img.save(f, "JPEG", quality=95)
+        tmp.replace(out)
+    finally:
+        tmp.unlink(missing_ok=True)
 
 
 def build_input_cache(
@@ -133,22 +142,24 @@ def build_input_cache(
     sources: dict[str, Path] | None = None,
 ) -> None:
     """`sources` maps a row's storage_path to its file when it is not under
-    `images_root` (snapshot images)."""
+    `images_root` (snapshot images). Rows sharing a storage_path (the same
+    content in several events) share one cached file, built once; the rows
+    themselves are left as they are."""
     sources = sources or {}
-    jobs = [
-        (
+    jobs = {
+        r.storage_path: (
             str(sources.get(r.storage_path, images_root / r.storage_path)),
             str(cache_root / r.storage_path),
             size,
         )
         for r in rows
         if not (cache_root / r.storage_path).exists()
-    ]
+    }
     if not jobs:
         return
     log.info("building %dpx training input cache for %d images", size, len(jobs))
     with ProcessPoolExecutor(max_workers=workers) as pool:
-        list(pool.map(_cache_one, jobs, chunksize=64))
+        list(pool.map(_cache_one, jobs.values(), chunksize=64))
 
 
 class TrainImages(Dataset[tuple[torch.Tensor, int]]):
