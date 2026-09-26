@@ -310,3 +310,123 @@ def test_training_refuses_a_snapshot_it_cannot_use(
     (d / "snapshot.json").write_text(json.dumps(summary))
     with pytest.raises(SnapshotError, match=message):
         snapshot_rows(d)
+
+
+def test_snapshot_separates_content_whatever_its_name_camera_or_time(
+    settings: Settings,  # noqa: F811
+    tmp_path: Path,
+) -> None:
+    """Identical bytes re-uploaded as other events (another camera, time, or file
+    name) never reach training from a holdout, current or earlier; overlaps are
+    resolved by whole events, and the gate re-derives the same invariants."""
+    import gzip
+
+    from fastapi.testclient import TestClient
+
+    from wildinbox.api.app import create_app
+    from wildinbox.training.gate import leakage
+    from wildinbox.training.snapshot import build
+
+    def sha(data: bytes) -> str:
+        return hashlib.sha256(data).hexdigest()
+
+    dup, seq_dup, fit_img, old = jpeg(301), jpeg(302), jpeg(303), jpeg(304)
+    uploads = [  # (file name, bytes, camera, day, sequence)
+        ("d-early.jpg", dup, "cct-90", 1, "s1"),
+        ("seq-a.jpg", jpeg(305), "cct-90", 2, "s2"),
+        ("seq-b.jpg", seq_dup, "cct-90", 2, "s2"),
+        ("f1.jpg", jpeg(306), "cct-90", 3, "s3"),
+        ("f2.jpg", jpeg(307), "cct-90", 4, "s4"),
+        ("renamed-train-image.jpg", fit_img, "cct-90", 5, "s5"),
+        ("seq-b-again.jpg", seq_dup, "cct-90", 6, "s6"),
+        ("f3.jpg", jpeg(308), "cct-90", 7, "s7"),
+        ("renamed-old-holdout.jpg", old, "cct-125", 1, "t1"),
+        ("g1.jpg", jpeg(309), "cct-125", 2, "t2"),
+        ("g2.jpg", jpeg(310), "cct-125", 3, "t3"),
+        ("d-late.jpg", dup, "cct-125", 4, "t4"),
+        ("g3.jpg", jpeg(311), "cct-125", 5, "t5"),
+    ]
+    splits = tmp_path / "images.jsonl.gz"
+    with gzip.open(splits, "wt") as fh:
+        fh.write(json.dumps({"partition": "train", "sha256": sha(fit_img), "source_id": "t"}))
+    earlier = tmp_path / "earlier-holdout.jsonl"
+    earlier.write_text(json.dumps({"event_id": "gone", "frames": [{"sha256": sha(old)}]}) + "\n")
+
+    with TestClient(create_app(settings)) as c:
+        by_file: dict[str, dict[str, Any]] = {}
+        for seq in dict.fromkeys(u[4] for u in uploads):  # one batch per sequence
+            files = [u for u in uploads if u[4] == seq]
+            meta = {
+                "files": {
+                    name: {
+                        "camera_id": cam,
+                        "captured_at": f"2012-01-0{day}T10:00:0{i}",
+                        "sequence_id": seq,
+                    }
+                    for i, (name, _, cam, day, _) in enumerate(files)
+                }
+            }
+            batch = c.post(
+                "/batches",
+                files=[("files", (n, d, "image/jpeg")) for n, d, *_ in files],
+                data={"metadata": json.dumps(meta)},
+            ).json()
+            (event,) = c.get("/events", params={"batch_id": batch["id"]}).json()["events"]
+            by_file.update((n, event) for n, *_ in files)
+        for e in {e["id"]: e for e in by_file.values()}.values():
+            url = f"/events/{e['id']}/reviews"
+            body = {"reviewer": "ranger", "outcome": "corrected", "confirmed_label": "cat"}
+            if c.post(url, json=body).status_code == 422:  # suggested cat already
+                assert c.post(url, json={**body, "outcome": "confirmed"}).status_code == 201
+        protocol = tmp_path / "protocol.yaml"
+        protocol.write_text(
+            yaml.safe_dump(
+                {
+                    "name": "update3",
+                    "deployed_release": "test-predictor-v0",
+                    "deployment": {"cameras": ["90", "125"], "reviewer": "ranger"},
+                    "protected": {
+                        "splits": "images.jsonl.gz",
+                        "partitions": ["final_test"],
+                        "snapshot_holdouts": ["earlier-holdout.jsonl"],
+                    },
+                }
+            )
+        )
+        out = build(protocol, "http://testserver", tmp_path / "snaps", client=c, root=tmp_path)
+
+    summary = json.loads((out / "snapshot.json").read_text())
+    ids = {name: e["id"] for name, e in by_file.items()}
+    reasons = {x["event_id"]: x["reason"] for x in summary["excluded"]["records"]}
+    assert reasons == {
+        ids["renamed-old-holdout.jpg"]: "earlier_snapshot_holdout_sha256",
+        ids["d-early.jpg"]: "train_frame_in_holdout",  # its bytes are in camera 125's holdout
+        ids["seq-a.jpg"]: "train_frame_in_holdout",  # one duplicated frame drops the event
+        ids["renamed-train-image.jpg"]: "holdout_frame_in_training_partition",
+    }
+    train = [json.loads(x) for x in (out / "train.jsonl").read_text().splitlines()]
+    hold = [json.loads(x) for x in (out / "holdout.jsonl").read_text().splitlines()]
+    assert {r["event_id"] for r in train} == {ids["f1.jpg"], ids["g1.jpg"]}
+    train_shas = {r["sha256"] for r in train}
+    hold_shas = {f["sha256"] for h in hold for f in h["frames"]}
+    assert not train_shas & (hold_shas | {sha(dup), sha(seq_dup), sha(old), sha(fit_img)})
+    assert sha(fit_img) not in hold_shas and sha(old) not in hold_shas
+    assert leakage(out, {}, training={sha(fit_img)}, earlier_holdouts={sha(old)}) == {}
+
+
+def test_gate_finds_content_overlap_the_builder_should_have_removed(tmp_path: Path) -> None:
+    from wildinbox.training.gate import leakage
+
+    snap = _snapshot(tmp_path)
+    train = snap / "train.jsonl"
+    train.write_text(
+        train.read_text()
+        + json.dumps({"sha256": "c2", "label": "cat", "event_id": "h1", "camera_id": "cct-90"})
+        + "\n"
+    )
+    assert leakage(snap, {}, training={"d1"}, earlier_holdouts={"aa", "e1"}) == {
+        "train_frame_in_holdout": 1,
+        "event_in_train_and_holdout": 1,
+        "holdout_frame_in_training_partition": 1,
+        "earlier_snapshot_holdout": 2,
+    }

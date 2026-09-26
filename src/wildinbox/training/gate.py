@@ -58,15 +58,53 @@ def partition_hashes(split_dir: Path, partitions: tuple[Partition, ...]) -> dict
     return out
 
 
-def leakage(snapshot_dir: Path, guarded: dict[str, str]) -> dict[str, int]:
-    """Snapshot frames (train and holdout) that belong to guarded partitions."""
+def earlier_holdout_hashes(protocol: dict[str, Any], root: Path = Path(".")) -> set[str]:
+    """Frame SHA-256s of the earlier snapshot holdouts the protocol protects."""
+    out: set[str] = set()
+    for path in (protocol.get("protected") or {}).get("snapshot_holdouts", []):
+        for line in (root / path).read_text().splitlines():
+            out.update(f["sha256"] for f in json.loads(line).get("frames", []))
+    return out
+
+
+def leakage(
+    snapshot_dir: Path,
+    guarded: dict[str, str],
+    training: set[str] | frozenset[str] = frozenset(),
+    earlier_holdouts: set[str] | frozenset[str] = frozenset(),
+) -> dict[str, int]:
+    """Content-separation violations, counted by frame, checked from the snapshot
+    files alone (not trusting the builder's exclusions):
+
+    - `<partition>`: snapshot frames (train or holdout) of a guarded partition;
+    - `train_frame_in_holdout`: training frames whose bytes are also in the holdout;
+    - `event_in_train_and_holdout`: an event on both sides (counted per event);
+    - `holdout_frame_in_training_partition`: holdout frames any model trained on;
+    - `earlier_snapshot_holdout`: snapshot frames of an earlier protected holdout.
+    """
     found: dict[str, int] = {}
+
+    def add(key: str) -> None:
+        found[key] = found.get(key, 0) + 1
+
     train = [json.loads(x) for x in (snapshot_dir / "train.jsonl").read_text().splitlines()]
     hold = [json.loads(x) for x in (snapshot_dir / "holdout.jsonl").read_text().splitlines()]
-    shas = [r["sha256"] for r in train] + [f["sha256"] for e in hold for f in e["frames"]]
-    for sha in shas:
+    train_shas = [r["sha256"] for r in train]
+    hold_shas = [f["sha256"] for e in hold for f in e["frames"]]
+    for sha in train_shas + hold_shas:
         if sha in guarded:
-            found[guarded[sha]] = found.get(guarded[sha], 0) + 1
+            add(guarded[sha])
+        if sha in earlier_holdouts:
+            add("earlier_snapshot_holdout")
+    in_holdout = set(hold_shas)
+    for sha in train_shas:
+        if sha in in_holdout:
+            add("train_frame_in_holdout")
+    for sha in hold_shas:
+        if sha in training:
+            add("holdout_frame_in_training_partition")
+    for _ in {r["event_id"] for r in train} & {e["event_id"] for e in hold}:
+        add("event_in_train_and_holdout")
     return found
 
 
@@ -157,11 +195,16 @@ def run(
     snapshot_dir = Path(snap["path"])
     if load_summary(snapshot_dir)["version"] != snap["version"]:
         raise RuntimeError(f"{snapshot_dir} is no longer snapshot {snap['version']}")
-    leaked = leakage(snapshot_dir, partition_hashes(ctx.split_dir, GUARDED))
+    leaked = leakage(
+        snapshot_dir,
+        partition_hashes(ctx.split_dir, GUARDED),
+        training=set(partition_hashes(ctx.split_dir, (Partition.TRAIN,))),
+        earlier_holdouts=earlier_holdout_hashes(protocol),
+    )
     if leaked:
         raise RuntimeError(
-            f"snapshot {snap['version']} contains protected evaluation frames {leaked}; "
-            "rebuild it with `wildinbox snapshot build` (which excludes them)"
+            f"snapshot {snap['version']} breaks content separation {leaked}; "
+            "rebuild it with `wildinbox snapshot build` (which excludes these events)"
         )
     deployed_policy = json.loads(Path("reports/calibration/policy.json").read_text())
     deployed_dir = Path("models") / deployed_policy["model"]
