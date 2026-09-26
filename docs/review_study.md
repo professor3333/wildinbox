@@ -35,18 +35,30 @@ processed).
 
 ## 1. Prepare a study batch (organizer)
 
-Use photos the deployment has not seen (already uploaded photos are recognised
-as duplicates and form no events) and whose ground truth you know:
+Use photos the deployment has not seen, and whose ground truth you know.
+Already uploaded photos are recognised as duplicates and form no events, and a
+sequence with even one duplicate frame is incomplete. So list the hashes the
+deployment holds and skip every sequence that contains one:
 
 ```bash
+docker compose exec -T postgres psql -U wildinbox -d wildinbox -tAc \
+  "select distinct sha256 from images where sha256 is not null" > seen.txt
 uv run python scripts/make_sample_batch.py --partition calibration --images 400 \
-  --seed review-study --out data/samples/review-study
-uv run python scripts/simulate_deployment.py --batch-dir data/samples/review-study --upload-only
+  --seed review-study --exclude-hashes seen.txt --out data/samples/review-study-1
+uv run python scripts/simulate_deployment.py --batch-dir data/samples/review-study-1 --upload-only
 ```
 
-The second command uploads one batch per camera and prints the batch ids. The
-sets need about 100 events with enough of each label; the plan command says so
-if the batch is too small.
+The second command uploads one batch per camera and prints the batch ids. Its
+upload `Idempotency-Key` comes from the directory name. Give every study batch
+a new directory (`review-study-1`, `review-study-2`, ...); reusing one gets
+`409 idempotency_conflict`. The sets need about 100 events with enough of each
+label; the plan command says so if the batch is too small. Check that the
+events were decided by the release and policy above:
+
+```bash
+curl -s "localhost:8000/events?batch_id=<batch id>&limit=500" \
+  | jq -r '.events[].decision | "\(.model_release_id) \(.policy_version)"' | sort | uniq -c
+```
 
 ## 2. Create the plan
 
