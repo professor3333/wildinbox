@@ -36,6 +36,7 @@ from wildinbox.evaluation.data import ImageRow, load_rows
 from wildinbox.evaluation.metrics import image_metrics, wilson
 from wildinbox.inference.calibration import apply_temperature
 from wildinbox.policy.conservative import POLICY_NAME, Frame, PolicyConfig, decide
+from wildinbox.training.snapshot import load_summary
 
 
 def _version(obj: Any) -> str:
@@ -154,6 +155,8 @@ def run(
     if snap is None:
         raise RuntimeError("the candidate was not trained on a snapshot")
     snapshot_dir = Path(snap["path"])
+    if load_summary(snapshot_dir)["version"] != snap["version"]:
+        raise RuntimeError(f"{snapshot_dir} is no longer snapshot {snap['version']}")
     leaked = leakage(snapshot_dir, partition_hashes(ctx.split_dir, GUARDED))
     if leaked:
         raise RuntimeError(

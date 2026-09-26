@@ -32,6 +32,7 @@ from wildinbox.evaluation.data import ImageRow, box_lists, load_rows
 from wildinbox.inference.architecture import build_model
 from wildinbox.preprocessing import Box, TrainAugmentation, load_image, resize_shorter_side
 from wildinbox.training.run import MLFLOW_URI, git_state, hardware, load_context, seed_everything
+from wildinbox.training.snapshot import load_summary
 
 log = logging.getLogger(__name__)
 
@@ -212,8 +213,9 @@ def training_rows(split_dir: Path) -> list[ImageRow]:
 def snapshot_rows(snapshot_dir: Path) -> tuple[list[ImageRow], dict[str, Path], dict[str, Any]]:
     """Fit rows for a snapshot's training frames, their source files, and its summary.
     Rows are marked as fitting rows (partition `train`); their origin is the
-    snapshot, recorded in the model's metadata and in the `snapshot:` id prefix."""
-    summary = json.loads((snapshot_dir / "snapshot.json").read_text())
+    snapshot, recorded in the model's metadata and in the `snapshot:` id prefix.
+    Raises `SnapshotError` for a summary training cannot use."""
+    summary = load_summary(snapshot_dir)
     rows, sources = [], {}
     for line in (snapshot_dir / "train.jsonl").read_text().splitlines():
         r = json.loads(line)
@@ -233,6 +235,19 @@ def snapshot_rows(snapshot_dir: Path) -> tuple[list[ImageRow], dict[str, Path], 
             )
         )
     return rows, sources, summary
+
+
+def snapshot_record(snapshot_dir: Path, summary: dict[str, Any]) -> dict[str, Any]:
+    """The model metadata's `trained_on.snapshot`: which snapshot, and whose reviews."""
+    return {
+        "version": summary["version"],
+        "path": str(snapshot_dir),
+        "images": summary["train"]["images"],
+        "events": summary["train"]["events"],
+        "schema": summary["schema"],
+        "approved_reviewers": summary["approved_reviewers"],
+        "provenance_sha256": (summary["provenance"] or {}).get("sha256"),
+    }
 
 
 def train(config_path: Path, data_dir: Path, models_dir: Path) -> Path:
@@ -397,14 +412,8 @@ def train(config_path: Path, data_dir: Path, models_dir: Path) -> Path:
             "images_per_class": dict(sorted(counts.items())),
             "source_ids_sha256": ids_digest.hexdigest(),
             "snapshot": None
-            if snapshot is None
-            else {
-                "version": snapshot["version"],
-                "path": str(cfg.snapshot),
-                "images": snapshot["train"]["images"],
-                "events": snapshot["train"]["events"],
-                "reviewer": snapshot["reviewer"],
-            },
+            if snapshot is None or cfg.snapshot is None
+            else snapshot_record(cfg.snapshot, snapshot),
         },
         "device": device,
         "history": history,

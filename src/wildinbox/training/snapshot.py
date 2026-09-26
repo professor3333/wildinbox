@@ -21,6 +21,10 @@ on the protocol's cameras, their frames, and their originals.
 
 The snapshot version is a hash of the train and holdout manifests, so the
 same approved reviews always give the same version.
+
+`snapshot.json` carries `schema` (`SNAPSHOT_SCHEMA`); `load_summary` is the one
+reader, and training calls it before any work starts. Snapshots written before
+the field existed (`reviewer`, no provenance) are read as `snapshot/v1`.
 """
 
 from __future__ import annotations
@@ -38,6 +42,64 @@ import httpx
 import yaml
 
 from wildinbox.class_map import EMPTY_CLASS
+
+SNAPSHOT_SCHEMA = "snapshot/v2"
+LEGACY_SNAPSHOT_SCHEMA = "snapshot/v1"
+
+
+class SnapshotError(ValueError):
+    """A snapshot directory that training cannot use as it stands."""
+
+
+def load_summary(snapshot_dir: Path) -> dict[str, Any]:
+    """`snapshot.json`, validated and normalised to `SNAPSHOT_SCHEMA` fields.
+
+    v1 summaries named one `reviewer`; they are read with `approved_reviewers`
+    set to that name and no provenance record. For v2 the provenance file must
+    match the SHA-256 the summary recorded."""
+    path = snapshot_dir / "snapshot.json"
+    if not path.is_file():
+        raise SnapshotError(f"{path} does not exist")
+    summary: dict[str, Any] = json.loads(path.read_text())
+    schema = summary.get("schema", LEGACY_SNAPSHOT_SCHEMA if "reviewer" in summary else None)
+    if schema == LEGACY_SNAPSHOT_SCHEMA:
+        summary = {**summary, "schema": schema, "approved_reviewers": [summary.get("reviewer")]}
+        summary.pop("reviewer", None)
+        summary.setdefault("provenance", None)
+    elif schema != SNAPSHOT_SCHEMA:
+        raise SnapshotError(
+            f"{path}: unknown snapshot schema {schema!r} (expected {SNAPSHOT_SCHEMA}); "
+            "rebuild it with `wildinbox snapshot build`"
+        )
+    problems = []
+    if not isinstance(summary.get("version"), str) or not summary["version"]:
+        problems.append("version")
+    reviewers = summary.get("approved_reviewers")
+    if not (
+        isinstance(reviewers, list)
+        and reviewers
+        and all(isinstance(r, str) and r for r in reviewers)
+    ):
+        problems.append("approved_reviewers")
+    train = summary.get("train")
+    if not (
+        isinstance(train, dict) and all(isinstance(train.get(k), int) for k in ("images", "events"))
+    ):
+        problems.append("train.images/train.events")
+    if not (snapshot_dir / "train.jsonl").is_file():
+        problems.append("train.jsonl")
+    if schema == SNAPSHOT_SCHEMA:
+        prov = summary.get("provenance")
+        labels = snapshot_dir / str((prov or {}).get("file", "labels.jsonl"))
+        if not (isinstance(prov, dict) and isinstance(prov.get("sha256"), str)):
+            problems.append("provenance")
+        elif not labels.is_file():
+            problems.append(labels.name)
+        elif hashlib.sha256(labels.read_bytes()).hexdigest() != prov["sha256"]:
+            problems.append(f"{labels.name} (SHA-256 differs from the summary)")
+    if problems:
+        raise SnapshotError(f"{path} ({schema}) is missing or has invalid: {', '.join(problems)}")
+    return summary
 
 
 def load_protocol(path: Path) -> dict[str, Any]:
@@ -285,6 +347,7 @@ def build(
     for x in excluded:
         reasons[x["reason"]] = reasons.get(x["reason"], 0) + 1
     summary = {
+        "schema": SNAPSHOT_SCHEMA,
         "version": version,
         "protocol": str(protocol_path),
         "protocol_sha256": hashlib.sha256(protocol_path.read_bytes()).hexdigest(),
@@ -316,4 +379,5 @@ def build(
     (out / "snapshot.json").write_text(json.dumps(summary, indent=2) + "\n")
     assert all(r["label"] != "" for r in train_rows)
     assert EMPTY_CLASS in classes
+    load_summary(out)  # what training will read back
     return out

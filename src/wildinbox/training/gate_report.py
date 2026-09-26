@@ -22,13 +22,21 @@ def write_report(report_dir: Path, out: dict[str, Any]) -> Path:
     d, c = out["results"]["deployed"], out["results"]["candidate"]
     snap = out["snapshot"]
     checks = out["checks"]
+    # candidates trained before snapshot/v2 recorded a single `reviewer`
+    reviewers = snap.get("approved_reviewers") or [snap["reviewer"]]
+    simulated = reviewers == ["simulated-ground-truth"]
     md = [
         f"# Update candidate: `{out['candidate']}`",
         "",
         f"Protocol [`{out['protocol']}`](../../../{out['protocol']}), committed before any "
         f"review was collected or candidate trained. Snapshot `{snap['version']}`: "
-        f"{snap['images']} images from {snap['events']} reviewed events. **Reviews were "
-        f"simulated from the dataset's ground truth** (reviewer `{snap['reviewer']}`).",
+        f"{snap['images']} images from {snap['events']} reviewed events"
+        + (
+            ". **Reviews were simulated from the dataset's ground truth** "
+            "(reviewer `simulated-ground-truth`)."
+            if simulated
+            else f", approved reviewers {', '.join(f'`{r}`' for r in reviewers)}."
+        ),
         "",
         "## Decision",
         "",
