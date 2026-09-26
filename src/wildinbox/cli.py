@@ -521,9 +521,14 @@ def main(argv: Sequence[str] | None = None) -> int:
         print(f"  provenance: {summary['provenance']['events']} events in labels.jsonl")
         return 0
     if args.command == "update":
+        from wildinbox.training.gate import GateError
         from wildinbox.training.gate import run as run_gate
 
-        verdict = run_gate(args.protocol, args.candidate, args.config, args.report_dir)
+        try:
+            verdict = run_gate(args.protocol, args.candidate, args.config, args.report_dir)
+        except GateError as e:
+            print(f"error: {e}", file=sys.stderr)
+            return 1
         for name, check in verdict["checks"].items():
             print(f"{'pass' if check['pass'] else 'FAIL'}  {name}: {check['value']}")
         decision = "PROMOTE" if verdict["promote"] else "DO NOT PROMOTE"

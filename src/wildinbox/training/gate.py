@@ -23,6 +23,7 @@ from __future__ import annotations
 import gzip
 import hashlib
 import json
+from dataclasses import dataclass
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
@@ -39,8 +40,60 @@ from wildinbox.policy.conservative import POLICY_NAME, Frame, PolicyConfig, deci
 from wildinbox.training.snapshot import load_summary
 
 
+class GateError(RuntimeError):
+    """The gate cannot run a comparison it could vouch for."""
+
+
 def _version(obj: Any) -> str:
     return hashlib.sha256(json.dumps(obj, sort_keys=True).encode()).hexdigest()[:12]
+
+
+@dataclass(frozen=True)
+class DeployedRelease:
+    """The exact artifacts behind a release id, verified against each other."""
+
+    id: str
+    model_dir: Path
+    policy_path: Path
+    policy: dict[str, Any]
+    weights_sha256: str
+
+
+def resolve_release(
+    release_id: str, models_root: Path = Path("models"), policy_path: Path | None = None
+) -> DeployedRelease:
+    """Local artifacts of `release_id` (`<model name>@<policy artifact version>`):
+    `models_root/<name>` and the policy artifact of that version (`policy_path`,
+    else the model directory's `policy.json`). Refuses anything that would not
+    register as exactly this release: a policy of another version or edited
+    after it was versioned, or weights, classes, calibration, or preprocessing
+    that disagree (the checks `wildinbox release register` applies)."""
+    from wildinbox.inference.releases import ReleaseError, build_release
+
+    name, sep, version = release_id.rpartition("@")
+    if not sep or not name or not version:
+        raise GateError(f"release id {release_id!r} is not <model>@<policy artifact version>")
+    model_dir = models_root / name
+    if not (model_dir / "meta.json").is_file() or not (model_dir / "model.pt").is_file():
+        raise GateError(f"release {release_id}: no model at {model_dir}")
+    path = policy_path or model_dir / "policy.json"
+    if not path.is_file():
+        raise GateError(f"release {release_id}: no policy artifact at {path}")
+    policy = json.loads(path.read_text())
+    if policy.get("artifact_version") != version:
+        raise GateError(
+            f"release {release_id}: {path} is policy version "
+            f"{policy.get('artifact_version')!r}, not {version!r}"
+        )
+    if _version({k: v for k, v in policy.items() if k != "artifact_version"}) != version:
+        raise GateError(f"release {release_id}: {path} was changed after it was versioned")
+    try:
+        row, _ = build_release(model_dir, path)
+    except ReleaseError as e:
+        raise GateError(f"release {release_id}: {e}") from e
+    if row["id"] != release_id:
+        raise GateError(f"release {release_id}: artifacts resolve to {row['id']}")
+    return DeployedRelease(release_id, model_dir, path, policy, row["weights_sha256"])
 
 
 GUARDED = (Partition.FINAL_TEST, Partition.CALIBRATION, Partition.SEEN_CAMERA_DIAGNOSTIC)
@@ -187,8 +240,18 @@ def run(
 
     protocol = yaml.safe_load(protocol_path.read_text())
     gate = protocol["gate"]
-    ctx = load_context(config_path, Settings().data_dir)
+    # The baseline is the protocol's deployed release, resolved and verified
+    # before any data is read; never whichever policy happens to be current.
+    deployed = resolve_release(
+        protocol["deployed_release"],
+        Path(protocol.get("models_root", "models")),
+        Path(protocol["deployed_policy"]) if protocol.get("deployed_policy") else None,
+    )
+    deployed_policy = deployed.policy
     cand_meta = json.loads((candidate_dir / "meta.json").read_text())
+    if list(cand_meta["classes"]) != list(deployed_policy["classes"]):
+        raise GateError("candidate and deployed release disagree on the class order")
+    ctx = load_context(config_path, Settings().data_dir)
     snap = cand_meta["trained_on"]["snapshot"]
     if snap is None:
         raise RuntimeError("the candidate was not trained on a snapshot")
@@ -206,8 +269,6 @@ def run(
             f"snapshot {snap['version']} breaks content separation {leaked}; "
             "rebuild it with `wildinbox snapshot build` (which excludes these events)"
         )
-    deployed_policy = json.loads(Path("reports/calibration/policy.json").read_text())
-    deployed_dir = Path("models") / deployed_policy["model"]
     classes = list(deployed_policy["classes"])
     released = {k: v for k, v in deployed_policy["released"].items() if k != "policy_version"}
     cfg = PolicyConfig(
@@ -219,9 +280,11 @@ def run(
     )
 
     models = {
-        "deployed": FinetunedPredictor(ctx, deployed_dir, "mps"),
+        "deployed": FinetunedPredictor(ctx, deployed.model_dir, "mps"),
         "candidate": FinetunedPredictor(ctx, candidate_dir, "mps"),
     }
+    if models["deployed"].weights_digest != deployed.weights_sha256[:12]:
+        raise GateError(f"{deployed.model_dir}/model.pt changed while the gate was loading it")
     cal_rows, _ = load_rows(ctx.split_dir, [Partition.CALIBRATION])
     diag_rows, _ = load_rows(ctx.split_dir, [Partition.SEEN_CAMERA_DIAGNOSTIC])
     events, hold_rows = holdout_rows(snapshot_dir)
@@ -294,6 +357,8 @@ def run(
             "at": datetime.now(UTC).isoformat(),
             "candidate": cand_meta["name"],
             "candidate_weights": models["candidate"].weights_digest,
+            "deployed_release": deployed.id,
+            "deployed_weights": models["deployed"].weights_digest,
             "holdout_version": snap["version"],
             "protocol_sha256": hashlib.sha256(protocol_path.read_bytes()).hexdigest(),
             "holdout_gain": gain,
@@ -330,7 +395,13 @@ def run(
     out = {
         "protocol": str(protocol_path),
         "protocol_sha256": hashlib.sha256(protocol_path.read_bytes()).hexdigest(),
-        "deployed_release": protocol["deployed_release"],
+        "deployed_release": deployed.id,
+        "deployed": {
+            "model_dir": str(deployed.model_dir),
+            "policy": str(deployed.policy_path),
+            "weights_sha256": deployed.weights_sha256,
+            "calibration_version": deployed_policy["calibration"]["version"],
+        },
         "candidate": cand_meta["name"],
         "candidate_release": f"{cand_meta['name']}@{policy['artifact_version']}",
         "snapshot": snap,

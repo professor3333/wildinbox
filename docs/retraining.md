@@ -142,6 +142,27 @@ Training runs offline on a separate machine, never in CI or on the serving VM.
 uv run wildinbox update gate --candidate models/finetune-e3-update1
 ```
 
+**The baseline is the protocol's `deployed_release`, resolved exactly.** The
+id `<model>@<policy artifact version>` names the model directory
+`models/<model>`. It also names the policy artifact of that version:
+`deployed_policy` in the protocol if given, else `models/<model>/policy.json`.
+(`update gate` writes a candidate's policy there, so a promoted candidate is
+the next cycle's baseline.)
+
+Before reading any data, the gate refuses the comparison, and the command exits
+with status 1, if any of these holds:
+
+- the policy artifact is another version;
+- the policy was edited after it was versioned (its content no longer hashes
+  to its version);
+- `wildinbox release register` would reject the pair: the model name, class
+  order, calibration weights, class map, or preprocessing disagree;
+- the candidate's class order differs from the deployed release's.
+
+It checks the weights digest again after loading. `metrics.json` and
+`comparisons.jsonl` record the deployed release id, its weights SHA-256,
+policy path, and calibration version.
+
 The candidate's temperature is refit on the calibration cameras. The deployed
 and candidate models are then compared on **development data only**:
 
