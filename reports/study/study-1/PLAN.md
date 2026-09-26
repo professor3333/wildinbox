@@ -66,10 +66,14 @@ terms, for example "volunteers, not trained field reviewers".
 | # | Participant code | Date | Arm | Notes |
 |---|---|---|---|---|
 | 1 | author | 2026-09-26 | 0 | The project's author (knows how the model behaves). Completed: 6 practice, 40 + 40 events, 2 ratings. |
-| 2 | | | 1 | |
-| 3 | | | 2 | |
-| 4 | | | 3 | |
-| 5 | | | 0 | |
+| 2 | P1 | 2026-09-26 | 1 | Volunteer. Completed: 6 practice, 40 + 40 events, 2 ratings. Nothing unusual. |
+| 3 | P2 | 2026-09-26 | 2 | Volunteer. Completed: 6 practice, 40 + 40 events, 2 ratings. Nothing unusual. |
+| 4 | P3 | 2026-09-26 | 3 | Volunteer. Completed: 6 practice, 40 + 40 events, 2 ratings. Nothing unusual. |
+| 5 | P4 | 2026-09-26 | 0 | Volunteer. Completed: 6 practice, 40 + 40 events, 2 ratings. Nothing unusual. |
+
+Participants 2-5 are volunteers, not trained field reviewers. All sessions ran
+one after another on the same laptop; the recorded trial times confirm that no
+two sessions overlapped. The study data was backed up after the last session.
 
 **Decided on 2026-09-26, after participant 1 and before anyone looked at any
 timing or accuracy data:**
