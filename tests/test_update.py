@@ -630,3 +630,149 @@ def test_the_training_loader_refuses_bytes_the_snapshot_did_not_record(tmp_path:
     (d / "images" / f"{AA}.jpg").write_bytes(b"")
     with pytest.raises(SnapshotError, match="does not match its SHA-256"):
         snapshot_rows(d)
+
+
+def _release_dir(root: Path, name: str, seed: int, temperature: float = 1.5) -> str:
+    """A model directory and its policy artifact that register as one release;
+    returns the release id."""
+    from wildinbox.class_map import ClassMap
+    from wildinbox.config import load_config
+    from wildinbox.training.gate import _version
+
+    cfg = load_config(REPO_ROOT / "configs/example.yaml")
+    d = root / name
+    d.mkdir(parents=True)
+    weights = f"weights-{seed}".encode()
+    (d / "model.pt").write_bytes(weights)
+    (d / "meta.json").write_text(
+        json.dumps(
+            {
+                "name": name,
+                "classes": cfg.classes,
+                "class_map_fingerprint": ClassMap(cfg.classes).fingerprint(),
+                "preprocessing": cfg.preprocessing.model_dump(mode="json"),
+                "preprocessing_version": cfg.preprocessing.fingerprint(),
+            }
+        )
+    )
+    calibration = {
+        "method": "temperature",
+        "temperature": temperature,
+        "weights_digest": hashlib.sha256(weights).hexdigest()[:12],
+    }
+    calibration["version"] = _version(calibration)
+    policy: dict[str, Any] = {
+        "policy": "conservative",
+        "model": name,
+        "classes": cfg.classes,
+        "calibration": calibration,
+        "unfamiliar": None,
+        "released": {
+            "empty_threshold": 0.65,
+            "species_threshold": None,
+            "auto_filter_enabled": False,
+            "auto_accept_enabled": False,
+            "accept_species": [],
+            "policy_version": f"conservative/v1+{seed}",
+        },
+        "rule": {},
+    }
+    policy["artifact_version"] = _version(policy)
+    (d / "policy.json").write_text(json.dumps(policy))
+    return f"{name}@{policy['artifact_version']}"
+
+
+def test_the_gate_resolves_exactly_the_deployed_release(tmp_path: Path) -> None:
+    from wildinbox.training.gate import GateError, resolve_release
+
+    root = tmp_path / "models"
+    v1, v2 = _release_dir(root, "model-v1", 1), _release_dir(root, "model-v2", 2)
+    got = resolve_release(v2, root)
+    assert (got.id, got.model_dir, got.policy_path) == (
+        v2,
+        root / "model-v2",
+        root / "model-v2/policy.json",
+    )
+    assert got.weights_sha256 == hashlib.sha256(b"weights-2").hexdigest()
+    assert resolve_release(v1, root).model_dir == root / "model-v1"
+
+    def refused(release_id: str, match: str, policy: Path | None = None) -> None:
+        with pytest.raises(GateError, match=match):
+            resolve_release(release_id, root, policy)
+
+    v1_version = v1.split("@")[1]
+    refused(f"model-v2@{v1_version}", "is policy version")  # V2's name, V1's policy
+    refused(v2, "is policy version", root / "model-v1/policy.json")  # another policy file
+    refused("model-v9@abc", "no model at")
+    refused("model-v2", "is not <model>@")
+
+    policy_path = root / "model-v2/policy.json"
+    original = policy_path.read_text()
+    edited = json.loads(original)
+    edited["released"]["empty_threshold"] = 0.2  # loosened, version left as it was
+    policy_path.write_text(json.dumps(edited))
+    refused(v2, "changed after it was versioned")
+    policy_path.write_text(original)
+
+    (root / "model-v2/model.pt").write_bytes(b"other weights")  # retrained in place
+    refused(v2, "calibration was fitted on different weights")
+
+
+def test_a_v3_cycle_against_deployed_v2_loads_v2_and_refuses_mismatches_first(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    import gzip
+    from types import SimpleNamespace
+
+    from wildinbox.evaluation import predictors
+    from wildinbox.training import gate
+    from wildinbox.training import run as training_run
+    from wildinbox.training.gate import GateError
+
+    root = tmp_path / "models"
+    _release_dir(root, "model-v1", 1)
+    v2 = _release_dir(root, "model-v2", 2)
+    _release_dir(root, "model-v3", 3)
+    cand = root / "model-v3"
+    meta = json.loads((cand / "meta.json").read_text())
+    snap = _snapshot(tmp_path)
+    meta["trained_on"] = {"snapshot": {"version": "abc123", "path": str(snap)}}
+    (cand / "meta.json").write_text(json.dumps(meta))
+    splits = tmp_path / "splits"
+    splits.mkdir()
+    with gzip.open(splits / "images.jsonl.gz", "wt"):
+        pass
+
+    def protocol(deployed: str) -> Path:
+        p = tmp_path / "protocol.yaml"
+        p.write_text(
+            yaml.safe_dump({"deployed_release": deployed, "models_root": str(root), "gate": {}})
+        )
+        return p
+
+    contexts: list[Path] = []
+
+    def fake_context(config: Path, data_dir: Path) -> SimpleNamespace:
+        contexts.append(config)
+        return SimpleNamespace(split_dir=splits)
+
+    loaded: list[Path] = []
+
+    class Loaded(Exception):
+        pass
+
+    def fake_predictor(ctx: Any, model_dir: Path, device: str) -> None:
+        loaded.append(model_dir)
+        raise Loaded
+
+    monkeypatch.setattr(training_run, "load_context", fake_context)
+    monkeypatch.setattr(predictors, "FinetunedPredictor", fake_predictor)
+
+    wrong = f"model-v2@{v2.split('@')[1][::-1]}"
+    with pytest.raises(GateError, match="is policy version"):
+        gate.run(protocol(wrong), cand, tmp_path / "cfg.yaml", tmp_path / "report")
+    assert contexts == [] and loaded == []  # refused before reading any data
+
+    with pytest.raises(Loaded):
+        gate.run(protocol(v2), cand, tmp_path / "cfg.yaml", tmp_path / "report")
+    assert loaded == [root / "model-v2"]  # the baseline is V2, not the current policy's model
