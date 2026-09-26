@@ -36,6 +36,7 @@ from __future__ import annotations
 import gzip
 import hashlib
 import json
+import os
 import statistics
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
@@ -106,6 +107,39 @@ def load_summary(snapshot_dir: Path) -> dict[str, Any]:
     return summary
 
 
+class SnapshotAPIError(RuntimeError):
+    """The API refused or failed a request the snapshot needs."""
+
+
+def api_client(api_url: str) -> httpx.Client:
+    """Client for `api_url`, sending `Authorization: Bearer $WILDINBOX_TOKEN` when
+    set (the convention of the UI and scripts). Reviewer approval trusts the
+    reviewer names the API returns, so snapshots come from an authenticated API."""
+    token = os.environ.get("WILDINBOX_TOKEN")
+    headers = {"Authorization": f"Bearer {token}"} if token else {}
+    return httpx.Client(base_url=api_url, timeout=120, headers=headers)
+
+
+def _get(api: httpx.Client, path: str, **params: Any) -> httpx.Response:
+    """GET, or `SnapshotAPIError` for any non-2xx status; bodies are only read
+    from successful responses."""
+    try:
+        res = api.get(path, params=params or None)
+    except httpx.HTTPError as e:
+        raise SnapshotAPIError(f"GET {path}: {e}") from e
+    if res.status_code in (401, 403):
+        sent = "a token" if "authorization" in api.headers else "no token"
+        raise SnapshotAPIError(
+            f"GET {path}: {res.status_code} {res.reason_phrase} ({sent} sent); "
+            "set WILDINBOX_TOKEN to a valid API token for this deployment"
+        )
+    if not res.is_success:
+        raise SnapshotAPIError(
+            f"GET {path}: {res.status_code} {res.reason_phrase}: {res.text[:200]}"
+        )
+    return res
+
+
 def load_protocol(path: Path) -> dict[str, Any]:
     raw: dict[str, Any] = yaml.safe_load(path.read_text())
     return raw
@@ -115,9 +149,8 @@ def _events(api: httpx.Client, camera: str) -> list[dict[str, Any]]:
     out: list[dict[str, Any]] = []
     offset: int | None = 0
     while offset is not None:
-        page = api.get(
-            "/events",
-            params={"camera_id": camera, "reviewed": True, "limit": 500, "offset": offset},
+        page = _get(
+            api, "/events", camera_id=camera, reviewed=True, limit=500, offset=offset
         ).json()
         out.extend(page["events"])
         offset = page["next_offset"]
@@ -252,9 +285,9 @@ def build(
     root: Path = Path("."),
 ) -> Path:
     protocol = load_protocol(protocol_path)
-    api = client or httpx.Client(base_url=api_url, timeout=120)
+    api = client or api_client(api_url)
     deployed = protocol["deployed_release"]
-    releases = {r["id"]: r for r in api.get("/releases").json()["releases"]}
+    releases = {r["id"]: r for r in _get(api, "/releases").json()["releases"]}
     if deployed not in releases:
         raise RuntimeError(f"deployed release {deployed} is not registered at {api_url}")
     classes = set(releases[deployed]["class_names"])
@@ -293,7 +326,7 @@ def build(
             if e["latest_review"]["reviewer"] not in approved:
                 not_approved += 1
                 continue
-            details[e["id"]] = api.get(f"/events/{e['id']}").json()
+            details[e["id"]] = _get(api, f"/events/{e['id']}").json()
             why = protected.reason(e["id"], details[e["id"]]["images"])
             if why is not None:
                 exclude(e, why)
@@ -377,7 +410,7 @@ def build(
         dest = out / "images" / f"{sha}.jpg"
         if dest.exists():
             continue
-        data = api.get(f"/images/{image_id}/original").content
+        data = _get(api, f"/images/{image_id}/original").content
         if hashlib.sha256(data).hexdigest() != sha:
             raise RuntimeError(f"original for image {image_id} does not match its SHA-256")
         dest.write_bytes(data)

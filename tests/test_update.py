@@ -430,3 +430,76 @@ def test_gate_finds_content_overlap_the_builder_should_have_removed(tmp_path: Pa
         "holdout_frame_in_training_partition": 1,
         "earlier_snapshot_holdout": 2,
     }
+
+
+def test_snapshot_authenticates_with_the_token_convention_and_names_auth_failures(
+    settings: Settings,  # noqa: F811
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    """Against a token-protected API: WILDINBOX_TOKEN builds the snapshot; a
+    wrong or missing token is a clear authentication error, never a KeyError
+    from reading an error body as data."""
+    from fastapi.testclient import TestClient
+
+    from wildinbox import cli
+    from wildinbox.api.app import create_app
+    from wildinbox.api.auth import new_token, token_hash
+    from wildinbox.training import snapshot
+    from wildinbox.training.snapshot import SnapshotAPIError, api_client, build
+
+    token = new_token()
+    secured = settings.model_copy(
+        update={"auth": "tokens", "api_tokens": {"alice": token_hash(token)}}
+    )
+    protocol = tmp_path / "protocol.yaml"
+    protocol.write_text(
+        yaml.safe_dump(
+            {
+                "name": "update4",
+                "deployed_release": "test-predictor-v0",
+                "deployment": {"cameras": ["90"], "reviewer": "alice"},
+                "protected": {"partitions": [], "snapshot_holdouts": []},
+            }
+        )
+    )
+    app = create_app(secured)
+
+    def client_as(env_token: str | None) -> TestClient:
+        """What `api_client` would send, over the in-process app."""
+        if env_token is None:
+            monkeypatch.delenv("WILDINBOX_TOKEN", raising=False)
+        else:
+            monkeypatch.setenv("WILDINBOX_TOKEN", env_token)
+        c = TestClient(app)
+        c.headers.update(api_client("http://testserver").headers)
+        return c
+
+    with client_as(token) as c:
+        meta = {"files": {"a.jpg": {"camera_id": "cct-90", "captured_at": "2012-01-01T10:00:00"}}}
+        batch = c.post(
+            "/batches",
+            files=[("files", ("a.jpg", jpeg(401), "image/jpeg"))],
+            data={"metadata": json.dumps(meta)},
+        ).json()
+        (event,) = c.get("/events", params={"batch_id": batch["id"]}).json()["events"]
+        res = c.post(f"/events/{event['id']}/reviews", json={"outcome": "unresolved"})
+        assert res.status_code == 201 and res.json()["reviewer"] == "alice"
+        out = build(protocol, "http://testserver", tmp_path / "snaps", client=c, root=tmp_path)
+    summary = json.loads((out / "snapshot.json").read_text())
+    assert summary["approved_reviewers"] == ["alice"]
+    assert summary["provenance"]["events"] == 1
+
+    for env_token, sent in (("not-the-token", "a token sent"), (None, "no token sent")):
+        with (
+            client_as(env_token) as c,
+            pytest.raises(SnapshotAPIError, match=f"401 Unauthorized \\({sent}\\)"),
+        ):
+            build(protocol, "http://testserver", tmp_path / "snaps", client=c, root=tmp_path)
+
+    with client_as("not-the-token") as c:
+        monkeypatch.setattr(snapshot, "api_client", lambda url: c)
+        code = cli.main(["snapshot", "build", "--protocol", str(protocol), "--out", str(tmp_path)])
+    err = capsys.readouterr().err
+    assert code == 1 and "GET /releases: 401" in err and "WILDINBOX_TOKEN" in err

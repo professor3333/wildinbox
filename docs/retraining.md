@@ -40,10 +40,16 @@ gate:
 ## 2. Snapshot from approved labels: `wildinbox snapshot build`
 
 ```bash
+export WILDINBOX_API_URL=https://wildinbox.example.org   # default http://localhost:8000
+export WILDINBOX_TOKEN=...                               # a token of that deployment
 uv run wildinbox snapshot build --protocol configs/experiments/update_cycle.yaml
 ```
 
-It reads through the API, as an offline training machine would.
+It reads through the API, as an offline training machine would. Like the UI and
+the scripts, it sends `Authorization: Bearer $WILDINBOX_TOKEN` when the variable
+is set. If the API refuses a request, the command stops with exit status 1 and
+names the request and status. For 401 or 403 it also says whether a token was
+sent. It never reads an error response as data.
 
 - **Approved labels only.** An event counts only when its *latest* review is by
   an approved reviewer. Automatic labels, unreviewed suggestions, and reviews by
