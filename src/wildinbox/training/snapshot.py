@@ -18,6 +18,11 @@ on the protocol's cameras, their frames, and their originals.
 - **Content separation** after the split, across cameras and by whole events:
   a holdout event holding a dataset training-partition frame is excluded, and
   so is a training event sharing any frame (by SHA-256) with a holdout event.
+- **Only usable frames are ML inputs**: an event keeps every member (rejected,
+  duplicate, or failed files included), but only frames that decoded and were
+  scored without error enter `train.jsonl` or `holdout.jsonl`; downloaded
+  originals must match their SHA-256 and decode. An event with no usable frame
+  is excluded (`no_usable_frames`).
 - **Provenance**: `labels.jsonl` records, for every considered event, where its
   label came from (review id, reviewer, time, outcome, the suggestion and the
   release that made it, the full review chain) and where it went (train,
@@ -38,13 +43,16 @@ import hashlib
 import json
 import os
 import statistics
+from collections import Counter
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
+from io import BytesIO
 from pathlib import Path
 from typing import Any
 
 import httpx
 import yaml
+from PIL import Image as PILImage
 
 from wildinbox.class_map import EMPTY_CLASS
 
@@ -138,6 +146,16 @@ def _get(api: httpx.Client, path: str, **params: Any) -> httpx.Response:
             f"GET {path}: {res.status_code} {res.reason_phrase}: {res.text[:200]}"
         )
     return res
+
+
+def decode_problem(data: bytes) -> str | None:
+    """Why these bytes cannot be an ML input, or None when they fully decode."""
+    try:
+        with PILImage.open(BytesIO(data)) as img:
+            img.load()
+    except Exception as e:
+        return f"does not decode: {type(e).__name__}"
+    return None
 
 
 def load_protocol(path: Path) -> dict[str, Any]:
@@ -253,6 +271,29 @@ def review_label(event: dict[str, Any]) -> tuple[str | None, str]:
     return review["confirmed_label"], "reviewed"
 
 
+def frame_status(image: dict[str, Any]) -> tuple[str, str | None]:
+    """(status, reason) of an event member. Only `usable` frames (decoded, and
+    scored without error) become ML inputs; the others stay event members, and
+    in provenance, with the reason they were withheld."""
+    if image["validation_status"] == "invalid":
+        return "invalid", image.get("validation_error")
+    if image["validation_status"] == "duplicate":
+        return "duplicate", f"duplicate of image {image.get('duplicate_of')}"
+    if image.get("processing_error"):
+        return "processing_failed", image["processing_error"]
+    if image["validation_status"] != "valid" or not image.get("sha256"):
+        return "unprocessed", f"validation status {image['validation_status']}"
+    return "usable", None
+
+
+def usable_frames(detail: dict[str, Any]) -> list[dict[str, Any]]:
+    return [
+        {"image_id": i["id"], "sha256": i["sha256"], "filename": i["filename"]}
+        for i in sorted(detail["images"], key=lambda i: i["position"])
+        if frame_status(i)[0] == "usable"
+    ]
+
+
 def _provenance(event: dict[str, Any], detail: dict[str, Any], use: str) -> dict[str, Any]:
     review = event["latest_review"]
     decision = detail.get("decision") or {}
@@ -273,7 +314,19 @@ def _provenance(event: dict[str, Any], detail: dict[str, Any], use: str) -> dict
         "disposition": decision.get("disposition"),
         "audit_selected": decision.get("audit_selected"),
         "review_chain": [r["id"] for r in detail.get("reviews", [])],
-        "frames": sorted(i["sha256"] for i in detail["images"]),
+        # ML inputs only; `members` keeps every frame and why it was withheld.
+        "frames": sorted(f["sha256"] for f in usable_frames(detail)),
+        "members": [
+            {
+                "image_id": i["id"],
+                "filename": i["filename"],
+                "sha256": i["sha256"],
+                "status": status,
+                "reason": reason,
+            }
+            for i in sorted(detail["images"], key=lambda i: i["position"])
+            for status, reason in [frame_status(i)]
+        ],
     }
 
 
@@ -300,7 +353,9 @@ def build(
     not_approved = 0
     cutoffs: dict[str, str] = {}
     to_download: dict[str, str] = {}  # sha256 -> image id
+    withheld: Counter[str] = Counter()  # members of train/holdout events kept out of ML inputs
     details: dict[str, dict[str, Any]] = {}
+    undecodable: set[str] = set()
     before: list[dict[str, Any]] = []
     after: list[dict[str, Any]] = []
 
@@ -317,7 +372,11 @@ def build(
         provenance.append(_provenance(e, detail, f"excluded:{why}"))
 
     def shas(e: dict[str, Any]) -> set[str]:
-        return {i["sha256"] for i in details[e["id"]]["images"]}
+        """Content of every member whose bytes decode, usable or not: a
+        duplicate or a frame that failed inference still carries the image.
+        Bytes of a rejected file (corrupt, or a duplicate of one) carry none,
+        and would otherwise tie unrelated events together."""
+        return {i["sha256"] for i in details[e["id"]]["images"] if i["sha256"]} - undecodable
 
     for cam in protocol["deployment"]["cameras"]:
         camera_id = f"cct-{cam}"
@@ -333,6 +392,12 @@ def build(
                 continue
             events.append(e)
         cam_before, cam_after, cutoffs[camera_id] = split_by_time(events)
+        undecodable.update(
+            i["sha256"]
+            for e in events
+            for i in details[e["id"]]["images"]
+            if i["validation_status"] == "invalid" and i["sha256"]
+        )
         before += cam_before
         after += cam_after
     # Content separation, whole events at a time, across cameras (the same
@@ -356,10 +421,11 @@ def build(
         for e in group:
             detail = details[e["id"]]
             label, kind = review_label(e)
-            frames = [
-                {"image_id": i["id"], "sha256": i["sha256"], "filename": i["filename"]}
-                for i in detail["images"]
-            ]
+            frames = usable_frames(detail)
+            if not frames:
+                exclude(e, "no_usable_frames")
+                continue
+            withheld.update(s for s, _ in map(frame_status, detail["images"]) if s != "usable")
             if rows is train_rows:
                 if label not in classes:
                     # unsupported species and unresolved events are not fit
@@ -413,6 +479,8 @@ def build(
         data = _get(api, f"/images/{image_id}/original").content
         if hashlib.sha256(data).hexdigest() != sha:
             raise RuntimeError(f"original for image {image_id} does not match its SHA-256")
+        if (problem := decode_problem(data)) is not None:
+            raise RuntimeError(f"image {image_id} was marked usable but {problem}")
         dest.write_bytes(data)
     (out / "train.jsonl").write_text(train_text)
     (out / "holdout.jsonl").write_text(holdout_text)
@@ -446,6 +514,9 @@ def build(
         },
         "protected": protected.description,
         "excluded": {"events": len(excluded), "by_reason": reasons, "records": excluded},
+        # Members of train/holdout events that are not ML inputs, by status;
+        # each is listed with its reason under `members` in labels.jsonl.
+        "withheld_frames": dict(sorted(withheld.items())),
         "provenance": {
             "file": "labels.jsonl",
             "sha256": hashlib.sha256(labels_text.encode()).hexdigest(),

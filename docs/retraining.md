@@ -86,11 +86,28 @@ sent. It never reads an error response as data.
   This matches exact bytes only. A copy that has been re-encoded, or whose EXIF
   was edited, has a different SHA-256. It is not caught, except for dataset
   frames, which are also matched by source file name.
+- **Only usable frames are ML inputs.** An event keeps every member, but only
+  a frame that decoded and was scored without error enters `train.jsonl` or
+  `holdout.jsonl`. These members are withheld:
+  - `invalid`: rejected at upload or on decoding, such as zero-byte or corrupt
+    files;
+  - `duplicate`: a repeat of another file's bytes;
+  - `processing_failed`: inference failed on it;
+  - `unprocessed`: not yet scored.
+
+  An event with no usable frame is excluded (`no_usable_frames`).
+  `snapshot.json` counts the withheld members of kept events under
+  `withheld_frames`. Duplicates and failed frames still count as content for the
+  separation checks above. Rejected files, and copies of their bytes, do not.
+  Each downloaded original must match its SHA-256 and decode, and training
+  checks each file's SHA-256 again before loading it.
 - **Provenance**: `labels.jsonl` has one row per considered event:
   - the label, review id, reviewer, time, and outcome;
   - the suggestion, and the release and policy that made it;
   - whether it was an audit sample;
-  - the full review chain and the frame hashes;
+  - the full review chain;
+  - `frames`: the hashes of the ML-input frames;
+  - `members`: every frame with its status and, when withheld, the reason;
   - its use: `train`, `holdout`, `not_fit`, or `excluded:<reason>`.
 
   `snapshot.json` records the file's SHA-256.
