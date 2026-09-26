@@ -327,7 +327,9 @@ def main(argv: Sequence[str] | None = None) -> int:
         "--protocol", type=Path, default=Path("configs/experiments/update_cycle.yaml")
     )
     p_sb.add_argument(
-        "--api-url", default=os.environ.get("WILDINBOX_API_URL", "http://localhost:8000")
+        "--api-url",
+        default=os.environ.get("WILDINBOX_API_URL", "http://localhost:8000"),
+        help="API to read from; sends WILDINBOX_TOKEN as a bearer token when set.",
     )
     p_sb.add_argument("--out", type=Path, default=Path("data/snapshots"))
 
@@ -500,9 +502,13 @@ def main(argv: Sequence[str] | None = None) -> int:
         print(f"report -> {args.report_dir / 'README.md'}")
         return 0
     if args.command == "snapshot":
-        from wildinbox.training.snapshot import build
+        from wildinbox.training.snapshot import SnapshotAPIError, build
 
-        out = build(args.protocol, args.api_url, args.out)
+        try:
+            out = build(args.protocol, args.api_url, args.out)
+        except SnapshotAPIError as e:
+            print(f"error: {e}", file=sys.stderr)
+            return 1
         summary = json.loads((out / "snapshot.json").read_text())
         print(f"snapshot {summary['version']} -> {out}")
         print(f"  train: {summary['train']}")
