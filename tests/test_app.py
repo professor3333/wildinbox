@@ -308,6 +308,105 @@ def test_reviews_form_a_chain(client: TestClient) -> None:
     assert [r["outcome"] for r in history] == ["corrected", "unresolved"]
 
 
+@pytest.mark.parametrize("prior_reviews", [0, 1])
+def test_concurrent_reviews_never_fork_the_history(
+    settings: Settings, monkeypatch: pytest.MonkeyPatch, prior_reviews: int
+) -> None:
+    """Two reviews that both read the same history (none yet, or one) before
+    either commits: one is recorded, the other gets 409, and the event keeps a
+    single chain with one first review."""
+    import threading
+
+    from wildinbox.api import app as app_module
+
+    app = create_app(settings)
+    with TestClient(app) as c:
+        batch = c.post("/batches", files=_files(("a.jpg", jpeg(51)))).json()
+        event = c.get("/events", params={"batch_id": batch["id"]}).json()["events"][0]
+        url = f"/events/{event['id']}/reviews"
+        for _ in range(prior_reviews):
+            assert (
+                c.post(url, json={"reviewer": "vol-0", "outcome": "unresolved"}).status_code == 201
+            )
+
+    both_read = threading.Barrier(2, timeout=10)
+    real_contract = app_module.ReviewContract
+
+    def contract_after_both_read(**kw: Any) -> Any:
+        both_read.wait()  # each request has read the chain's tail; neither has committed
+        return real_contract(**kw)
+
+    monkeypatch.setattr(app_module, "ReviewContract", contract_after_both_read)
+    results: dict[str, Any] = {}
+
+    def submit(who: str) -> None:
+        with TestClient(app) as c:
+            results[who] = c.post(url, json={"reviewer": who, "outcome": "unresolved"})
+
+    threads = [threading.Thread(target=submit, args=(w,)) for w in ("vol-a", "vol-b")]
+    for t in threads:
+        t.start()
+    for t in threads:
+        t.join()
+    codes = sorted(r.status_code for r in results.values())
+    assert codes == [201, 409]
+    (lost,) = [r for r in results.values() if r.status_code == 409]
+    assert lost.json()["error"] == "review_conflict"
+
+    monkeypatch.setattr(app_module, "ReviewContract", real_contract)
+    with TestClient(app) as c:
+        history = c.get(f"/events/{event['id']}").json()["reviews"]
+    assert len(history) == prior_reviews + 1
+    assert sum(r["previous_review_id"] is None for r in history) == 1
+    by_previous = {r["previous_review_id"] for r in history}
+    assert len(by_previous) == len(history)  # a single chain: nothing superseded twice
+
+
+def test_the_database_allows_one_first_review_per_event(settings: Settings) -> None:
+    from sqlalchemy.exc import IntegrityError
+
+    from wildinbox.storage.models import Review
+
+    with TestClient(create_app(settings)) as c:
+        batch = c.post("/batches", files=_files(("a.jpg", jpeg(52)))).json()
+        event = c.get("/events", params={"batch_id": batch["id"]}).json()["events"][0]
+    factory = session_factory(settings.database_url)
+    for reviewer in ("first", "second"):
+        with factory() as s:
+            s.add(Review(event_id=uuid.UUID(event["id"]), reviewer=reviewer, outcome="unresolved"))
+            if reviewer == "first":
+                s.commit()
+            else:
+                with pytest.raises(IntegrityError, match="uq_reviews_one_first_review_per_event"):
+                    s.commit()
+
+
+def test_the_migration_refuses_histories_that_are_already_forked(settings: Settings) -> None:
+    with TestClient(create_app(settings)) as c:
+        batch = c.post("/batches", files=_files(("a.jpg", jpeg(53)))).json()
+        event_id = c.get("/events", params={"batch_id": batch["id"]}).json()["events"][0]["id"]
+    cfg = Config(str(REPO_ROOT / "alembic.ini"))
+    cfg.set_main_option("sqlalchemy.url", settings.database_url)
+    engine = create_engine(settings.database_url)
+    try:
+        command.downgrade(cfg, "4803c5c84b95")
+        with engine.begin() as conn:
+            for who in ("a", "b"):  # a fork made before the index existed
+                conn.execute(
+                    text(
+                        "INSERT INTO reviews (id, event_id, reviewer, outcome, created_at) "
+                        "VALUES (:id, :e, :who, 'unresolved', now())"
+                    ),
+                    {"id": uuid.uuid4(), "e": event_id, "who": who},
+                )
+        with pytest.raises(RuntimeError, match="more than one first review"):
+            command.upgrade(cfg, "head")
+        with engine.begin() as conn:
+            conn.execute(text("DELETE FROM reviews WHERE reviewer = 'b'"))
+    finally:
+        command.upgrade(cfg, "head")
+
+
 def test_status_page_labels_test_output_and_escapes_input(client: TestClient) -> None:
     batch = client.post(
         "/batches", files=_files(("<script>x</script>.gif", b"GIF89a"), ("a.jpg", jpeg(60)))
