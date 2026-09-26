@@ -891,7 +891,12 @@ def create_app(
             event = _event(s, event_id)
             decision = max(event.decisions, key=lambda d: d.created_at, default=None)
             suggested = decision.suggested_label if decision else None
-            previous = event.reviews[-1] if event.reviews else None
+            # The chain's tail: the one review nothing supersedes (not the newest
+            # timestamp, which can tie). A concurrent review that read the same
+            # tail fails the database's one-chain constraints below: 409.
+            superseded = {r.previous_review_id for r in event.reviews}
+            tails = [r for r in event.reviews if r.id not in superseded]
+            previous = tails[0] if tails else None
             review_id = uuid.uuid4()
             try:
                 ReviewContract(

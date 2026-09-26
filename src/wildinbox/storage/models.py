@@ -246,7 +246,17 @@ class Review(Base):
     """Human verdicts are appended, never overwritten; each points at the review it supersedes."""
 
     __tablename__ = "reviews"
-    __table_args__ = (CheckConstraint(_in("outcome", REVIEW_OUTCOMES), name="outcome"),)
+    __table_args__ = (
+        CheckConstraint(_in("outcome", REVIEW_OUTCOMES), name="outcome"),
+        # One chain per event: a single first review (the unique constraint on
+        # previous_review_id cannot see NULLs), and each review superseded once.
+        Index(
+            "uq_reviews_one_first_review_per_event",
+            "event_id",
+            unique=True,
+            postgresql_where=text("previous_review_id IS NULL"),
+        ),
+    )
     id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
     event_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("events.id", ondelete="CASCADE"))
     reviewer: Mapped[str] = mapped_column(String(200))
