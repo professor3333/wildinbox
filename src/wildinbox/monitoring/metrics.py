@@ -399,7 +399,7 @@ def event_views(session: Session) -> list[EventView]:
     out = []
     for e, batch_created_at in rows:
         d = max(e.decisions, key=lambda d: d.created_at, default=None)
-        r = e.reviews[-1] if e.reviews else None
+        r = e.current_review
         q = [i.quality for i in e.images if i.quality and "night" in i.quality]
         out.append(
             EventView(

@@ -200,7 +200,7 @@ def image_row(img: Image) -> dict[str, Any]:
 def event_row(session: Session, event: Event, detail: bool = False) -> dict[str, Any]:
     decision = max(event.decisions, key=lambda d: d.created_at, default=None)
     release = session.get(ModelRelease, decision.model_release_id) if decision else None
-    latest = event.reviews[-1] if event.reviews else None
+    latest = event.current_review
     row: dict[str, Any] = {
         "id": str(event.id),
         "batch_id": str(event.batch_id),
@@ -272,7 +272,7 @@ def event_row(session: Session, event: Event, detail: bool = False) -> dict[str,
             }
             for i in event.images
         ]
-        row["reviews"] = [_review(r) for r in event.reviews]
+        row["reviews"] = [_review(r) for r in event.review_chain]
     return row
 
 
@@ -892,11 +892,9 @@ def create_app(
             decision = max(event.decisions, key=lambda d: d.created_at, default=None)
             suggested = decision.suggested_label if decision else None
             # The chain's tail: the one review nothing supersedes (not the newest
-            # timestamp, which can tie). A concurrent review that read the same
+            # timestamp, which can tie or disagree). A concurrent review that read the same
             # tail fails the database's one-chain constraints below: 409.
-            superseded = {r.previous_review_id for r in event.reviews}
-            tails = [r for r in event.reviews if r.id not in superseded]
-            previous = tails[0] if tails else None
+            previous = event.current_review
             review_id = uuid.uuid4()
             try:
                 ReviewContract(
