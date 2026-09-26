@@ -17,7 +17,13 @@ from wildinbox.evaluation.run import compare
 from wildinbox.policy.conservative import Thresholds, decide_event
 from wildinbox.schemas import Disposition, ReviewReason
 from wildinbox.training.classifier import LinearClassifier, fit
-from wildinbox.training.embeddings import extract, image_stats, load_cache, save_cache
+from wildinbox.training.embeddings import (
+    cache_identity,
+    extract,
+    image_stats,
+    load_cache,
+    save_cache,
+)
 from wildinbox.training.spec import ClassifierSpec, EvaluationSpec, load_baseline_config
 
 from .conftest import EXAMPLE_CONFIG, REPO_ROOT
@@ -203,10 +209,52 @@ def test_extract_and_cache(tmp_path: Path) -> None:
     again = extract(fake_model, paths, pre, batch_size=3)
     assert np.array_equal(ext.embeddings, again.embeddings)  # batch size doesn't matter
     ids = [p.name for p in paths]
-    save_cache(tmp_path / "c.npz", ids, ext)
-    cached = load_cache(tmp_path / "c.npz", ids)
+    identity = cache_identity("m1", pre, paths)
+    save_cache(tmp_path / "c.npz", ids, ext, identity=identity)
+    cached = load_cache(tmp_path / "c.npz", ids, identity=cache_identity("m1", pre, paths))
     assert cached is not None and np.array_equal(cached.embeddings, ext.embeddings)
-    assert load_cache(tmp_path / "c.npz", ids[::-1]) is None  # different images -> recompute
+    assert load_cache(tmp_path / "c.npz", ids[::-1], identity=identity) is None  # other images
+
+
+def test_cache_identity_misses_on_any_change_to_model_preprocessing_or_inputs(
+    tmp_path: Path,
+) -> None:
+    import os
+
+    from wildinbox.config import load_config
+
+    paths = []
+    for i in range(3):
+        p = tmp_path / f"{i}.png"
+        _noise(i).save(p)
+        paths.append(p)
+    pre = load_config(EXAMPLE_CONFIG).preprocessing
+    ext = extract(lambda x: x.mean(dim=(2, 3)), paths, pre, batch_size=2)
+    ids = [p.name for p in paths]
+    path = tmp_path / "c.npz"
+    save_cache(path, ids, ext, identity=cache_identity("m1", pre, paths))
+
+    def hit(model: str = "m1", preprocessing: Any = pre) -> bool:
+        identity = cache_identity(model, preprocessing, paths)
+        return load_cache(path, ids, identity=identity) is not None
+
+    assert hit()  # unchanged: reused
+    assert not hit(model="m2")
+    assert not hit(preprocessing=pre.model_copy(update={"crop_size": 192}))
+    st = paths[1].stat()
+    os.utime(paths[1], ns=(st.st_atime_ns, st.st_mtime_ns + 1_000_000))  # file replaced
+    assert not hit()
+    np.savez_compressed(  # written before cache identities existed
+        path,
+        ids=np.array(ids),
+        embeddings=ext.embeddings,
+        night=ext.night,
+        blur=ext.blur,
+        seconds=ext.seconds,
+        images_per_second=ext.images_per_second,
+        peak_rss_mb=ext.peak_rss_mb,
+    )
+    assert load_cache(path, ids, identity=cache_identity("m1", pre, paths)) is None
 
 
 # ---------------------------------------------------------- reproducibility

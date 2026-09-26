@@ -7,6 +7,7 @@ Images go through `wildinbox.preprocessing`, the same code serving uses.
 from __future__ import annotations
 
 import hashlib
+import json
 import logging
 import resource
 import sys
@@ -120,11 +121,31 @@ def cache_key(spec: BackboneSpec, preprocessing: PreprocessingConfig, split_vers
     return f"{spec.architecture}-{spec.weights}-{hashlib.sha256(raw.encode()).hexdigest()[:12]}"
 
 
-def save_cache(path: Path, ids: list[str], ext: Extraction) -> None:
+def cache_identity(model: str, preprocessing: PreprocessingConfig, files: list[Path]) -> str:
+    """What a cached extraction depends on besides the image ids: the model,
+    the preprocessing, and the input files (path, size, modification time).
+    A change to any of them makes the cache miss instead of returning stale
+    outputs."""
+    digest = hashlib.sha256()
+    for f in files:
+        st = f.stat()
+        digest.update(f"{f}\t{st.st_size}\t{st.st_mtime_ns}\n".encode())
+    return json.dumps(
+        {
+            "model": model,
+            "preprocessing": preprocessing.fingerprint(),
+            "inputs": digest.hexdigest(),
+        },
+        sort_keys=True,
+    )
+
+
+def save_cache(path: Path, ids: list[str], ext: Extraction, *, identity: str) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     tmp = path.with_suffix(".tmp.npz")
     np.savez_compressed(
         tmp,
+        identity=np.array(identity),
         ids=np.array(ids),
         embeddings=ext.embeddings,
         night=ext.night,
@@ -149,13 +170,21 @@ def concat(parts: list[Extraction]) -> Extraction:
     )
 
 
-def load_cache(path: Path, ids: list[str]) -> Extraction | None:
-    """Cached embeddings, or None if missing or for a different set of images."""
+def load_cache(path: Path, ids: list[str], *, identity: str) -> Extraction | None:
+    """Cached outputs, or None if missing, for a different set of images, or made
+    under a different `cache_identity` (model, preprocessing, or input files);
+    caches written before identities were recorded never match."""
     if not path.exists():
         return None
     with np.load(path) as z:
         if z["ids"].tolist() != ids:
             log.warning("embedding cache %s is for different images; recomputing", path)
+            return None
+        if "identity" not in z.files or str(z["identity"]) != identity:
+            log.warning(
+                "cache %s was made with another model, preprocessing, or input files; recomputing",
+                path,
+            )
             return None
         return Extraction(
             z["embeddings"],
