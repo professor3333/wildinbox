@@ -23,6 +23,7 @@ from wildinbox.training.classifier import fit
 from wildinbox.training.embeddings import (
     Backbone,
     Extraction,
+    cache_identity,
     cache_key,
     concat,
     extract,
@@ -116,20 +117,22 @@ def embed(
         chunk = rows[k : k + CACHE_CHUNK]
         ids = [r.source_id for r in chunk]
         path = ctx.cache_dir / f"{name}.{k // CACHE_CHUNK:03d}.npz"
-        cached = load_cache(path, ids) if use_cache else None
+        files = [ctx.images_root / r.storage_path for r in chunk]
+        identity = cache_identity(f"backbone:{ctx.cache_dir.name}", ctx.run.preprocessing, files)
+        cached = load_cache(path, ids, identity=identity) if use_cache else None
         if cached is None:
             log.info(
                 "%s: embedding images %d-%d of %d on %s", name, k, k + len(chunk), len(rows), device
             )
             cached = extract(
                 backbone.get(),
-                [ctx.images_root / r.storage_path for r in chunk],
+                files,
                 ctx.run.preprocessing,
                 device=device,
                 batch_size=ctx.cfg.extraction.batch_size,
                 num_workers=ctx.cfg.extraction.num_workers,
             )
-            save_cache(path, ids, cached)
+            save_cache(path, ids, cached, identity=identity)
         parts.append(cached)
     log.info("%s: %d embeddings ready", name, len(rows))
     return concat(parts)

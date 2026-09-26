@@ -5,16 +5,37 @@ from __future__ import annotations
 
 import hashlib
 import json
+from collections.abc import Callable
 from pathlib import Path
 from typing import Protocol
 
 import numpy as np
 import torch
 
+from wildinbox.config import ConfigError
 from wildinbox.evaluation.data import ImageRow
 from wildinbox.training.classifier import LinearClassifier
-from wildinbox.training.embeddings import Extraction, extract, load_cache, save_cache
+from wildinbox.training.embeddings import (
+    Extraction,
+    cache_identity,
+    extract,
+    load_cache,
+    save_cache,
+)
 from wildinbox.training.run import Context, LazyBackbone, embed
+
+
+def check_preprocessing(ctx: Context, model_dir: Path) -> None:
+    """Evaluation must preprocess exactly as the model artifact records;
+    anything else would score a different model than the one being reported."""
+    meta = json.loads((model_dir / "meta.json").read_text())
+    expected, configured = meta.get("preprocessing_version"), ctx.run.preprocessing.fingerprint()
+    if expected != configured:
+        raise ConfigError(
+            f"{model_dir} was trained with preprocessing {expected} "
+            f"({meta.get('preprocessing')}), but the evaluation config gives {configured} "
+            f"({ctx.run.preprocessing.model_dump(mode='json')})"
+        )
 
 
 class Predictor(Protocol):
@@ -32,6 +53,7 @@ class Predictor(Protocol):
 
 class LinearProbePredictor:
     def __init__(self, ctx: Context, model_dir: Path, device: str) -> None:
+        check_preprocessing(ctx, model_dir)
         self.ctx, self.device = ctx, device
         self.clf = LinearClassifier.load(model_dir / "classifier.npz")
         self.classes = self.clf.classes
@@ -57,6 +79,7 @@ class FinetunedPredictor:
     def __init__(self, ctx: Context, model_dir: Path, device: str) -> None:
         from wildinbox.training.finetune import load_finetuned
 
+        check_preprocessing(ctx, model_dir)
         self.ctx, self.device, self.model_dir = ctx, device, model_dir
         self.model, meta = load_finetuned(model_dir, device)
         self.classes = tuple(meta["classes"])
@@ -67,22 +90,33 @@ class FinetunedPredictor:
     def _probs(self, x: torch.Tensor) -> torch.Tensor:
         return torch.softmax(self.model(x), dim=1)
 
-    def score(self, name: str, rows: list[ImageRow]) -> Extraction:
+    def _cached(
+        self, name: str, rows: list[ImageRow], fn: Callable[[torch.Tensor], torch.Tensor]
+    ) -> Extraction:
+        """`fn` over `rows`, cached under the weights, preprocessing, and input
+        files; a change to any of them recomputes."""
         ids = [r.source_id for r in rows]
+        files = [self.ctx.images_root / r.storage_path for r in rows]
+        identity = cache_identity(
+            f"finetuned:{self.weights_digest}", self.ctx.run.preprocessing, files
+        )
         path = self.model_dir / "eval-cache" / self.weights_digest / f"{name}.npz"
-        cached = load_cache(path, ids)
+        cached = load_cache(path, ids, identity=identity)
         if cached is not None:
             return cached
         ext = extract(
-            self._probs,
-            [self.ctx.images_root / r.storage_path for r in rows],
+            fn,
+            files,
             self.ctx.run.preprocessing,
             device=self.device,
             batch_size=64,
             num_workers=self.ctx.cfg.extraction.num_workers,
         )
-        save_cache(path, ids, ext)
+        save_cache(path, ids, ext, identity=identity)
         return ext
+
+    def score(self, name: str, rows: list[ImageRow]) -> Extraction:
+        return self._cached(name, rows, self._probs)
 
     def forward(self, x: torch.Tensor) -> np.ndarray:
         out: np.ndarray = self._probs(x).float().cpu().numpy()
@@ -94,22 +128,8 @@ class FinetunedPredictor:
         return torch.flatten(m.avgpool(m.features(x)), 1)  # type: ignore[operator]
 
     def features(self, name: str, rows: list[ImageRow]) -> Extraction:
-        """Penultimate features for `rows`, cached by weights like `score`."""
-        ids = [r.source_id for r in rows]
-        path = self.model_dir / "eval-cache" / self.weights_digest / f"features-{name}.npz"
-        cached = load_cache(path, ids)
-        if cached is not None:
-            return cached
-        ext = extract(
-            self._features,
-            [self.ctx.images_root / r.storage_path for r in rows],
-            self.ctx.run.preprocessing,
-            device=self.device,
-            batch_size=64,
-            num_workers=self.ctx.cfg.extraction.num_workers,
-        )
-        save_cache(path, ids, ext)
-        return ext
+        """Penultimate features for `rows`, cached like `score`."""
+        return self._cached(f"features-{name}", rows, self._features)
 
 
 def predictor_for(ctx: Context, model_dir: Path, device: str) -> Predictor:

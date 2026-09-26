@@ -4,6 +4,7 @@ import gzip
 import json
 import random
 from pathlib import Path
+from typing import Any
 
 import numpy as np
 import pytest
@@ -153,16 +154,79 @@ def test_experiment_configs_are_valid(path: Path) -> None:
     assert cfg.augmentation.min_box_kept >= 0.9  # crops may not remove the animal
 
 
-def test_eval_cache_is_keyed_by_model_weights(tmp_path: Path) -> None:
-    from wildinbox.evaluation.predictors import FinetunedPredictor
+def test_eval_cache_reuses_unchanged_inputs_and_refuses_other_preprocessing(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Same weights, preprocessing, and files: cached. New weights or a changed
+    file: recomputed. Preprocessing other than the model's: a ConfigError."""
+    import os
+    from types import SimpleNamespace
 
-    (tmp_path / "meta.json").write_text(json.dumps({"classes": ["empty", "cat"]}))
-    digests = []
-    for seed in (0, 1):  # "retrain" into the same directory
+    from wildinbox.config import ConfigError
+    from wildinbox.evaluation import predictors
+    from wildinbox.evaluation.data import ImageRow
+    from wildinbox.training.embeddings import Extraction
+
+    pre = load_config(REPO_ROOT / "configs/example.yaml").preprocessing
+    model_dir, images = tmp_path / "model", tmp_path / "images"
+    model_dir.mkdir()
+    images.mkdir()
+    (model_dir / "meta.json").write_text(
+        json.dumps({"classes": ["empty", "cat"], "preprocessing_version": pre.fingerprint()})
+    )
+    rows = []
+    for i in range(2):
+        Image.new("RGB", (40, 30), (i * 50, 0, 0)).save(images / f"{i}.jpg")
+        rows.append(
+            ImageRow(
+                f"s{i}",
+                f"e{i}",
+                Partition.CALIBRATION,
+                "c",
+                f"{i}.jpg",
+                "cat",
+                "cat",
+                "supported_species",
+                False,
+            )
+        )
+    calls: list[int] = []
+
+    def fake_extract(fn: Any, files: list[Path], *a: Any, **k: Any) -> Extraction:
+        calls.append(len(files))
+        n = len(files)
+        return Extraction(np.full((n, 2), 0.5), np.zeros(n, bool), np.ones(n), 1.0, 1.0, 1.0)
+
+    monkeypatch.setattr(predictors, "extract", fake_extract)
+
+    def ctx(preprocessing: Any = pre) -> Any:
+        return SimpleNamespace(
+            run=SimpleNamespace(preprocessing=preprocessing),
+            images_root=images,
+            cfg=SimpleNamespace(extraction=SimpleNamespace(num_workers=0)),
+        )
+
+    def predictor(seed: int = 0) -> Any:
         torch.manual_seed(seed)
-        torch.save(build_model(2, None).state_dict(), tmp_path / "model.pt")
-        digests.append(FinetunedPredictor(None, tmp_path, "cpu").weights_digest)  # type: ignore[arg-type]
-    assert digests[0] != digests[1]
+        torch.save(build_model(2, None).state_dict(), model_dir / "model.pt")
+        return predictors.FinetunedPredictor(ctx(), model_dir, "cpu")
+
+    first = predictor()
+    first.score("cal", rows)
+    first.score("cal", rows)
+    assert calls == [2]  # unchanged inputs reuse the cache
+    st = (images / "1.jpg").stat()
+    os.utime(images / "1.jpg", ns=(st.st_atime_ns, st.st_mtime_ns + 1_000_000))
+    first.score("cal", rows)
+    assert calls == [2, 2]  # a changed input file recomputes
+    retrained = predictor(seed=1)  # retrained into the same directory
+    assert retrained.weights_digest != first.weights_digest
+    retrained.score("cal", rows)
+    assert calls == [2, 2, 2]
+    with pytest.raises(ConfigError, match="trained with preprocessing"):
+        predictors.FinetunedPredictor(
+            ctx(pre.model_copy(update={"crop_size": 192})), model_dir, "cpu"
+        )
 
 
 def test_update_candidate_uses_the_deployed_recipe_unchanged() -> None:
