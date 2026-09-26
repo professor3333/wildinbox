@@ -1,0 +1,129 @@
+{
+  "summary": {
+    "participants_analysed": 5,
+    "participants_excluded": [],
+    "enough_participants": false,
+    "median_seconds": {
+      "grouped": 2.5215,
+      "suggested": 1.0925
+    },
+    "median_seconds_difference": -1.383,
+    "median_seconds_difference_ci95": [
+      -3.8434999999999997,
+      0.45100000000000007
+    ],
+    "share_faster_with_suggestions": 0.6,
+    "mean_accuracy": {
+      "grouped": 0.47500000000000003,
+      "suggested": 0.432948717948718
+    },
+    "mean_accuracy_difference": -0.04205128205128204,
+    "mean_accuracy_difference_ci95": [
+      -0.175,
+      0.09089743589743592
+    ],
+    "verdict": "descriptive only: 5 participant(s), the protocol needs 8",
+    "workload": {
+      "events": 1000,
+      "needs_review_share": 1.0,
+      "automatic_share": 0.0,
+      "audit_rate": 0.05,
+      "grouped_minutes": 42.025,
+      "system_minutes": 18.208333333333332,
+      "audit_minutes": 0.0,
+      "time_saved_share": 0.5667261550664286
+    }
+  },
+  "participants": [
+    {
+      "participant": "P1",
+      "trials_over_limit": 0,
+      "grouped": {
+        "median_seconds": 2.69,
+        "accuracy": 0.5,
+        "mean_interactions": 1,
+        "difficulty": 3
+      },
+      "suggested": {
+        "median_seconds": 1.0925,
+        "accuracy": 0.325,
+        "mean_interactions": 1,
+        "difficulty": 4
+      },
+      "seconds_difference": -1.5975,
+      "accuracy_difference": -0.175
+    },
+    {
+      "participant": "P2",
+      "trials_over_limit": 0,
+      "grouped": {
+        "median_seconds": 2.2115,
+        "accuracy": 0.55,
+        "mean_interactions": 1,
+        "difficulty": 3
+      },
+      "suggested": {
+        "median_seconds": 0.8285,
+        "accuracy": 0.325,
+        "mean_interactions": 1,
+        "difficulty": 4
+      },
+      "seconds_difference": -1.383,
+      "accuracy_difference": -0.22500000000000003
+    },
+    {
+      "participant": "P3",
+      "trials_over_limit": 0,
+      "grouped": {
+        "median_seconds": 2.234,
+        "accuracy": 0.375,
+        "mean_interactions": 1,
+        "difficulty": 3
+      },
+      "suggested": {
+        "median_seconds": 2.685,
+        "accuracy": 0.55,
+        "mean_interactions": 1,
+        "difficulty": 4
+      },
+      "seconds_difference": 0.45100000000000007,
+      "accuracy_difference": 0.17500000000000004
+    },
+    {
+      "participant": "P4",
+      "trials_over_limit": 1,
+      "grouped": {
+        "median_seconds": 2.5215,
+        "accuracy": 0.5,
+        "mean_interactions": 1,
+        "difficulty": 3
+      },
+      "suggested": {
+        "median_seconds": 2.667,
+        "accuracy": 0.5897435897435898,
+        "mean_interactions": 1,
+        "difficulty": 3
+      },
+      "seconds_difference": 0.14549999999999974,
+      "accuracy_difference": 0.08974358974358976
+    },
+    {
+      "participant": "author",
+      "trials_over_limit": 0,
+      "grouped": {
+        "median_seconds": 4.5855,
+        "accuracy": 0.45,
+        "mean_interactions": 1.075,
+        "difficulty": 3
+      },
+      "suggested": {
+        "median_seconds": 0.742,
+        "accuracy": 0.375,
+        "mean_interactions": 1,
+        "difficulty": 2
+      },
+      "seconds_difference": -3.8434999999999997,
+      "accuracy_difference": -0.07500000000000001
+    }
+  ]
+}
