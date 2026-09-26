@@ -45,9 +45,15 @@ def test_review_labels() -> None:
     assert review_label(_ev("x", "unresolved", None)) == (None, "unresolved")
 
 
+FRAME_A, FRAME_B = jpeg(1), jpeg(2)
+AA, BB = hashlib.sha256(FRAME_A).hexdigest(), hashlib.sha256(FRAME_B).hexdigest()
+
+
 def _snapshot(tmp_path: Path) -> Path:
     d = tmp_path / "snap"
     (d / "images").mkdir(parents=True)
+    (d / "images" / f"{AA}.jpg").write_bytes(FRAME_A)
+    (d / "images" / f"{BB}.jpg").write_bytes(FRAME_B)
     (d / "labels.jsonl").write_text('{"event_id": "e1"}\n')
     summary = {
         "schema": SNAPSHOT_SCHEMA,
@@ -61,9 +67,9 @@ def _snapshot(tmp_path: Path) -> Path:
     }
     (d / "snapshot.json").write_text(json.dumps(summary))
     (d / "train.jsonl").write_text(
-        json.dumps({"sha256": "aa", "label": "empty", "event_id": "e1", "camera_id": "cct-90"})
+        json.dumps({"sha256": AA, "label": "empty", "event_id": "e1", "camera_id": "cct-90"})
         + "\n"
-        + json.dumps({"sha256": "bb", "label": "cat", "event_id": "e2", "camera_id": "cct-90"})
+        + json.dumps({"sha256": BB, "label": "cat", "event_id": "e2", "camera_id": "cct-90"})
         + "\n"
     )
     holdout = [
@@ -107,7 +113,7 @@ def test_snapshot_rows_are_fit_rows_with_reviewed_labels(tmp_path: Path) -> None
         ("cat", "supported_species", True),
     ]
     assert all(r.source_id.startswith("snapshot:") for r in rows)
-    assert sources[rows[0].storage_path].name == "aa.jpg" and summary["version"] == "abc123"
+    assert sources[rows[0].storage_path].name == f"{AA}.jpg" and summary["version"] == "abc123"
 
 
 def test_gate_scores_events_by_the_policy_suggestion(tmp_path: Path) -> None:
@@ -267,7 +273,7 @@ def test_gate_refuses_leaked_snapshots_and_counts_repeated_comparisons(tmp_path:
 
     snap = _snapshot(tmp_path)
     assert leakage(snap, {"zz": "final_test"}) == {}
-    assert leakage(snap, {"bb": "calibration", "c2": "final_test"}) == {
+    assert leakage(snap, {BB: "calibration", "c2": "final_test"}) == {
         "calibration": 1,
         "final_test": 1,
     }
@@ -403,6 +409,10 @@ def test_snapshot_separates_content_whatever_its_name_camera_or_time(
         ids["d-early.jpg"]: "train_frame_in_holdout",  # its bytes are in camera 125's holdout
         ids["seq-a.jpg"]: "train_frame_in_holdout",  # one duplicated frame drops the event
         ids["renamed-train-image.jpg"]: "holdout_frame_in_training_partition",
+        # Same-workspace re-uploads are stored as duplicates, not ML inputs, but
+        # their content still counts for separation (d-early above).
+        ids["d-late.jpg"]: "no_usable_frames",
+        ids["seq-b-again.jpg"]: "no_usable_frames",
     }
     train = [json.loads(x) for x in (out / "train.jsonl").read_text().splitlines()]
     hold = [json.loads(x) for x in (out / "holdout.jsonl").read_text().splitlines()]
@@ -424,7 +434,7 @@ def test_gate_finds_content_overlap_the_builder_should_have_removed(tmp_path: Pa
         + json.dumps({"sha256": "c2", "label": "cat", "event_id": "h1", "camera_id": "cct-90"})
         + "\n"
     )
-    assert leakage(snap, {}, training={"d1"}, earlier_holdouts={"aa", "e1"}) == {
+    assert leakage(snap, {}, training={"d1"}, earlier_holdouts={AA, "e1"}) == {
         "train_frame_in_holdout": 1,
         "event_in_train_and_holdout": 1,
         "holdout_frame_in_training_partition": 1,
@@ -503,3 +513,120 @@ def test_snapshot_authenticates_with_the_token_convention_and_names_auth_failure
         code = cli.main(["snapshot", "build", "--protocol", str(protocol), "--out", str(tmp_path)])
     err = capsys.readouterr().err
     assert code == 1 and "GET /releases: 401" in err and "WILDINBOX_TOKEN" in err
+
+
+def test_mixed_valid_and_unusable_members_give_a_valid_snapshot(
+    settings: Settings,  # noqa: F811
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Rejected, corrupt, and failed-inference members stay in the event and in
+    provenance with their reasons; only usable frames become ML inputs."""
+    from fastapi.testclient import TestClient
+
+    from wildinbox.api.app import create_app
+    from wildinbox.inference.serving import PlumbingScorer
+    from wildinbox.training.snapshot import build
+    from wildinbox.workers import process
+
+    good_a, good_f, good_b, fails_b, fails_c = (jpeg(600 + i) for i in range(5))
+    corrupt = jpeg(605)[:200]  # a truncated JPEG: accepted at upload, fails to decode
+    failing = {hashlib.sha256(d).hexdigest() for d in (fails_b, fails_c)}
+
+    class PickyScorer(PlumbingScorer):
+        def score(self, images: Any, sha256s: Any) -> list[dict[str, float]]:
+            if failing & set(sha256s):
+                raise RuntimeError("model rejected this input")
+            return super().score(images, sha256s)
+
+    monkeypatch.setattr(process, "scorer_for", lambda r, st, d="cpu": PickyScorer(r))
+    uploads = [  # (file name, bytes, day, sequence)
+        ("a-good.jpg", good_a, 1, "a"),
+        ("a-empty.jpg", b"", 1, "a"),
+        ("a-corrupt.jpg", corrupt, 1, "a"),
+        ("f-good.jpg", good_f, 2, "f"),
+        # Same bytes as a-corrupt (stored as its duplicate): must not tie a to f.
+        ("f-corrupt.jpg", corrupt, 2, "f"),
+        ("b-good.jpg", good_b, 3, "b"),
+        ("b-fails.jpg", fails_b, 3, "b"),
+        ("c-fails.jpg", fails_c, 4, "c"),  # decodes, never scored: no usable frame
+    ]
+    meta = {
+        "files": {
+            name: {
+                "camera_id": "cct-90",
+                "captured_at": f"2012-01-0{day}T10:00:0{i}",
+                "sequence_id": seq,
+            }
+            for i, (name, _, day, seq) in enumerate(uploads)
+        }
+    }
+    with TestClient(create_app(settings)) as c:
+        batch = c.post(
+            "/batches",
+            files=[("files", (n, d, "image/jpeg")) for n, d, *_ in uploads],
+            data={"metadata": json.dumps(meta)},
+        ).json()
+        events = c.get("/events", params={"batch_id": batch["id"]}).json()["events"]
+        by_seq = {}
+        for e in events:
+            detail = c.get(f"/events/{e['id']}").json()
+            by_seq[detail["images"][0]["sequence_id"]] = e["id"]
+            url = f"/events/{e['id']}/reviews"
+            body = {"reviewer": "ranger", "outcome": "corrected", "confirmed_label": "cat"}
+            if c.post(url, json=body).status_code == 422:  # suggested cat already
+                assert c.post(url, json={**body, "outcome": "confirmed"}).status_code == 201
+        assert set(by_seq) == {"a", "f", "b", "c"}
+        protocol = tmp_path / "protocol.yaml"
+        protocol.write_text(
+            yaml.safe_dump(
+                {
+                    "name": "update5",
+                    "deployed_release": "test-predictor-v0",
+                    "deployment": {"cameras": ["90"], "reviewer": "ranger"},
+                    "protected": {"partitions": [], "snapshot_holdouts": []},
+                }
+            )
+        )
+        out = build(protocol, "http://testserver", tmp_path / "snaps", client=c, root=tmp_path)
+
+    def sha(data: bytes) -> str:
+        return hashlib.sha256(data).hexdigest()
+
+    summary = json.loads((out / "snapshot.json").read_text())
+    assert summary["excluded"]["by_reason"] == {"no_usable_frames": 1}
+    assert summary["withheld_frames"] == {"duplicate": 1, "invalid": 2, "processing_failed": 1}
+    train = [json.loads(x) for x in (out / "train.jsonl").read_text().splitlines()]
+    hold = {
+        h["event_id"]: h for h in map(json.loads, (out / "holdout.jsonl").read_text().splitlines())
+    }
+    assert [r["sha256"] for r in train] == [sha(good_a)]
+    assert [f["sha256"] for f in hold[by_seq["b"]]["frames"]] == [sha(good_b)]
+    assert by_seq["c"] not in hold
+    assert sorted(p.name for p in (out / "images").iterdir()) == sorted(
+        f"{sha(d)}.jpg" for d in (good_a, good_f, good_b)
+    )
+    labels = {
+        r["event_id"]: r for r in map(json.loads, (out / "labels.jsonl").read_text().splitlines())
+    }
+    members = {m["filename"]: m for m in labels[by_seq["a"]]["members"]}
+    assert [members[n]["status"] for n in ("a-good.jpg", "a-empty.jpg", "a-corrupt.jpg")] == [
+        "usable",
+        "invalid",
+        "invalid",
+    ]
+    assert members["a-good.jpg"]["reason"] is None
+    assert members["a-empty.jpg"]["reason"] and members["a-corrupt.jpg"]["reason"]
+    assert labels[by_seq["a"]]["frames"] == [sha(good_a)]
+    failed = {m["filename"]: m for m in labels[by_seq["b"]]["members"]}["b-fails.jpg"]
+    assert failed["status"] == "processing_failed" and "model rejected" in failed["reason"]
+    assert labels[by_seq["c"]]["use"] == "excluded:no_usable_frames"
+    rows, _, _ = snapshot_rows(out)  # the loader's own byte check passes
+    assert [r.source_id for r in rows] == [f"snapshot:{sha(good_a)}"]
+
+
+def test_the_training_loader_refuses_bytes_the_snapshot_did_not_record(tmp_path: Path) -> None:
+    d = _snapshot(tmp_path)
+    (d / "images" / f"{AA}.jpg").write_bytes(b"")
+    with pytest.raises(SnapshotError, match="does not match its SHA-256"):
+        snapshot_rows(d)

@@ -32,7 +32,7 @@ from wildinbox.evaluation.data import ImageRow, box_lists, load_rows
 from wildinbox.inference.architecture import build_model
 from wildinbox.preprocessing import Box, TrainAugmentation, load_image, resize_shorter_side
 from wildinbox.training.run import MLFLOW_URI, git_state, hardware, load_context, seed_everything
-from wildinbox.training.snapshot import load_summary
+from wildinbox.training.snapshot import SnapshotError, load_summary
 
 log = logging.getLogger(__name__)
 
@@ -217,10 +217,17 @@ def snapshot_rows(snapshot_dir: Path) -> tuple[list[ImageRow], dict[str, Path], 
     Raises `SnapshotError` for a summary training cannot use."""
     summary = load_summary(snapshot_dir)
     rows, sources = [], {}
+    checked: set[str] = set()
     for line in (snapshot_dir / "train.jsonl").read_text().splitlines():
         r = json.loads(line)
         storage = f"snapshot-{summary['version']}/{r['sha256']}.jpg"
-        sources[storage] = snapshot_dir / "images" / f"{r['sha256']}.jpg"
+        path = snapshot_dir / "images" / f"{r['sha256']}.jpg"
+        if r["sha256"] not in checked:
+            # Only the bytes the snapshot recorded reach the loader.
+            if not path.is_file() or hashlib.sha256(path.read_bytes()).hexdigest() != r["sha256"]:
+                raise SnapshotError(f"{path} is missing or does not match its SHA-256")
+            checked.add(r["sha256"])
+        sources[storage] = path
         rows.append(
             ImageRow(
                 source_id=f"snapshot:{r['sha256']}",
