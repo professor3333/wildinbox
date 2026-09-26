@@ -75,10 +75,16 @@ sent. It never reads an error response as data.
   go to `holdout.jsonl`, which is never trained on.
 - **Content separation after the split**, across all cameras, whole events at
   a time. The same bytes can be uploaded again under another name, camera, or
-  time, and get a new event. Two rules apply:
+  time, and get a new event. Three rules apply:
   - A holdout event with a frame from the dataset's training partition is
     excluded (`holdout_frame_in_training_partition`), because both models have
     already seen it.
+  - A holdout event with a frame the **deployed release** was fit on in an
+    earlier update cycle is excluded (`holdout_frame_in_deployed_training`).
+    The builder resolves the protocol's `deployed_release` the way the gate
+    does and reads its training lineage. Otherwise a later cycle's recalculated
+    cutoff could move events the deployed model trained on into the new
+    holdout, and the deployed model would be scored on its own training data.
   - A training event that shares any frame with a holdout event is excluded
     (`train_frame_in_holdout`), together with its other frames. The holdout
     keeps its copy.
@@ -131,8 +137,13 @@ Before training starts, it validates the snapshot. It refuses an unknown
 schema, missing approved reviewers or train counts, a missing `train.jsonl`,
 or a `labels.jsonl` whose SHA-256 differs from the summary. The model's
 `meta.json` records `trained_on.snapshot` with the version, schema, approved
-reviewers, and provenance SHA-256. The gate checks that the snapshot directory
-still holds that version.
+reviewers, and provenance SHA-256. It also records the model's **training
+lineage**: `train_sha256`, every snapshot frame it was fit on, and the
+`train_manifest_sha256`. Later cycles use the lineage, so it still works after
+the snapshot directory is gone. For models trained before lineage was recorded,
+it is read from the snapshot directory, if that still holds the recorded
+version; otherwise the builder and the gate refuse. The gate also checks that
+the snapshot directory still holds that version.
 
 Training runs offline on a separate machine, never in CI or on the serving VM.
 
@@ -183,7 +194,10 @@ and candidate models are then compared on **development data only**:
     frame, or is in an earlier protected holdout;
   - a training frame's bytes are also in the holdout;
   - an event is on both sides;
-  - a holdout frame is in the dataset's training partition.
+  - a holdout frame is in the dataset's training partition, or in the training
+    lineage of **either compared model** (the deployed release's update
+    snapshot, or the candidate's);
+  - the candidate's recorded lineage is not the snapshot being gated.
 - **Comparisons are counted.** Every gate run is appended to
   [`reports/update/comparisons.jsonl`](../reports/update/comparisons.jsonl),
   with the candidate, weights, holdout version, gain, and verdict. Trying many

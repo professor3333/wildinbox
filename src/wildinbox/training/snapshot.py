@@ -158,6 +158,57 @@ def decode_problem(data: bytes) -> str | None:
     return None
 
 
+def snapshot_train_frames(snapshot_dir: Path) -> set[str]:
+    """SHA-256s of the frames a snapshot's `train.jsonl` fits."""
+    return {
+        json.loads(line)["sha256"]
+        for line in (snapshot_dir / "train.jsonl").read_text().splitlines()
+    }
+
+
+def model_training_frames(meta: dict[str, Any], model: str) -> set[str]:
+    """Snapshot frames a model was fit on, beyond the dataset's training
+    partition. Read from the lineage its `meta.json` records
+    (`trained_on.snapshot.train_sha256`). For models trained before that was
+    recorded, it comes from the snapshot directory, if that directory still
+    holds the same version. Otherwise `SnapshotError`: an unknown lineage
+    cannot be protected."""
+    snap = (meta.get("trained_on") or {}).get("snapshot")
+    if snap is None:
+        return set()
+    if "train_sha256" in snap:
+        return set(snap["train_sha256"])
+    d = Path(snap["path"])
+    try:
+        found = load_summary(d)["version"]
+    except SnapshotError as e:
+        raise SnapshotError(f"{model}: training lineage unknown ({e})") from e
+    if found != snap["version"]:
+        raise SnapshotError(
+            f"{model}: trained on snapshot {snap['version']}, but {d} now holds {found}"
+        )
+    return snapshot_train_frames(d)
+
+
+def deployed_training_frames(protocol: dict[str, Any], root: Path = Path(".")) -> set[str]:
+    """Snapshot frames the protocol's deployed release was fit on (its exact
+    artifacts, verified as the gate verifies them). The plumbing test release
+    was fit on nothing."""
+    from wildinbox.inference.plumbing import TEST_RELEASE_ID
+    from wildinbox.training.gate import resolve_release
+
+    release_id = protocol["deployed_release"]
+    if release_id == TEST_RELEASE_ID:
+        return set()
+    deployed = resolve_release(
+        release_id,
+        root / protocol.get("models_root", "models"),
+        root / protocol["deployed_policy"] if protocol.get("deployed_policy") else None,
+    )
+    meta = json.loads((deployed.model_dir / "meta.json").read_text())
+    return model_training_frames(meta, release_id)
+
+
 def load_protocol(path: Path) -> dict[str, Any]:
     raw: dict[str, Any] = yaml.safe_load(path.read_text())
     return raw
@@ -211,6 +262,9 @@ class Protected:
     # Frames the deployed model (and every candidate) already trained on; they
     # cannot measure either model, so they never enter a holdout.
     training_sha256: set[str] = field(default_factory=set)
+    # Snapshot frames the deployed release was fit on (earlier update cycles):
+    # it cannot be measured on them either.
+    deployed_training_sha256: set[str] = field(default_factory=set)
     description: dict[str, Any] = field(default_factory=dict)
 
     def reason(self, event_id: str, frames: list[dict[str, Any]]) -> str | None:
@@ -346,6 +400,7 @@ def build(
     classes = set(releases[deployed]["class_names"])
     approved = approved_reviewers(protocol)
     protected = protected_records(protocol, root)
+    protected.deployed_training_sha256 = deployed_training_frames(protocol, root)
     train_rows: list[dict[str, Any]] = []
     holdout_rows: list[dict[str, Any]] = []
     provenance: list[dict[str, Any]] = []
@@ -409,6 +464,8 @@ def build(
     for e in after:
         if shas(e) & protected.training_sha256:
             exclude(e, "holdout_frame_in_training_partition")
+        elif shas(e) & protected.deployed_training_sha256:
+            exclude(e, "holdout_frame_in_deployed_training")
         else:
             kept_after.append(e)
     kept_before = []

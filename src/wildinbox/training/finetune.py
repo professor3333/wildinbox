@@ -32,7 +32,7 @@ from wildinbox.evaluation.data import ImageRow, box_lists, load_rows
 from wildinbox.inference.architecture import build_model
 from wildinbox.preprocessing import Box, TrainAugmentation, load_image, resize_shorter_side
 from wildinbox.training.run import MLFLOW_URI, git_state, hardware, load_context, seed_everything
-from wildinbox.training.snapshot import SnapshotError, load_summary
+from wildinbox.training.snapshot import SnapshotError, load_summary, snapshot_train_frames
 
 log = logging.getLogger(__name__)
 
@@ -245,7 +245,11 @@ def snapshot_rows(snapshot_dir: Path) -> tuple[list[ImageRow], dict[str, Path], 
 
 
 def snapshot_record(snapshot_dir: Path, summary: dict[str, Any]) -> dict[str, Any]:
-    """The model metadata's `trained_on.snapshot`: which snapshot, and whose reviews."""
+    """The model metadata's `trained_on.snapshot`: which snapshot, whose reviews,
+    and the SHA-256 of every frame fit from it, so later update cycles can
+    keep this model's training data out of their holdouts even if the
+    snapshot directory is gone."""
+    frames = snapshot_train_frames(snapshot_dir)
     return {
         "version": summary["version"],
         "path": str(snapshot_dir),
@@ -254,6 +258,10 @@ def snapshot_record(snapshot_dir: Path, summary: dict[str, Any]) -> dict[str, An
         "schema": summary["schema"],
         "approved_reviewers": summary["approved_reviewers"],
         "provenance_sha256": (summary["provenance"] or {}).get("sha256"),
+        "train_manifest_sha256": hashlib.sha256(
+            (snapshot_dir / "train.jsonl").read_bytes()
+        ).hexdigest(),
+        "train_sha256": sorted(frames),
     }
 
 
