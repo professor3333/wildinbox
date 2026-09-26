@@ -47,7 +47,7 @@ COLUMNS = (
 
 def observation(event: Event, decision: Decision | None) -> tuple[str | None, str]:
     """(label, source): source is review, automatic, pending_review, or unresolved."""
-    review = event.reviews[-1] if event.reviews else None
+    review = event.current_review
     if review is not None:
         if review.outcome == "unresolved":
             return None, "unresolved"
@@ -68,7 +68,7 @@ def rows(
         d = latest.get(e.id)
         r = releases.get(d.model_release_id) if d else None
         label, source = observation(e, d)
-        review = e.reviews[-1] if e.reviews else None
+        review = e.current_review
         out.append(
             {
                 "event_id": str(e.id),

@@ -362,6 +362,89 @@ def test_concurrent_reviews_never_fork_the_history(
     assert len(by_previous) == len(history)  # a single chain: nothing superseded twice
 
 
+def test_every_consumer_reads_the_chains_last_review_not_the_newest_timestamp(
+    settings: Settings,
+) -> None:
+    """Request A starts its transaction, B records a review and commits, then A
+    reads B's review and supersedes it. A's `created_at` (its transaction's
+    start) is earlier than B's, but A is the chain's last review, and the API,
+    export, monitoring, and snapshot input must all say so."""
+    import threading
+
+    from sqlalchemy import event as orm_event
+    from sqlalchemy.orm import ORMExecuteState
+    from sqlalchemy.orm import Session as OrmSession
+
+    from wildinbox.monitoring.metrics import event_views
+    from wildinbox.storage.models import Review
+
+    app = create_app(settings)
+    with TestClient(app) as c:
+        batch = c.post("/batches", files=_files(("a.jpg", jpeg(54)))).json()
+        event = c.get("/events", params={"batch_id": batch["id"]}).json()["events"][0]
+    suggested = event["decision"]["suggested_label"]
+    b_label, a_label = [x for x in ("empty", "cat", "coyote") if x != suggested][:2]
+    url = f"/events/{event['id']}/reviews"
+
+    armed, a_paused, b_committed = threading.Event(), threading.Event(), threading.Event()
+
+    def pause_first_chain_read(state: ORMExecuteState) -> None:
+        # A's transaction is open (it has read the event) but its chain is not.
+        loads_reviews = any(m.class_ is Review for m in state.all_mappers)
+        if armed.is_set() and state.is_relationship_load and loads_reviews:
+            armed.clear()
+            a_paused.set()
+            assert b_committed.wait(10)
+
+    orm_event.listen(OrmSession, "do_orm_execute", pause_first_chain_read)
+    results: dict[str, Any] = {}
+
+    def review(who: str, label: str) -> None:
+        with TestClient(app) as c:
+            results[who] = c.post(
+                url, json={"reviewer": who, "outcome": "corrected", "confirmed_label": label}
+            )
+
+    try:
+        armed.set()
+        a = threading.Thread(target=review, args=("A", a_label))
+        a.start()
+        assert a_paused.wait(10)
+        review("B", b_label)
+        b_committed.set()
+        a.join()
+    finally:
+        orm_event.remove(OrmSession, "do_orm_execute", pause_first_chain_read)
+
+    assert results["B"].status_code == 201 and results["A"].status_code == 201
+    first, last = results["B"].json(), results["A"].json()
+    assert last["previous_review_id"] == first["id"]
+    assert last["created_at"] < first["created_at"]  # the timestamps disagree with the chain
+
+    with TestClient(app) as c:
+        listed = c.get("/events", params={"batch_id": batch["id"]}).json()["events"][0]
+        detail = c.get(f"/events/{event['id']}").json()
+        exported = c.get(f"/batches/{batch['id']}/export", params={"format": "json"}).json()
+    assert listed["latest_review"]["id"] == last["id"]
+    assert listed["latest_review"]["confirmed_label"] == a_label
+    assert [r["id"] for r in detail["reviews"]] == [first["id"], last["id"]]
+    (row,) = exported["observations"]
+    assert (row["observation"], row["review_id"]) == (a_label, last["id"])
+    with session_factory(settings.database_url)() as s:
+        (view,) = event_views(s)
+    assert view.reviewed_label == a_label and view.reviewer == "A"
+
+
+def test_a_broken_review_chain_is_an_error_not_a_guess() -> None:
+    from wildinbox.storage.models import Review, review_chain
+
+    first = Review(id=uuid.uuid4(), previous_review_id=None)
+    stray = Review(id=uuid.uuid4(), previous_review_id=uuid.uuid4())
+    assert review_chain([]) == []
+    with pytest.raises(ValueError, match="1 of 2 reviews"):
+        review_chain([first, stray])
+
+
 def test_the_database_allows_one_first_review_per_event(settings: Settings) -> None:
     from sqlalchemy.exc import IntegrityError
 

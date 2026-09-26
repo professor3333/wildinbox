@@ -170,9 +170,20 @@ class Event(Base):
 
     images: Mapped[list[Image]] = relationship(back_populates="event", order_by="Image.position")
     decisions: Mapped[list[Decision]] = relationship(back_populates="event")
+    # Loading order only. Which review is current comes from the chain's links
+    # (`review_chain`, `current_review`), never from timestamps.
     reviews: Mapped[list[Review]] = relationship(
         back_populates="event", order_by="Review.created_at"
     )
+
+    @property
+    def review_chain(self) -> list[Review]:
+        return review_chain(self.reviews)
+
+    @property
+    def current_review(self) -> Review | None:
+        chain = self.review_chain
+        return chain[-1] if chain else None
 
 
 class Job(Base):
@@ -240,6 +251,26 @@ class Decision(Base):
     created_at: Mapped[datetime] = _now()
 
     event: Mapped[Event] = relationship(back_populates="decisions")
+
+
+def review_chain(reviews: list[Review]) -> list[Review]:
+    """An event's reviews in supersession order, first to current.
+
+    The links, not `created_at`, define the order: `created_at` is the
+    transaction's start time, so a review that read and superseded another can
+    carry the earlier timestamp. The database allows one first review per event
+    and one successor per review, so the links form a single chain."""
+    successor = {r.previous_review_id: r for r in reviews}
+    chain: list[Review] = []
+    r = successor.get(None)
+    while r is not None:
+        chain.append(r)
+        r = successor.get(r.id)
+    if len(chain) != len(reviews):
+        raise ValueError(
+            f"review chain broken: {len(chain)} of {len(reviews)} reviews reachable from the first"
+        )
+    return chain
 
 
 class Review(Base):
