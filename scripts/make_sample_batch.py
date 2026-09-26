@@ -2,6 +2,7 @@
 
     uv run python scripts/make_sample_batch.py --images 1000 --out data/samples/dev-1000
     uv run python scripts/make_sample_batch.py --images 36 --diverse --out samples/cct-dev
+    uv run python scripts/make_sample_batch.py --images 400 --exclude-hashes seen.txt ...
 
 Takes whole capture sequences (never splitting one) from the calibration and
 policy-validation partitions, in a fixed pseudo-random order, until the image
@@ -56,6 +57,13 @@ def main() -> None:
         choices=["calibration", "policy_validation"],
         help="development partition(s) to draw from (default: both)",
     )
+    parser.add_argument(
+        "--exclude-hashes",
+        type=Path,
+        help="file of SHA-256s (one per line), e.g. every image a deployment already "
+        "holds; sequences with any of these frames are skipped, since re-uploaded "
+        "photos are stored as duplicates and form no events",
+    )
     args = parser.parse_args()
 
     ctx = load_context(Path("configs/experiments/baseline.yaml"), Settings().data_dir)
@@ -73,6 +81,19 @@ def main() -> None:
     for r in rows:
         by_event.setdefault(r.event_id, []).append(r)
     order = sorted(by_event, key=lambda e: hashlib.sha256(f"{args.seed}:{e}".encode()).hexdigest())
+    if args.exclude_hashes:
+        excluded = set(args.exclude_hashes.read_text().split())
+
+        def seen(eid: str) -> bool:
+            return any(
+                hashlib.sha256((ctx.images_root / r.storage_path).read_bytes()).hexdigest()
+                in excluded
+                for r in by_event[eid]
+            )
+
+        before = len(order)
+        order = [e for e in order if not seen(e)]
+        print(f"skipped {before - len(order)} of {before} sequences with already-seen frames")
 
     chosen = []
     if args.diverse:
