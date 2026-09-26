@@ -243,6 +243,8 @@ def test_snapshot_uses_approved_labels_and_excludes_protected_records_with_their
         "schema": SNAPSHOT_SCHEMA,
         "approved_reviewers": ["ranger"],
         "provenance_sha256": summary["provenance"]["sha256"],
+        "train_manifest_sha256": hashlib.sha256((out / "train.jsonl").read_bytes()).hexdigest(),
+        "train_sha256": sorted({r.source_id.removeprefix("snapshot:") for r in rows}),
     }
     assert summary["reviews_not_approved"] == 1
     excluded = {x["event_id"]: x for x in summary["excluded"]["records"]}
@@ -776,3 +778,163 @@ def test_a_v3_cycle_against_deployed_v2_loads_v2_and_refuses_mismatches_first(
     with pytest.raises(Loaded):
         gate.run(protocol(v2), cand, tmp_path / "cfg.yaml", tmp_path / "report")
     assert loaded == [root / "model-v2"]  # the baseline is V2, not the current policy's model
+
+
+def test_a_second_cycle_never_holds_out_frames_the_deployed_model_was_fit_on(
+    settings: Settings,  # noqa: F811
+    tmp_path: Path,
+) -> None:
+    """Cycle 1 trains V2; cycle 2 protects cycle 1's holdout and gains an older
+    event, so its recalculated cutoff moves V2's training events into the new
+    holdout. The builder keeps them out, and the gate's own check finds them
+    in a snapshot that lacks that protection."""
+    from fastapi.testclient import TestClient
+
+    from wildinbox.api.app import create_app
+    from wildinbox.training.gate import leakage
+    from wildinbox.training.snapshot import build, model_training_frames
+
+    def upload(c: TestClient, day: int) -> str:
+        name = f"day{day}.jpg"
+        meta = {"files": {name: {"camera_id": "cct-90", "captured_at": f"2012-01-0{day}T10:00:00"}}}
+        batch = c.post(
+            "/batches",
+            files=[("files", (name, jpeg(700 + day), "image/jpeg"))],
+            data={"metadata": json.dumps(meta)},
+        ).json()
+        (e,) = c.get("/events", params={"batch_id": batch["id"]}).json()["events"]
+        url = f"/events/{e['id']}/reviews"
+        body = {"reviewer": "ranger", "outcome": "corrected", "confirmed_label": "cat"}
+        if c.post(url, json=body).status_code == 422:  # suggested cat already
+            assert c.post(url, json={**body, "outcome": "confirmed"}).status_code == 201
+        return str(e["id"])
+
+    def protocol(name: str, deployed: str, holdouts: list[str]) -> Path:
+        p = tmp_path / f"{name}.yaml"
+        p.write_text(
+            yaml.safe_dump(
+                {
+                    "name": name,
+                    "deployed_release": deployed,
+                    "models_root": "models",
+                    "deployment": {"cameras": ["90"], "reviewer": "ranger"},
+                    "protected": {"partitions": [], "snapshot_holdouts": holdouts},
+                }
+            )
+        )
+        return p
+
+    root = tmp_path / "models"
+    with TestClient(create_app(settings)) as c:
+        ids = {day: upload(c, day) for day in (3, 4, 5, 6, 7)}
+        cycle1 = build(protocol("cycle1", "test-predictor-v0", []), "", tmp_path / "s", c, tmp_path)
+        trained = {
+            json.loads(x)["event_id"] for x in (cycle1 / "train.jsonl").read_text().splitlines()
+        }
+        assert trained == {ids[3], ids[4]}
+
+        # V2: trained on cycle 1, with the lineage finetune records.
+        v2 = _release_dir(root, "model-v2", 2)
+        meta_path = root / "model-v2/meta.json"
+        meta = json.loads(meta_path.read_text())
+        meta["trained_on"] = {"snapshot": snapshot_record(cycle1, load_summary(cycle1))}
+        meta_path.write_text(json.dumps(meta))
+        v2_frames = model_training_frames(meta, v2)
+        assert v2_frames == {
+            hashlib.sha256(jpeg(703)).hexdigest(),
+            hashlib.sha256(jpeg(704)).hexdigest(),
+        }
+
+        from wildinbox.inference.releases import register_release
+        from wildinbox.storage.db import session_factory
+        from wildinbox.storage.objects import LocalStore
+
+        with session_factory(settings.database_url)() as s:
+            register_release(
+                s,
+                LocalStore(settings.local_store_dir),
+                root / "model-v2",
+                root / "model-v2/policy.json",
+                "cycle 1 candidate",
+            )
+            s.commit()
+
+        ids[1] = upload(c, 1)  # an older memory card, reviewed later
+        cycle1_holdout = str((cycle1 / "holdout.jsonl").relative_to(tmp_path))
+        cycle2 = build(protocol("cycle2", v2, [cycle1_holdout]), "", tmp_path / "s", c, tmp_path)
+        # The same cycle without knowing V2's lineage: what the gate must catch.
+        unprotected = build(
+            protocol("cycle2x", "test-predictor-v0", [cycle1_holdout]),
+            "",
+            tmp_path / "s",
+            c,
+            tmp_path,
+        )
+
+    summary = json.loads((cycle2 / "snapshot.json").read_text())
+    reasons = {x["event_id"]: x["reason"] for x in summary["excluded"]["records"]}
+    assert reasons[ids[3]] == reasons[ids[4]] == "holdout_frame_in_deployed_training"
+    hold2 = [json.loads(x) for x in (cycle2 / "holdout.jsonl").read_text().splitlines()]
+    assert not {f["sha256"] for h in hold2 for f in h["frames"]} & v2_frames
+    assert leakage(cycle2, {}, fitted={"deployed": v2_frames}) == {}
+
+    hold_x = [json.loads(x) for x in (unprotected / "holdout.jsonl").read_text().splitlines()]
+    assert {h["event_id"] for h in hold_x} == {ids[3], ids[4]}
+    assert leakage(unprotected, {}, fitted={"deployed": v2_frames}) == {
+        "holdout_frame_in_deployed_training": 2
+    }
+
+
+@pytest.mark.parametrize(
+    ("deployed_lineage", "candidate_lineage", "message"),
+    [
+        ({"train_sha256": ["c1"]}, None, "holdout_frame_in_deployed_training"),
+        ({"path": "gone"}, None, "training lineage unknown"),
+        ({}, ["other"], "recorded training frames are not"),
+    ],
+)
+def test_the_gate_refuses_holdouts_either_model_was_fit_on(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    deployed_lineage: dict[str, Any],
+    candidate_lineage: list[str] | None,
+    message: str,
+) -> None:
+    import gzip
+    from types import SimpleNamespace
+
+    from wildinbox.evaluation import predictors
+    from wildinbox.training import gate
+    from wildinbox.training import run as training_run
+    from wildinbox.training.gate import GateError
+
+    root = tmp_path / "models"
+    v2 = _release_dir(root, "model-v2", 2)
+    _release_dir(root, "model-v3", 3)
+    snap = _snapshot(tmp_path)  # holdout frames c1, c2, d1, e1, f1
+    if deployed_lineage:
+        meta = json.loads((root / "model-v2/meta.json").read_text())
+        record = {"version": "old", "path": str(tmp_path / "gone"), **deployed_lineage}
+        meta["trained_on"] = {"snapshot": record}
+        (root / "model-v2/meta.json").write_text(json.dumps(meta))
+    cand = root / "model-v3"
+    meta = json.loads((cand / "meta.json").read_text())
+    record = {"version": "abc123", "path": str(snap)}
+    if candidate_lineage is not None:
+        record["train_sha256"] = candidate_lineage
+    meta["trained_on"] = {"snapshot": record}
+    (cand / "meta.json").write_text(json.dumps(meta))
+    splits = tmp_path / "splits"
+    splits.mkdir()
+    with gzip.open(splits / "images.jsonl.gz", "wt"):
+        pass
+    p = tmp_path / "protocol.yaml"
+    p.write_text(yaml.safe_dump({"deployed_release": v2, "models_root": str(root), "gate": {}}))
+    loaded: list[Path] = []
+    monkeypatch.setattr(
+        training_run, "load_context", lambda c, d: SimpleNamespace(split_dir=splits)
+    )
+    monkeypatch.setattr(predictors, "FinetunedPredictor", lambda ctx, d, dev: loaded.append(d))
+    with pytest.raises(GateError, match=message):
+        gate.run(p, cand, tmp_path / "cfg.yaml", tmp_path / "report")
+    assert loaded == []  # refused before any model was loaded or scored

@@ -37,7 +37,12 @@ from wildinbox.evaluation.data import ImageRow, load_rows
 from wildinbox.evaluation.metrics import image_metrics, wilson
 from wildinbox.inference.calibration import apply_temperature
 from wildinbox.policy.conservative import POLICY_NAME, Frame, PolicyConfig, decide
-from wildinbox.training.snapshot import load_summary
+from wildinbox.training.snapshot import (
+    SnapshotError,
+    load_summary,
+    model_training_frames,
+    snapshot_train_frames,
+)
 
 
 class GateError(RuntimeError):
@@ -125,6 +130,7 @@ def leakage(
     guarded: dict[str, str],
     training: set[str] | frozenset[str] = frozenset(),
     earlier_holdouts: set[str] | frozenset[str] = frozenset(),
+    fitted: dict[str, set[str]] | None = None,
 ) -> dict[str, int]:
     """Content-separation violations, counted by frame, checked from the snapshot
     files alone (not trusting the builder's exclusions):
@@ -133,6 +139,9 @@ def leakage(
     - `train_frame_in_holdout`: training frames whose bytes are also in the holdout;
     - `event_in_train_and_holdout`: an event on both sides (counted per event);
     - `holdout_frame_in_training_partition`: holdout frames any model trained on;
+    - `holdout_frame_in_<model>_training`: holdout frames a compared model was fit
+      on through an update snapshot (`fitted`: model -> frames, e.g. the
+      deployed release trained in an earlier cycle);
     - `earlier_snapshot_holdout`: snapshot frames of an earlier protected holdout.
     """
     found: dict[str, int] = {}
@@ -156,6 +165,9 @@ def leakage(
     for sha in hold_shas:
         if sha in training:
             add("holdout_frame_in_training_partition")
+        for model, frames in (fitted or {}).items():
+            if sha in frames:
+                add(f"holdout_frame_in_{model}_training")
     for _ in {r["event_id"] for r in train} & {e["event_id"] for e in hold}:
         add("event_in_train_and_holdout")
     return found
@@ -258,14 +270,28 @@ def run(
     snapshot_dir = Path(snap["path"])
     if load_summary(snapshot_dir)["version"] != snap["version"]:
         raise RuntimeError(f"{snapshot_dir} is no longer snapshot {snap['version']}")
+    # What each compared model was fit on beyond the training partition: the
+    # deployed release's update snapshot (an earlier cycle) and the candidate's
+    # recorded lineage, which must be the snapshot being gated.
+    try:
+        deployed_meta = json.loads((deployed.model_dir / "meta.json").read_text())
+        fitted = {
+            "deployed": model_training_frames(deployed_meta, deployed.id),
+            "candidate": model_training_frames(cand_meta, cand_meta["name"]),
+        }
+    except SnapshotError as e:
+        raise GateError(str(e)) from e
+    if fitted["candidate"] != snapshot_train_frames(snapshot_dir):
+        raise GateError(f"the candidate's recorded training frames are not {snapshot_dir}'s")
     leaked = leakage(
         snapshot_dir,
         partition_hashes(ctx.split_dir, GUARDED),
         training=set(partition_hashes(ctx.split_dir, (Partition.TRAIN,))),
         earlier_holdouts=earlier_holdout_hashes(protocol),
+        fitted=fitted,
     )
     if leaked:
-        raise RuntimeError(
+        raise GateError(
             f"snapshot {snap['version']} breaks content separation {leaked}; "
             "rebuild it with `wildinbox snapshot build` (which excludes these events)"
         )
