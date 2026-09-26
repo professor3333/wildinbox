@@ -66,7 +66,8 @@ something changed and needs a look, not necessarily a fault.
 | operations | workers restarted often | warning | worker starts in the last 24 h > `max_worker_starts` (6) | Crash loop; check logs and memory. |
 | operations | a worker uses a lot of memory | warning | resident memory > `max_worker_rss_mb` (3,072 MB) | Lower `WILDINBOX_INFERENCE_CHUNK` or add memory. |
 | operations | a job has waited too long to run | warning | oldest runnable queued job > `max_queue_age_seconds` (900) | Add workers: `docker compose up -d --scale worker=3`. |
-| operations | frames failed inference | warning | failed frames / images scored > `max_processing_error_rate` (2%) | Check the frame errors on the event details. |
+| operations | inference failed for every frame | critical | frames reached inference in the window and none was scored (error rate 100%) | Inference is down: check the worker logs and the model artifact. |
+| operations | frames failed inference | warning | failed frames / frames attempted > `max_processing_error_rate` (2%) | Check the frame errors on the event details. |
 | operations | many uploaded files were unusable | warning | unusable files / files uploaded > `max_unreadable_rate` (5%) | The camera or card may be producing corrupt files. |
 | operations | the API returned server errors | warning | 5xx / responses since the API started > `max_api_server_error_rate` (1%) | Check the API logs. |
 | operations | metadata API is slow | warning | p95 of the slowest metadata GET route with ≥ 20 requests > `max_api_p95_ms` (500 ms) | Check database load; add indexes. |

@@ -59,10 +59,22 @@ def render(data: dict[str, Any], latency: dict[str, dict[str, float]]) -> str:
         [({}, ops["images_scored_last_24h"])],
     )
     metric(
-        "processing_error_rate",
-        "Failed frames per image scored in the window.",
+        "frames_attempted_window",
+        "Uploaded frames in the window that reached inference (scored or failed).",
         "gauge",
-        [({}, ops["processing_error_rate"])],
+        [({}, ops["frames_attempted"])],
+    )
+    metric(
+        "frames_failed_window",
+        "Uploaded frames in the window whose inference failed.",
+        "gauge",
+        [({}, ops["frames_failed"])],
+    )
+    metric(
+        "processing_error_rate",
+        "Failed frames per frame attempted in the window (absent with no attempts).",
+        "gauge",
+        [({}, ops["processing_error_rate"])] if ops["processing_error_rate"] is not None else [],
     )
     metric(
         "unreadable_rate",
