@@ -75,6 +75,10 @@ It reads through the API, as an offline training machine would.
   `snapshot.json` records the file's SHA-256.
 - The **version** is a hash of the train and holdout manifests: the same
   approved reviews give the same version.
+- **Schema**: `snapshot.json` carries `schema: snapshot/v2` (fields include
+  `approved_reviewers` and `provenance`). Snapshots built before the field
+  existed are read as `snapshot/v1`, whose single `reviewer` becomes
+  `approved_reviewers` and which has no provenance file.
 
 ## 3. Train the candidate
 
@@ -84,6 +88,13 @@ added:
 ```bash
 uv run wildinbox finetune train --config configs/experiments/finetune-e3-update1.yaml
 ```
+
+Before training starts, it validates the snapshot. It refuses an unknown
+schema, missing approved reviewers or train counts, a missing `train.jsonl`,
+or a `labels.jsonl` whose SHA-256 differs from the summary. The model's
+`meta.json` records `trained_on.snapshot` with the version, schema, approved
+reviewers, and provenance SHA-256. The gate checks that the snapshot directory
+still holds that version.
 
 Training runs offline on a separate machine, never in CI or on the serving VM.
 

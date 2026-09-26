@@ -1,16 +1,24 @@
 from __future__ import annotations
 
+import hashlib
 import json
 from pathlib import Path
 from typing import Any
 
+import pytest
 import yaml
 
 from wildinbox.policy.conservative import PolicyConfig
 from wildinbox.settings import Settings
-from wildinbox.training.finetune import snapshot_rows
+from wildinbox.training.finetune import snapshot_record, snapshot_rows
 from wildinbox.training.gate import event_block, holdout_rows
-from wildinbox.training.snapshot import review_label, split_by_time
+from wildinbox.training.snapshot import (
+    SNAPSHOT_SCHEMA,
+    SnapshotError,
+    load_summary,
+    review_label,
+    split_by_time,
+)
 
 from .test_app import database_url, settings  # noqa: F401
 from .test_uploads import jpeg
@@ -40,7 +48,18 @@ def test_review_labels() -> None:
 def _snapshot(tmp_path: Path) -> Path:
     d = tmp_path / "snap"
     (d / "images").mkdir(parents=True)
-    (d / "snapshot.json").write_text(json.dumps({"version": "abc123", "train": {}}))
+    (d / "labels.jsonl").write_text('{"event_id": "e1"}\n')
+    summary = {
+        "schema": SNAPSHOT_SCHEMA,
+        "version": "abc123",
+        "approved_reviewers": ["ranger"],
+        "train": {"images": 2, "events": 2},
+        "provenance": {
+            "file": "labels.jsonl",
+            "sha256": hashlib.sha256((d / "labels.jsonl").read_bytes()).hexdigest(),
+        },
+    }
+    (d / "snapshot.json").write_text(json.dumps(summary))
     (d / "train.jsonl").write_text(
         json.dumps({"sha256": "aa", "label": "empty", "event_id": "e1", "camera_id": "cct-90"})
         + "\n"
@@ -205,6 +224,20 @@ def test_snapshot_uses_approved_labels_and_excludes_protected_records_with_their
 
     summary = json.loads((out / "snapshot.json").read_text())
     assert out.name == f"update2-{summary['version']}"
+    # What training reads back from a freshly built snapshot, down to the
+    # model metadata (a stale field here crashed training after the epoch).
+    assert summary["schema"] == SNAPSHOT_SCHEMA
+    rows, _, read = snapshot_rows(out)
+    assert len(rows) == summary["train"]["images"] > 0
+    assert snapshot_record(out, read) == {
+        "version": summary["version"],
+        "path": str(out),
+        "images": summary["train"]["images"],
+        "events": summary["train"]["events"],
+        "schema": SNAPSHOT_SCHEMA,
+        "approved_reviewers": ["ranger"],
+        "provenance_sha256": summary["provenance"]["sha256"],
+    }
     assert summary["reviews_not_approved"] == 1
     excluded = {x["event_id"]: x for x in summary["excluded"]["records"]}
     assert summary["excluded"]["by_reason"] == {
@@ -243,3 +276,37 @@ def test_gate_refuses_leaked_snapshots_and_counts_repeated_comparisons(tmp_path:
     assert log_comparison(log, {"holdout_version": "h1", "candidate": "b"}) == 2
     assert log_comparison(log, {"holdout_version": "h2", "candidate": "b"}) == 1
     assert len(log.read_text().splitlines()) == 3
+
+
+def test_legacy_snapshot_is_read_with_its_single_reviewer(tmp_path: Path) -> None:
+    d = _snapshot(tmp_path)
+    legacy = json.loads((d / "snapshot.json").read_text())
+    del legacy["schema"], legacy["approved_reviewers"], legacy["provenance"]
+    legacy["reviewer"] = "simulated-ground-truth"
+    (d / "snapshot.json").write_text(json.dumps(legacy))
+    record = snapshot_record(d, load_summary(d))
+    assert record["schema"] == "snapshot/v1" and record["provenance_sha256"] is None
+    assert record["approved_reviewers"] == ["simulated-ground-truth"]
+
+
+@pytest.mark.parametrize(
+    ("change", "message"),
+    [
+        (lambda s, d: s.update(schema="snapshot/v9"), "unknown snapshot schema"),
+        (lambda s, d: s.pop("approved_reviewers"), "approved_reviewers"),
+        (lambda s, d: s.update(approved_reviewers=[]), "approved_reviewers"),
+        (lambda s, d: s.update(train={"images": 2}), "train.images"),
+        (lambda s, d: s.pop("provenance"), "provenance"),
+        (lambda s, d: (d / "labels.jsonl").write_text("{}\n"), "SHA-256 differs"),
+        (lambda s, d: (d / "train.jsonl").unlink(), "train.jsonl"),
+    ],
+)
+def test_training_refuses_a_snapshot_it_cannot_use(
+    tmp_path: Path, change: Any, message: str
+) -> None:
+    d = _snapshot(tmp_path)
+    summary = json.loads((d / "snapshot.json").read_text())
+    change(summary, d)
+    (d / "snapshot.json").write_text(json.dumps(summary))
+    with pytest.raises(SnapshotError, match=message):
+        snapshot_rows(d)
