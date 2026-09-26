@@ -6,7 +6,7 @@ operations:
   max_queue_age_seconds: 900         # oldest job waiting to run
   max_stale_leases: 0                # running jobs whose worker stopped renewing its lease
   max_failed_jobs: 0                 # terminal failures in the window
-  max_processing_error_rate: 0.02    # failed frames / images scored
+  max_processing_error_rate: 0.02    # failed frames / frames attempted (scored or failed)
   max_unreadable_rate: 0.05          # undecodable or unsupported files / files uploaded
   restart_window_hours: 24           # window for worker starts and deaths
   max_worker_deaths: 0               # workers that stopped reporting without shutting down

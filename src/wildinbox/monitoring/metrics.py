@@ -125,14 +125,33 @@ def operations(
         )
         or 0
     )
+    # Inference outcomes over one population: frames uploaded in the window
+    # that decoded and so reached the model. Each one is scored (it has a
+    # prediction) or failed (processing_error); frames still waiting count as
+    # neither. The rate is failed / attempted, so an outage where nothing
+    # scores is 100%, and a window with no attempts has no rate (None), not 0%.
+    attempted_frame = (Image.created_at >= window) & (Image.validation_status == "valid")
     frame_errors = (
         session.scalar(
             select(func.count())
             .select_from(Image)
-            .where(Image.created_at >= window, Image.processing_error.is_not(None))
+            .where(attempted_frame, Image.processing_error.is_not(None))
         )
         or 0
     )
+    frames_scored = (
+        session.scalar(
+            select(func.count())
+            .select_from(Image)
+            .where(
+                attempted_frame,
+                Image.processing_error.is_(None),
+                select(Prediction.id).where(Prediction.image_id == Image.id).exists(),
+            )
+        )
+        or 0
+    )
+    frames_attempted = frames_scored + frame_errors
     last_day = (
         session.scalar(
             select(func.count())
@@ -206,8 +225,10 @@ def operations(
         "files_unreadable": unreadable,
         "unreadable_rate": unreadable / uploaded if uploaded else 0.0,
         "images_scored": scored,
+        "frames_attempted": frames_attempted,
+        "frames_scored": frames_scored,
         "frames_failed": frame_errors,
-        "processing_error_rate": frame_errors / scored if scored else 0.0,
+        "processing_error_rate": frame_errors / frames_attempted if frames_attempted else None,
         "images_scored_last_24h": last_day,
         "cost_by_release": cost,
     }
@@ -787,12 +808,21 @@ def alerts(
             len(ops["failed_jobs_in_window"]),
             o["max_failed_jobs"],
         )
-    if ops["processing_error_rate"] > o["max_processing_error_rate"]:
+    rate = ops["processing_error_rate"]
+    if ops["frames_attempted"] and ops["frames_scored"] == 0:
+        add(
+            "critical",
+            "operations",
+            "inference failed for every frame",
+            rate,
+            o["max_processing_error_rate"],
+        )
+    elif rate is not None and rate > o["max_processing_error_rate"]:
         add(
             "warning",
             "operations",
             "frames failed inference",
-            ops["processing_error_rate"],
+            rate,
             o["max_processing_error_rate"],
         )
     if ops["unreadable_rate"] > o["max_unreadable_rate"]:

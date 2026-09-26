@@ -1,15 +1,19 @@
 from __future__ import annotations
 
+import hashlib
 import re
 import uuid
 from collections import Counter
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
+from typing import Any
 
+import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy import select, update
 
 from wildinbox.api.app import create_app
+from wildinbox.inference.serving import PlumbingScorer
 from wildinbox.monitoring.metrics import (
     EventView,
     accuracy,
@@ -26,7 +30,7 @@ from wildinbox.monitoring.prometheus import render
 from wildinbox.settings import Settings
 from wildinbox.storage.db import session_factory
 from wildinbox.storage.models import Image, Job, WorkerProcess
-from wildinbox.workers import liveness
+from wildinbox.workers import liveness, process
 from wildinbox.workers.process import claim
 
 from .test_app import NoopDispatcher, _files, _small_batch, database_url, settings  # noqa: F401
@@ -108,8 +112,10 @@ def _ops(**kw: object) -> dict[str, object]:
         "files_unreadable": 0,
         "unreadable_rate": 0.0,
         "images_scored": 0,
+        "frames_attempted": 0,
+        "frames_scored": 0,
         "frames_failed": 0,
-        "processing_error_rate": 0.0,
+        "processing_error_rate": None,
         "images_scored_last_24h": 0,
         "cost_by_release": {},
     }
@@ -330,3 +336,70 @@ def test_api_server_errors_and_slow_metadata_routes_alert() -> None:
     messages = [a["message"] for a in alerts(_ops(), {}, {"by_camera": {}}, CFG, api=api)]
     assert any("server errors" in m for m in messages)
     assert any("GET /events p95" in m for m in messages)
+
+
+@pytest.mark.parametrize(
+    ("failing", "attempted", "failed", "rate", "alert"),
+    [
+        ("none", 0, 0, None, None),  # no traffic: no rate, no alert
+        ("one", 3, 1, 1 / 3, ("warning", "frames failed inference")),
+        ("all", 3, 3, 1.0, ("critical", "inference failed for every frame")),
+    ],
+)
+def test_processing_error_rate_is_failures_per_attempt(
+    settings: Settings,  # noqa: F811
+    monkeypatch: pytest.MonkeyPatch,
+    failing: str,
+    attempted: int,
+    failed: int,
+    rate: float | None,
+    alert: tuple[str, str] | None,
+) -> None:
+    """Real upload -> inference -> /monitoring. A complete inference outage is
+    100% and critical, not 0% because nothing succeeded to divide by."""
+    photos = [(f"f{i}.jpg", jpeg(500 + i)) for i in range(3)]
+    bad = {hashlib.sha256(d).hexdigest() for _, d in photos[: {"one": 1, "all": 3}.get(failing, 0)]}
+
+    class FailingScorer(PlumbingScorer):
+        def score(self, images: Any, sha256s: Any) -> list[dict[str, float]]:
+            if bad & set(sha256s):
+                raise RuntimeError("inference unavailable")
+            return super().score(images, sha256s)
+
+    monkeypatch.setattr(process, "scorer_for", lambda r, st, d="cpu": FailingScorer(r))
+    with TestClient(create_app(settings)) as c:  # inline dispatch: processed on upload
+        if failing != "none":
+            batch = c.post("/batches", files=_files(*photos)).json()
+            assert c.get(f"/jobs/{batch['job']['id']}").json()["status"] == "succeeded"
+        ops = c.get("/monitoring").json()["operations"]
+        found = [
+            (a["level"], a["message"])
+            for a in c.get("/monitoring").json()["alerts"]
+            if a["area"] == "operations"
+        ]
+        text = c.get("/metrics").text
+    assert (ops["frames_attempted"], ops["frames_failed"]) == (attempted, failed)
+    assert ops["frames_scored"] == attempted - failed
+    assert ops["processing_error_rate"] == (pytest.approx(rate) if rate is not None else None)
+    assert found == ([alert] if alert else [])
+    assert f"wildinbox_frames_failed_window {failed}" in text
+    assert ("\nwildinbox_processing_error_rate " in text) == (rate is not None)
+
+
+def test_error_rate_alerts_from_the_rate_not_from_successes() -> None:
+    def messages(**kw: object) -> list[tuple[str, str]]:
+        return [(a["level"], a["message"]) for a in alerts(_ops(**kw), {}, {"by_camera": {}}, CFG)]
+
+    assert messages() == []
+    assert (
+        messages(
+            frames_attempted=100, frames_scored=99, frames_failed=1, processing_error_rate=0.01
+        )
+        == []
+    )
+    assert messages(
+        frames_attempted=100, frames_scored=90, frames_failed=10, processing_error_rate=0.1
+    ) == [("warning", "frames failed inference")]
+    assert messages(
+        frames_attempted=1, frames_scored=0, frames_failed=1, processing_error_rate=1.0
+    ) == [("critical", "inference failed for every frame")]
