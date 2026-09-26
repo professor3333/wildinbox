@@ -11,6 +11,7 @@ from typing import Any
 import httpx
 import yaml
 
+from wildinbox.api_client import api_client, request
 from wildinbox.class_map import EMPTY_CLASS
 from wildinbox.datasets.events import Role
 from wildinbox.study.analysis import analyze
@@ -29,25 +30,37 @@ def event_truth(row: dict[str, str]) -> str | None:
     return None
 
 
-def create_plan(api_url: str, name: str, batch_ids: list[str], truth_csv: Path) -> str:
+def create_plan(
+    api_url: str,
+    name: str,
+    batch_ids: list[str],
+    truth_csv: Path,
+    client: httpx.Client | None = None,
+) -> str:
     protocol = yaml.safe_load(PROTOCOL.read_text())
     d = protocol["design"]
     by_file = {r["filename"]: r for r in csv.DictReader(truth_csv.open())}
-    api = httpx.Client(base_url=api_url, timeout=120)
+    api = client or api_client(api_url)
     truth: dict[str, str | None] = {}
     for batch in batch_ids:
         offset: int | None = 0
         while offset is not None:
-            page = api.get(
-                "/events", params={"batch_id": batch, "limit": 500, "offset": offset}
+            page = request(
+                api,
+                "GET",
+                "/events",
+                params={"batch_id": batch, "limit": 500, "offset": offset},
             ).json()
             for e in page["events"]:
-                first = api.get(f"/events/{e['id']}").json()["images"][0]["filename"]
+                detail = request(api, "GET", f"/events/{e['id']}").json()
+                first = detail["images"][0]["filename"]
                 truth[e["id"]] = event_truth(by_file[first])
             offset = page["next_offset"]
     sets = build_sets(truth, d["events_per_set"], d["practice_events_per_condition"], d["seed"])
     used = {e for v in sets.values() for e in v}
-    res = api.post(
+    res = request(
+        api,
+        "POST",
         "/study/plans",
         json={
             "name": name,
@@ -56,16 +69,16 @@ def create_plan(api_url: str, name: str, batch_ids: list[str], truth_csv: Path) 
             "truth": {e: truth[e] for e in used},
         },
     )
-    res.raise_for_status()
     plan_id: str = res.json()["id"]
     return plan_id
 
 
-def write_analysis(api_url: str, plan_id: str, out: Path) -> dict[str, Any]:
+def write_analysis(
+    api_url: str, plan_id: str, out: Path, client: httpx.Client | None = None
+) -> dict[str, Any]:
     protocol = yaml.safe_load(PROTOCOL.read_text())
-    export = (
-        httpx.Client(base_url=api_url, timeout=120).get(f"/study/plans/{plan_id}/export").json()
-    )
+    api = client or api_client(api_url)
+    export = request(api, "GET", f"/study/plans/{plan_id}/export").json()
     if export["plan"]["protocol_sha256"] != hashlib.sha256(PROTOCOL.read_bytes()).hexdigest():
         raise RuntimeError("the protocol file changed after this study plan was created")
     result = analyze(export, protocol)

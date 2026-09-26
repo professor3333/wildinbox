@@ -491,8 +491,9 @@ def test_snapshot_authenticates_with_the_token_convention_and_names_auth_failure
     from wildinbox import cli
     from wildinbox.api.app import create_app
     from wildinbox.api.auth import new_token, token_hash
+    from wildinbox.api_client import APIError, api_client
     from wildinbox.training import snapshot
-    from wildinbox.training.snapshot import SnapshotAPIError, api_client, build
+    from wildinbox.training.snapshot import build
 
     token = new_token()
     secured = settings.model_copy(
@@ -539,7 +540,7 @@ def test_snapshot_authenticates_with_the_token_convention_and_names_auth_failure
     for env_token, sent in (("not-the-token", "a token sent"), (None, "no token sent")):
         with (
             client_as(env_token) as c,
-            pytest.raises(SnapshotAPIError, match=f"401 Unauthorized \\({sent}\\)"),
+            pytest.raises(APIError, match=f"401 Unauthorized \\({sent}\\)"),
         ):
             build(protocol, "http://testserver", tmp_path / "snaps", client=c, root=tmp_path)
 

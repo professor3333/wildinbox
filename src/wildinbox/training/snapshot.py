@@ -41,7 +41,6 @@ from __future__ import annotations
 import gzip
 import hashlib
 import json
-import os
 import statistics
 from collections import Counter
 from dataclasses import dataclass, field
@@ -54,6 +53,7 @@ import httpx
 import yaml
 from PIL import Image as PILImage
 
+from wildinbox.api_client import api_client, request
 from wildinbox.class_map import EMPTY_CLASS
 
 SNAPSHOT_SCHEMA = "snapshot/v2"
@@ -174,37 +174,8 @@ def manifest_mismatches(snapshot_dir: Path, summary: dict[str, Any]) -> list[str
     return out
 
 
-class SnapshotAPIError(RuntimeError):
-    """The API refused or failed a request the snapshot needs."""
-
-
-def api_client(api_url: str) -> httpx.Client:
-    """Client for `api_url`, sending `Authorization: Bearer $WILDINBOX_TOKEN` when
-    set (the convention of the UI and scripts). Reviewer approval trusts the
-    reviewer names the API returns, so snapshots come from an authenticated API."""
-    token = os.environ.get("WILDINBOX_TOKEN")
-    headers = {"Authorization": f"Bearer {token}"} if token else {}
-    return httpx.Client(base_url=api_url, timeout=120, headers=headers)
-
-
 def _get(api: httpx.Client, path: str, **params: Any) -> httpx.Response:
-    """GET, or `SnapshotAPIError` for any non-2xx status; bodies are only read
-    from successful responses."""
-    try:
-        res = api.get(path, params=params or None)
-    except httpx.HTTPError as e:
-        raise SnapshotAPIError(f"GET {path}: {e}") from e
-    if res.status_code in (401, 403):
-        sent = "a token" if "authorization" in api.headers else "no token"
-        raise SnapshotAPIError(
-            f"GET {path}: {res.status_code} {res.reason_phrase} ({sent} sent); "
-            "set WILDINBOX_TOKEN to a valid API token for this deployment"
-        )
-    if not res.is_success:
-        raise SnapshotAPIError(
-            f"GET {path}: {res.status_code} {res.reason_phrase}: {res.text[:200]}"
-        )
-    return res
+    return request(api, "GET", path, params=params or None)
 
 
 def decode_problem(data: bytes) -> str | None:
@@ -483,6 +454,8 @@ def build(
     root: Path = Path("."),
 ) -> Path:
     protocol = load_protocol(protocol_path)
+    # Reviewer approval trusts the reviewer names the API returns, so snapshots
+    # come from an authenticated API.
     api = client or api_client(api_url)
     deployed = protocol["deployed_release"]
     releases = {r["id"]: r for r in _get(api, "/releases").json()["releases"]}

@@ -291,3 +291,84 @@ def test_projected_workload_counts_audits_of_automatic_events() -> None:
     export["workload"] = {"dispositions": {"needs_review": 100}, "audit_rate": 0.05}
     w = analyze(export, PROTOCOL)["summary"]["workload"]
     assert w["audit_minutes"] == 0 and w["time_saved_share"] == pytest.approx(1 - t_s / t_g)
+
+
+# ------------------------------------------------------------------ CLI
+
+
+def test_study_commands_work_against_a_token_protected_api(
+    settings: Any,  # noqa: F811
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    """`study plan` and `study analyze` send WILDINBOX_TOKEN; a missing or
+    wrong token is a clear error, not a KeyError on the refusal's body."""
+    import csv
+    import json
+
+    from wildinbox import cli
+    from wildinbox.api.auth import new_token, token_hash
+    from wildinbox.api_client import api_client
+    from wildinbox.study import cli as study_cli
+
+    from .test_uploads import jpeg
+
+    token = new_token()
+    app = create_app(
+        settings.model_copy(update={"auth": "tokens", "api_tokens": {"alice": token_hash(token)}})
+    )
+
+    def client_as(env_token: str | None) -> TestClient:
+        """What `api_client` would send, over the in-process app."""
+        if env_token is None:
+            monkeypatch.delenv("WILDINBOX_TOKEN", raising=False)
+        else:
+            monkeypatch.setenv("WILDINBOX_TOKEN", env_token)
+        c = TestClient(app)
+        c.headers.update(api_client("http://testserver").headers)
+        return c
+
+    names = [f"{i}.jpg" for i in range(6)]
+    meta = {
+        "files": {
+            n: {"camera_id": "cct-7", "captured_at": f"2012-01-0{i + 1}T10:00:00"}
+            for i, n in enumerate(names)
+        }
+    }
+    truth_csv = tmp_path / "truth.csv"
+    with truth_csv.open("w", newline="") as f:
+        w = csv.DictWriter(f, ["filename", "event_role", "event_label", "image_label"])
+        w.writeheader()
+        for n in names:
+            w.writerow({"filename": n, "event_role": "empty", "event_label": "", "image_label": ""})
+    monkeypatch.setattr(  # a small plan: the protocol's sets need 86 events
+        study_cli,
+        "build_sets",
+        lambda truth, *a: dict(
+            zip(("A", "B", "practice"), [sorted(truth)[i::3] for i in range(3)], strict=True)
+        ),
+    )
+
+    with client_as(token) as c:
+        files = [("files", (n, jpeg(600 + i), "image/jpeg")) for i, n in enumerate(names)]
+        batch = c.post("/batches", files=files, data={"metadata": json.dumps(meta)}).json()
+        plan_id = study_cli.create_plan("http://testserver", "auth", [batch["id"]], truth_csv, c)
+        result = study_cli.write_analysis("http://testserver", plan_id, tmp_path / "out", c)
+    assert result["summary"]["participants_analysed"] == 0
+    export = json.loads((tmp_path / "out" / "export.json").read_text())
+    assert export["plan"]["id"] == plan_id and len(export["plan"]["truth"]) == 6
+
+    for env_token, sent in (("not-the-token", "a token"), (None, "no token")):
+        with client_as(env_token) as c:
+            monkeypatch.setattr(study_cli, "api_client", lambda url: c)
+            plan = ["study", "plan", "--name", "x", "--batch-id", batch["id"]]
+            analyze_args = ["study", "analyze", "--plan-id", plan_id]
+            for args, path in (
+                ([*plan, "--truth", str(truth_csv)], "GET /events: 401"),
+                ([*analyze_args, "--out", str(tmp_path / "o")], f"/study/plans/{plan_id}/export"),
+            ):
+                assert cli.main(args) == 1
+                err = capsys.readouterr().err
+                assert path in err and f"401 Unauthorized ({sent} sent)" in err
+                assert "WILDINBOX_TOKEN" in err

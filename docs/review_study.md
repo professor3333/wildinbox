@@ -71,6 +71,10 @@ uv run wildinbox study plan --name "study-1" \
 It prints the study code (plan id) and records the protocol's SHA-256, so the
 analysis refuses to run if the protocol file is edited afterwards.
 
+Against a deployment with token authentication, `export WILDINBOX_TOKEN=<token>`
+first: `study plan` and `study analyze` send it as a bearer token, and stop
+with an error naming the refused request if it is missing or wrong.
+
 ## 3. Run sessions
 
 For each participant, on a laptop with the deployment running:
