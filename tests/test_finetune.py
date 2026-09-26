@@ -13,6 +13,7 @@ from PIL import Image
 
 from wildinbox.config import load_config
 from wildinbox.datasets.spec import Partition
+from wildinbox.evaluation.data import ImageRow
 from wildinbox.preprocessing import TrainAugmentation, safe_crop_window
 from wildinbox.training.finetune import (
     build_model,
@@ -235,3 +236,71 @@ def test_update_candidate_uses_the_deployed_recipe_unchanged() -> None:
     differs = {k for k in e3.model_dump() if e3.model_dump()[k] != cand.model_dump()[k]}
     assert differs == {"name", "description", "snapshot"}
     assert cand.snapshot is not None and e3.snapshot is None
+
+
+def _cache_after(barrier: Any, job: tuple[str, str, int]) -> None:
+    from wildinbox.training.finetune import _cache_one
+
+    barrier.wait()  # every writer has started before any of them writes
+    _cache_one(job)
+
+
+def _cache_rows(images: Path, paths: list[str]) -> list[ImageRow]:
+    for p in sorted(set(paths)):
+        Image.new("RGB", (80, 60), (len(p) * 20 % 255, 90, 30)).save(images / p)
+    return [
+        ImageRow(f"s{i}", f"e{i}", Partition.TRAIN, "c", p, "cat", "cat", "supported_species", True)
+        for i, p in enumerate(paths)
+    ]
+
+
+def test_repeated_content_across_chunks_is_cached_once(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """65 rows (more than one chunk of 64) where the same file appears in
+    several events, including in both chunks: one job per destination, real
+    worker processes, a valid cache, no temporary files, rows unchanged."""
+    from wildinbox.training import finetune
+
+    images, cache = tmp_path / "images", tmp_path / "cache"
+    images.mkdir()
+    paths = ["shared.jpg"] + [f"{i}.jpg" for i in range(62)] + ["shared.jpg", "0.jpg"]
+    rows = _cache_rows(images, paths)
+    before = list(rows)
+    scheduled: list[str] = []
+
+    class CountingPool(finetune.ProcessPoolExecutor):
+        def map(self, fn: Any, *iterables: Any, **kw: Any) -> Any:  # type: ignore[override]
+            jobs = list(iterables[0])
+            scheduled.extend(dst for _, dst, _ in jobs)
+            return super().map(fn, jobs, **kw)
+
+    monkeypatch.setattr(finetune, "ProcessPoolExecutor", CountingPool)
+    finetune.build_input_cache(rows, images, cache, 32, workers=2)
+
+    assert rows == before and len(rows) == 65  # the training rows are untouched
+    assert sorted(scheduled) == sorted(str(cache / p) for p in set(paths))
+    for p in set(paths):
+        with Image.open(cache / p) as img:
+            assert min(img.size) == 32
+    assert not [f for f in cache.iterdir() if f.name.endswith(".tmp.jpg")]
+
+
+def test_concurrent_writers_of_one_cached_file_do_not_collide(tmp_path: Path) -> None:
+    import multiprocessing
+
+    images, cache = tmp_path / "images", tmp_path / "cache"
+    images.mkdir()
+    _cache_rows(images, ["shared.jpg"])
+    job = (str(images / "shared.jpg"), str(cache / "shared.jpg"), 32)
+    ctx = multiprocessing.get_context("spawn")
+    barrier = ctx.Barrier(6)
+    procs = [ctx.Process(target=_cache_after, args=(barrier, job)) for _ in range(6)]
+    for p in procs:
+        p.start()
+    for p in procs:
+        p.join(60)
+    assert [p.exitcode for p in procs] == [0] * 6
+    with Image.open(cache / "shared.jpg") as img:
+        assert min(img.size) == 32
+    assert [f.name for f in cache.iterdir()] == ["shared.jpg"]
