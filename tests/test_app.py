@@ -722,3 +722,77 @@ def test_animal_filter_matches_the_interfaces_visitor_rule(
         "corrected-to-animal",
         "unresolved",
     }
+
+
+def test_event_lists_run_a_bounded_number_of_queries(settings: Settings) -> None:
+    """Listing events must not add queries per event: a page of 100 costs about
+    what a page of 10 does, on every endpoint that lists events."""
+    from sqlalchemy import event as sa_event
+    from sqlalchemy.engine import Engine
+
+    cfg = settings.model_copy(update={"max_files_per_batch": 100, "max_batch_bytes": 2_000_000})
+    names = [f"{i}.jpg" for i in range(100)]
+    meta = {
+        "camera_id": "north",
+        "files": {n: {"sequence_id": n, "captured_at": "2024-05-01T21:00:00"} for n in names},
+    }
+    queries: list[str] = []
+
+    def count(*args: Any) -> None:
+        if args[2].lstrip().upper().startswith("SELECT"):
+            queries.append(args[2])
+
+    def selects(c: TestClient, path: str, **params: Any) -> int:
+        queries.clear()
+        assert c.get(path, params=params).status_code == 200
+        return len(queries)
+
+    with TestClient(create_app(cfg)) as c:
+        batch = c.post(
+            "/batches",
+            files=_files(*[(n, jpeg(5000 + i)) for i, n in enumerate(names)]),
+            data={"metadata": json.dumps(meta)},
+        ).json()["id"]
+        for eid in [e["id"] for e in c.get("/events", params={"limit": 3}).json()["events"]]:
+            c.post(f"/events/{eid}/reviews", json={"reviewer": "ann", "outcome": "unresolved"})
+        sa_event.listen(Engine, "before_cursor_execute", count)
+        try:
+            ten = selects(c, "/events", batch_id=batch, limit=10)
+            hundred = selects(c, "/events", batch_id=batch, limit=100)
+            animals = selects(c, "/events", batch_id=batch, limit=100, animal=True)
+            view = selects(c, f"/batches/{batch}/view")
+            export = selects(c, f"/batches/{batch}/export")
+        finally:
+            sa_event.remove(Engine, "before_cursor_execute", count)
+    counts = {"10": ten, "100": hundred, "animal": animals, "view": view, "export": export}
+    assert hundred == ten and animals <= ten, counts
+    assert max(view, export) <= 15, counts
+
+
+def test_monitoring_queries_do_not_grow_with_batches(client: TestClient) -> None:
+    from sqlalchemy import event as sa_event
+    from sqlalchemy.engine import Engine
+
+    queries: list[str] = []
+
+    def count(*args: Any) -> None:
+        if args[2].lstrip().upper().startswith("SELECT"):
+            queries.append(args[2])
+
+    def selects() -> int:
+        queries.clear()
+        sa_event.listen(Engine, "before_cursor_execute", count)
+        try:
+            assert client.get("/monitoring").status_code == 200
+        finally:
+            sa_event.remove(Engine, "before_cursor_execute", count)
+        return len(queries)
+
+    for n in range(2):
+        client.post("/batches", files=_files((f"{n}.jpg", jpeg(6000 + n))))
+    two = selects()
+    for n in range(2, 6):
+        client.post("/batches", files=_files((f"{n}.jpg", jpeg(6000 + n))))
+    six = selects()
+    assert six == two, (two, six)
+    assert client.get("/monitoring").json()["operations"]["batches"][0]["images"] == 1
