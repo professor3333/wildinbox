@@ -264,3 +264,6 @@ decisions ([report](../reports/update/rollback-restore.json)).
 - Rebuilding cycle 1's snapshot with the current command (approval,
   protection, provenance), the gate rerun with the new controls, and the
   rollback check: the same report, section "Stage 11".
+- A full rehearsal on the local stack (2026-09-27): deploy, 1,000 photos and a
+  worker restart, correction and export, snapshot, a new candidate, the gate on
+  CPU, release and rollback: [reports/rehearsal/README.md](../reports/rehearsal/README.md).

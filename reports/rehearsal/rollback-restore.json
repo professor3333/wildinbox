@@ -1,0 +1,40 @@
+{
+  "run": "20260927T160037",
+  "photos": 62,
+  "previous_release": "finetune-e3-deep-balanced@7a25aea97c76",
+  "candidate_release": "finetune-e3-rehearsal@5abc63b2fe2b",
+  "batches": {
+    "1": "7db2b155-fd37-465f-86fb-5b69b2c25929",
+    "2": "6dedd33a-cd02-48b0-a93e-e377c67b7439",
+    "3": "88e0e26c-552f-4522-a369-0f017d56d462"
+  },
+  "rollback": {
+    "max_probability_difference": 0.0,
+    "frame_labels_identical": 62,
+    "event_decisions_identical": 22,
+    "events": 22
+  },
+  "candidate_vs_previous": {
+    "max_probability_difference": 0.523879949682148,
+    "frame_labels_changed": 35,
+    "event_decisions_changed": 22
+  },
+  "tolerance": 1e-05,
+  "activations": [
+    {
+      "release_id": "finetune-e3-deep-balanced@7a25aea97c76",
+      "note": "rollback-restore demonstration: roll back",
+      "activated_at": "2026-09-27T10:16:27.409330+00:00"
+    },
+    {
+      "release_id": "finetune-e3-rehearsal@5abc63b2fe2b",
+      "note": "rollback-restore demonstration: candidate",
+      "activated_at": "2026-09-27T10:16:10.465879+00:00"
+    },
+    {
+      "release_id": "finetune-e3-deep-balanced@7a25aea97c76",
+      "note": "rollback-restore demonstration: roll back",
+      "activated_at": "2026-09-25T11:12:01.426073+00:00"
+    }
+  ]
+}

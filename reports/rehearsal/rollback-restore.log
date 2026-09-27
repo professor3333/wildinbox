@@ -1,0 +1,13 @@
+ok   previous release: finetune-e3-deep-balanced@7a25aea97c76
+ok   batch 1 ran on finetune-e3-deep-balanced@7a25aea97c76
+ok   activated the candidate finetune-e3-rehearsal@5abc63b2fe2b
+ok   batch 2 ran on the candidate
+ok   rolled back to finetune-e3-deep-balanced@7a25aea97c76
+ok   batch 3 ran on the previous release
+ok   62 frames scored each time
+ok   rollback restores probabilities (max difference 0.00e+00)
+ok   rollback restores all 62 frame labels
+ok   rollback restores all 22 event decisions
+ok   the candidate's predictions differ (max 0.524; 35 frame labels, 22 decisions)
+ok   stored results of batches 1 and 2 were not rewritten by the switches
+report -> reports/rehearsal/rollback-restore.json

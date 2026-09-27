@@ -1,0 +1,10 @@
+# after rollback, 2026-09-27T10:16:51Z
+$ GET /ready
+{"status":"ready","expected_release":null,"checks":{"database":{"ok":true,"ms":9.9},"queue":{"ok":true,"ms":122.6},"object_store":{"ok":true,"ms":124.0},"model":{"ok":true,"ms":23.8,"detail":"finetune-e3-deep-balanced@7a25aea97c76"}}}
+$ GET /version
+{"api_version":"0.1.0","active_release":{"id":"finetune-e3-deep-balanced@7a25aea97c76","kind":"finetuned_efficientnet_b0","is_test":false,"weights_sha256":"3ab6fec236ce4b418acdda78f94078ec3bd6331983e2186bd52aa11a1fd9b360","class_names":["empty","bobcat","cat","coyote","dog","opossum","rabbit","raccoon"],"class_map_fingerprint":"a833b676ea03","preprocessing_version":"6d9a950a6543","calibration_version":"55cdb7daad08","policy_version":"conservative/v2+378312635a29","notice":null}}
+$ GET /releases (activations)
+2026-09-27T10:16:27.409330+00:00 finetune-e3-deep-balanced@7a25aea97c76 | rollback-restore demonstration: roll back
+2026-09-27T10:16:10.465879+00:00 finetune-e3-rehearsal@5abc63b2fe2b | rollback-restore demonstration: candidate
+2026-09-25T11:12:01.426073+00:00 finetune-e3-deep-balanced@7a25aea97c76 | rollback-restore demonstration: roll back
+2026-09-25T11:11:50.171149+00:00 finetune-e3-update1@449138a9c367 | rollback-restore demonstration: candidate

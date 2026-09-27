@@ -1,0 +1,39 @@
+{
+  "policy": "conservative/v1",
+  "model": "finetune-e3-rehearsal",
+  "classes": [
+    "empty",
+    "bobcat",
+    "cat",
+    "coyote",
+    "dog",
+    "opossum",
+    "rabbit",
+    "raccoon"
+  ],
+  "calibration": {
+    "method": "temperature",
+    "temperature": 2.238887847548888,
+    "fit_partition": "calibration",
+    "weights_digest": "f2f778c0259f",
+    "version": "3c17b02eb99a"
+  },
+  "unfamiliar": null,
+  "released": {
+    "empty_threshold": 0.65,
+    "species_threshold": null,
+    "auto_filter_enabled": false,
+    "auto_accept_enabled": false,
+    "accept_species": [],
+    "policy_version": "conservative/v2+378312635a29"
+  },
+  "rule": {
+    "empty_threshold": 0.65,
+    "species_threshold": null,
+    "auto_filter_enabled": true,
+    "auto_accept_enabled": false,
+    "accept_species": [],
+    "policy_version": "conservative/v2+60aa73046092"
+  },
+  "artifact_version": "5abc63b2fe2b"
+}
