@@ -98,6 +98,14 @@ camera.
   recent batch.
 - Storage counts original photos (thumbnails are small and not counted), with
   bytes uploaded per day.
+- **History window.** Model behavior, signals, audits, and accuracy analyse the
+  events processed in the last 90 days (`history.days`), so the cost of a
+  monitoring request follows recent volume, not everything ever uploaded. The
+  response says how many events it analysed and how many older ones it left
+  out (`history.events_analysed`, `history.older_events_excluded`); a camera
+  whose events are all older drops out of these views. Operational health
+  reads only active jobs and those finished in its own window, with job counts
+  by status over all time.
 
 ## Prometheus
 
