@@ -142,7 +142,7 @@ Every headline claim and where it comes from:
 |---|---|---|
 | Retention, review reduction, precision, coverage, unsupported acceptance on unseen cameras | `reports/final_evaluation/metrics.json` (plan `configs/experiments/final_evaluation.yaml`, committed first) | `uv run wildinbox final-evaluation` |
 | 61.4% fewer items to review from grouping (23,275 photos → 8,982 events); 0% review reduction from the model as released | `reports/final_evaluation/metrics.json` (`images`, `events`, `released`) | `uv run wildinbox final-evaluation` |
-| Macro-F1 0.447 vs baseline 0.285; random-image vs unseen-camera gap | `reports/final_test/metrics.json` (protocol `configs/experiments/final_test.yaml`) | `uv run wildinbox final-test` (refuses unless it reproduces exactly) |
+| Macro-F1 0.447 vs baseline 0.285; random-image vs unseen-camera gap | `reports/final_test/metrics.json` (protocol `configs/experiments/final_test.yaml`) | `uv run wildinbox final-test` (refuses unless it reproduces: exactly on MPS, where it was recorded; within 0.005 elsewhere. On CPU: every decision identical, 1,018 of 1,020 numbers identical, two AUROCs off by 1e-6, [record](reports/final_test/cpu-reproduction.json)) |
 | Thresholds chosen on development cameras only; automation off | `reports/calibration/`, `configs/experiments/operating_point*.yaml` | `uv run wildinbox calibrate`, `uv run wildinbox replay` |
 | Model selection | `reports/experiments/comparison.md`, `configs/experiments/selection.yaml` | `uv run wildinbox compare reports/baseline reports/experiments/finetune-e*` |
 | 1,000 images in 111 s; metadata p95 < 360 ms (2-vCPU VM) | `reports/staging/workers-1.json` | `scripts/loadtest.py` ([how](reports/staging/README.md#reproduce)) |
