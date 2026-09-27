@@ -119,9 +119,15 @@ images), and the only candidate automation
 also falls below 98% retention for unsupported species (97.1%), by day
 (97.1%), and on camera 0 (94.2%). **Automation therefore stays off.** It is
 not enabled for a subset of cameras or hours either: that restriction would be
-chosen from final-test results and turn them into development evidence. The
-value delivered as released comes from grouping (23,275 images become 8,982
-events to review) and from suggestions shown to the reviewer.
+chosen from final-test results and turn them into development evidence. As
+released, the model reduces review by 0%. Grouping, which needs no model,
+turns 23,275 images into 8,982 events to review (61.4% fewer items); that is a
+count of items, not measured reviewer time. Whether the suggestions shown to
+reviewers help is not established: a pilot of the pre-registered timed study
+(5 participants, the protocol needs 8) found no reliable speed or accuracy
+gain, and most participants accepted suggestions that were right on 28 of 80
+events ([study-1 findings](../reports/study/study-1/FINDINGS.md)). Suggestions
+should be checked, not accepted as labels.
 
 ## Metrics on unseen cameras (development partitions)
 

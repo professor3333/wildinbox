@@ -116,7 +116,7 @@ def embed(
     for k in range(0, len(rows), CACHE_CHUNK):
         chunk = rows[k : k + CACHE_CHUNK]
         ids = [r.source_id for r in chunk]
-        path = ctx.cache_dir / f"{name}.{k // CACHE_CHUNK:03d}.npz"
+        path = ctx.cache_dir / device / f"{name}.{k // CACHE_CHUNK:03d}.npz"
         files = [ctx.images_root / r.storage_path for r in chunk]
         identity = cache_identity(
             f"backbone:{ctx.cache_dir.name}", ctx.run.preprocessing, files, device=device

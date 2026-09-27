@@ -103,7 +103,8 @@ class FinetunedPredictor:
             files,
             device=self.device,
         )
-        path = self.model_dir / "eval-cache" / self.weights_digest / f"{name}.npz"
+        # One file per device, so alternating devices does not recompute each time.
+        path = self.model_dir / "eval-cache" / self.weights_digest / self.device / f"{name}.npz"
         cached = load_cache(path, ids, identity=identity)
         if cached is not None:
             return cached

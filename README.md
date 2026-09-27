@@ -103,8 +103,16 @@ one camera on one night are not independent.
   would save 6% of reviews, and it falls below 98% retention for unsupported
   species, by day, and on one camera (94.2%). Every event goes to review with
   its suggestion, confidence, and reasons.
-- **What helps as released is grouping:** 23,275 photos become 8,982 events
-  to review (61.4% fewer items), and each comes with a suggestion.
+- **Grouping and the model are separate results.** Grouping frames into
+  capture events (from the dataset's sequence IDs; no model involved) turns
+  23,275 photos into 8,982 events to review: 61.4% fewer items than reviewing
+  every photo. The model's own contribution to review reduction, as released,
+  is 0%. Fewer items is not measured reviewer time.
+- **Suggestions are not shown to help reviewers.** Every event carries the
+  model's suggestion, but a pilot study (5 participants, below the
+  pre-registered 8) found no reliable speed gain and no accuracy gain, and
+  most participants accepted suggestions that were right on only 28 of 80
+  events ([study](reports/study/study-1/FINDINGS.md)).
 - The gap between 0.747 and 0.447 is the new-camera problem this project set out
   to measure. Reviewing a camera helps that camera: one update cycle raised
   label quality on later photos of the reviewed cameras from 0.486 to 0.548
@@ -133,6 +141,7 @@ Every headline claim and where it comes from:
 | Claim | Evidence | Reproduce |
 |---|---|---|
 | Retention, review reduction, precision, coverage, unsupported acceptance on unseen cameras | `reports/final_evaluation/metrics.json` (plan `configs/experiments/final_evaluation.yaml`, committed first) | `uv run wildinbox final-evaluation` |
+| 61.4% fewer items to review from grouping (23,275 photos → 8,982 events); 0% review reduction from the model as released | `reports/final_evaluation/metrics.json` (`images`, `events`, `released`) | `uv run wildinbox final-evaluation` |
 | Macro-F1 0.447 vs baseline 0.285; random-image vs unseen-camera gap | `reports/final_test/metrics.json` (protocol `configs/experiments/final_test.yaml`) | `uv run wildinbox final-test` (refuses unless it reproduces exactly) |
 | Thresholds chosen on development cameras only; automation off | `reports/calibration/`, `configs/experiments/operating_point*.yaml` | `uv run wildinbox calibrate`, `uv run wildinbox replay` |
 | Model selection | `reports/experiments/comparison.md`, `configs/experiments/selection.yaml` | `uv run wildinbox compare reports/baseline reports/experiments/finetune-e*` |
