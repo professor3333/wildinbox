@@ -242,7 +242,7 @@ def event_block(
 
 
 def run(
-    protocol_path: Path, candidate_dir: Path, config_path: Path, report_dir: Path
+    protocol_path: Path, candidate_dir: Path, config_path: Path, report_dir: Path, *, device: str
 ) -> dict[str, Any]:
     from wildinbox.evaluation.calibration import fit_temperature
     from wildinbox.evaluation.predictors import FinetunedPredictor
@@ -305,9 +305,10 @@ def run(
         tuple(released["accept_species"]) if released["accept_species"] is not None else None,
     )
 
+    # Both models on the same device, so the comparison is not also a device comparison.
     models = {
-        "deployed": FinetunedPredictor(ctx, deployed.model_dir, "mps"),
-        "candidate": FinetunedPredictor(ctx, candidate_dir, "mps"),
+        "deployed": FinetunedPredictor(ctx, deployed.model_dir, device),
+        "candidate": FinetunedPredictor(ctx, candidate_dir, device),
     }
     if models["deployed"].weights_digest != deployed.weights_sha256[:12]:
         raise GateError(f"{deployed.model_dir}/model.pt changed while the gate was loading it")
@@ -432,6 +433,7 @@ def run(
         "candidate_release": f"{cand_meta['name']}@{policy['artifact_version']}",
         "snapshot": snap,
         "code": git_state(),
+        "device": device,
         "results": results,
         "checks": checks,
         "promote": promote,

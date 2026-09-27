@@ -267,7 +267,12 @@ uv run wildinbox replay            # every saved decision reproduces from saved 
 ```
 
 `--compare-to` fails unless the fresh run matches the committed report within
-the documented tolerances. The other experiments, the selection rule, and the
+the documented tolerances. Every evaluation command (`evaluate`, `calibrate`,
+`unfamiliar`, `final-test`, `final-evaluation`, `update gate`) takes
+`--device auto|cpu|mps|cuda` and runs all of its models there (`auto`: CUDA,
+then MPS, then CPU; an unavailable device is an error). Cached predictions are
+kept per device, so a run on a new device recomputes rather than reusing
+another device's scores. The other experiments, the selection rule, and the
 final test have their own commands and reports:
 [experiments](reports/experiments/README.md),
 [unfamiliar inputs](reports/unfamiliar/README.md),

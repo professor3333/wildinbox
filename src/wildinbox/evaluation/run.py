@@ -198,12 +198,11 @@ def _benchmark(
 
 
 def evaluate(
-    model_dir: Path, config_path: Path, report_dir: Path, *, benchmark: bool = True
+    model_dir: Path, config_path: Path, report_dir: Path, *, device: str, benchmark: bool = True
 ) -> dict[str, Any]:
     settings = Settings()
     ctx = load_context(config_path, settings.data_dir)
     meta = json.loads((model_dir / "meta.json").read_text())
-    device = meta["device"]
     predictor = predictor_for(ctx, model_dir, device)
     if list(predictor.classes) != ctx.classes:
         raise ValueError(f"model classes {predictor.classes} differ from config {ctx.classes}")
@@ -231,6 +230,7 @@ def evaluate(
         "reference_thresholds": {"empty_filter": ref.empty, "species_accept": ref.species},
         "groups": results,
         "hardware": meta["hardware"],
+        "device": device,
         "extraction": timings,
         "lineage": {
             k: meta.get(k)
@@ -380,12 +380,19 @@ def _log_mlflow(meta: dict[str, Any], metrics: dict[str, Any], report_dir: Path)
 
 
 def evaluate_cli(args: argparse.Namespace) -> int:
+    from wildinbox.devices import resolve_device
     from wildinbox.training.spec import load_baseline_config
 
     # Read the reference BEFORE evaluating: it is usually the committed report
     # that this run is about to overwrite.
     ref = json.loads(Path(args.compare_to).read_text()) if args.compare_to else None
-    metrics = evaluate(args.model, args.config, args.report_dir, benchmark=not args.no_benchmark)
+    metrics = evaluate(
+        args.model,
+        args.config,
+        args.report_dir,
+        device=resolve_device(args.device),
+        benchmark=not args.no_benchmark,
+    )
     u = metrics["groups"][UNSEEN]
     print(
         f"unseen cameras: macro-F1 {u['image']['macro_f1']:.3f}, min species recall "

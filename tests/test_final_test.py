@@ -10,7 +10,9 @@ from wildinbox.evaluation.data import FinalTestAccessError, load_rows
 from wildinbox.evaluation.final_test import (
     FinalTestError,
     bootstrap_macro_f1,
+    compare_results,
     load_protocol,
+    max_difference,
     verify,
 )
 from wildinbox.evaluation.metrics import image_metrics
@@ -67,3 +69,34 @@ def test_event_bootstrap_brackets_macro_f1_and_is_deterministic() -> None:
     lo, hi = bootstrap_macro_f1(y_true, y_pred, groups, classes, 500, 7)
     assert lo < point < hi
     assert (lo, hi) == bootstrap_macro_f1(y_true, y_pred, groups, classes, 500, 7)
+
+
+RECORD = {
+    "macro_f1": 0.447123,
+    "events": {"needs_review": 8982, "likely_empty": 0},
+    "per_class": [{"label": "raccoon", "recall": 0.61}],
+    "ci": [0.41, 0.48],
+    "undefined": None,
+}
+
+
+def test_same_device_reruns_must_be_identical() -> None:
+    assert compare_results(RECORD, RECORD, 0.0) == []
+    nudged = {**RECORD, "macro_f1": 0.447124}
+    assert compare_results(RECORD, nudged, 0.0) == ["/macro_f1: 0.447124 vs recorded 0.447123"]
+    assert max_difference(RECORD, nudged) == pytest.approx(1e-6)
+
+
+def test_other_devices_may_move_numbers_only_within_the_tolerance() -> None:
+    nudged = {**RECORD, "macro_f1": 0.447124, "ci": [0.410001, 0.48]}
+    assert compare_results(RECORD, nudged, 1e-5) == []
+    assert compare_results(RECORD, {**RECORD, "macro_f1": 0.4472}, 1e-5) != []
+    # Counts, labels, and missing values are never tolerated.
+    moved = {**RECORD, "events": {"needs_review": 8981, "likely_empty": 1}}
+    assert len(compare_results(RECORD, moved, 1.0)) == 2
+    assert compare_results(RECORD, {**RECORD, "undefined": 0.0}, 1.0) != []
+    relabelled = {**RECORD, "per_class": [{"label": "bobcat", "recall": 0.61}]}
+    assert compare_results(RECORD, relabelled, 1.0) == [
+        "/per_class/0/label: 'bobcat' vs recorded 'raccoon'"
+    ]
+    assert compare_results(RECORD, {**RECORD, "ci": [0.41]}, 1.0) == ["/ci: 1 items, recorded 2"]

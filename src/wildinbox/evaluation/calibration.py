@@ -293,7 +293,12 @@ def _outcome(o: Any) -> dict[str, Any]:
 
 
 def run(
-    rule_path: Path, config_path: Path, report_dir: Path, deviation_path: Path | None = None
+    rule_path: Path,
+    config_path: Path,
+    report_dir: Path,
+    deviation_path: Path | None = None,
+    *,
+    device: str,
 ) -> dict[str, Any]:
     from wildinbox.datasets.spec import Partition
     from wildinbox.evaluation.data import load_rows
@@ -308,7 +313,7 @@ def run(
     code = git_state()
     ctx = load_context(config_path, Settings().data_dir)
     meta = json.loads((rule.model / "meta.json").read_text())
-    predictor = predictor_for(ctx, rule.model, meta["device"])
+    predictor = predictor_for(ctx, rule.model, device)
     classes = list(predictor.classes)
     if classes != ctx.classes:
         raise ValueError(f"model classes {classes} differ from config {ctx.classes}")
@@ -475,6 +480,7 @@ def run(
         "rule": str(rule_path),
         "rule_version": rule.version,
         "code": code,
+        "device": device,
         "split_version": meta["split_version"],
         "policy": policy,
         "calibration": {

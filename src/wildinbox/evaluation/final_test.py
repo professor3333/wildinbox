@@ -6,8 +6,10 @@ does so only after every artifact pinned by the protocol
 chosen here: thresholds, models, and rules are already frozen.
 
 The first run records `reports/final_test/opened.json`. A later run is allowed
-only with the same protocol and must reproduce the recorded results exactly;
-otherwise it refuses to write.
+only with the same protocol, never rewrites the record, and must reproduce it
+(see `compare_results`): exactly on the device that recorded it; on another
+device, every event decision, count, and label exactly and every number within
+CROSS_DEVICE_TOLERANCE.
 """
 
 from __future__ import annotations
@@ -33,6 +35,16 @@ from wildinbox.evaluation.metrics import ScoredEvent, event_metrics, image_metri
 from wildinbox.policy.conservative import Frame, PolicyConfig, Thresholds, decide
 
 INF = math.inf
+# The recorded final test predates the device field; the code that opened it
+# ran every model on MPS.
+RECORDED_DEVICE_DEFAULT = "mps"
+# Measured 2026-09-27 on all 23,275 final-test images, E3 on CPU vs the recorded
+# MPS scores: largest probability difference 0.0019 (99% of images <= 6.4e-6), no
+# predicted class or 0.65 empty-threshold decision changed (the baseline was not
+# measured). Counts, labels, and decisions must still match exactly; numbers may
+# move by at most this much (the macro-F1 tolerance of
+# configs/experiments/baseline.yaml).
+CROSS_DEVICE_TOLERANCE = 0.005
 
 
 class FinalTestError(RuntimeError):
@@ -206,6 +218,49 @@ def _rate(flags: np.ndarray) -> dict[str, Any]:
     return {"flagged": k, "n": n, "rate": k / n if n else None, "ci95": wilson(k, n)}
 
 
+def compare_results(recorded: Any, rerun: Any, tolerance: float, path: str = "") -> list[str]:
+    """Where `rerun` differs from `recorded`: non-numbers and integers must be
+    equal; floats may differ by at most `tolerance` (0: identical)."""
+    if isinstance(recorded, dict) and isinstance(rerun, dict):
+        if set(recorded) != set(rerun):
+            return [f"{path or '/'}: keys {sorted(set(recorded) ^ set(rerun))} differ"]
+        return [
+            p
+            for k in recorded
+            for p in compare_results(recorded[k], rerun[k], tolerance, f"{path}/{k}")
+        ]
+    if isinstance(recorded, list) and isinstance(rerun, list):
+        if len(recorded) != len(rerun):
+            return [f"{path}: {len(rerun)} items, recorded {len(recorded)}"]
+        return [
+            p
+            for i, (a, b) in enumerate(zip(recorded, rerun, strict=True))
+            for p in compare_results(a, b, tolerance, f"{path}/{i}")
+        ]
+    floats = isinstance(recorded, float) or isinstance(rerun, float)
+    numbers = all(isinstance(x, int | float) and not isinstance(x, bool) for x in (recorded, rerun))
+    if floats and numbers:
+        if abs(recorded - rerun) > tolerance:
+            return [f"{path}: {rerun} vs recorded {recorded}"]
+        return []
+    return [] if recorded == rerun else [f"{path}: {rerun!r} vs recorded {recorded!r}"]
+
+
+def max_difference(recorded: Any, rerun: Any) -> float:
+    """Largest absolute difference between matching numbers."""
+    if isinstance(recorded, dict) and isinstance(rerun, dict):
+        return max(
+            (max_difference(recorded[k], rerun[k]) for k in recorded if k in rerun), default=0.0
+        )
+    if isinstance(recorded, list) and isinstance(rerun, list):
+        return max(
+            (max_difference(a, b) for a, b in zip(recorded, rerun, strict=False)), default=0.0
+        )
+    if all(isinstance(x, int | float) and not isinstance(x, bool) for x in (recorded, rerun)):
+        return float(abs(recorded - rerun))
+    return 0.0
+
+
 def _policy_config(d: dict[str, Any]) -> PolicyConfig:
     species = d.get("accept_species")
     return PolicyConfig(
@@ -224,7 +279,7 @@ def _grid(spec: dict[str, Any]) -> list[float]:
     )
 
 
-def run(protocol_path: Path, config_path: Path, report_dir: Path) -> dict[str, Any]:
+def run(protocol_path: Path, config_path: Path, report_dir: Path, *, device: str) -> dict[str, Any]:
     from wildinbox.evaluation.predictors import FinetunedPredictor, predictor_for
     from wildinbox.evaluation.run import _events, _round, _score
     from wildinbox.inference.calibration import apply_temperature
@@ -250,7 +305,7 @@ def run(protocol_path: Path, config_path: Path, report_dir: Path) -> dict[str, A
     tuning, held_out = set(unf_rule["species"]["tuning"]), set(unf_rule["species"]["held_out"])
 
     rows, events = open_final_test(ctx.split_dir, box_areas(ctx.inventory_db))
-    e3 = FinetunedPredictor(ctx, protocol.model.dir, "mps")
+    e3 = FinetunedPredictor(ctx, protocol.model.dir, device)
     if e3.weights_digest != protocol.model.weights_sha256[:12]:
         raise FinalTestError("loaded E3 weights differ from the protocol")
     scored = _score(e3, rows)
@@ -260,8 +315,7 @@ def run(protocol_path: Path, config_path: Path, report_dir: Path) -> dict[str, A
         replace(s, probs={c: float(v) for c, v in zip(classes, p, strict=True)})
         for s, p in zip(scored, cal, strict=True)
     ]
-    baseline_meta = json.loads((protocol.baseline.dir / "meta.json").read_text())
-    base = predictor_for(ctx, protocol.baseline.dir, baseline_meta.get("device", "mps"))
+    base = predictor_for(ctx, protocol.baseline.dir, device)
     base_scored = _score(base, rows)
 
     def image_block(items: list[Any]) -> dict[str, Any]:
@@ -474,13 +528,54 @@ def run(protocol_path: Path, config_path: Path, report_dir: Path) -> dict[str, A
     }
     results = _round(results)
 
-    report_dir.mkdir(parents=True, exist_ok=True)
+    decisions = [
+        json.dumps(
+            {
+                "event_id": e.event_id,
+                "camera_id": events[e.event_id].camera_id,
+                "role": e.role,
+                "label": e.label,
+                "released": decide([Frame(p) for p in e.frames], released_cfg).disposition.value,
+                "rule": decide([Frame(p) for p in e.frames], rule_cfg).disposition.value,
+            }
+        )
+        for e in ev
+    ]
+    out = {
+        "protocol": str(protocol_path),
+        "protocol_sha256": protocol_sha,
+        "release_id": protocol.model.release_id,
+        "code": code,
+        "device": device,
+        "results": results,
+    }
     metrics_path = report_dir / "metrics.json"
     if opened_path.exists() and metrics_path.exists():
-        recorded = json.loads(metrics_path.read_text())["results"]
-        if recorded != json.loads(json.dumps(results)):
-            raise FinalTestError("re-run does not reproduce the recorded final-test results")
-    else:
+        # A re-run: compare with the record and leave it untouched.
+        record = json.loads(metrics_path.read_text())
+        recorded_device = record.get("device", RECORDED_DEVICE_DEFAULT)
+        tolerance = 0.0 if device == recorded_device else CROSS_DEVICE_TOLERANCE
+        rerun = json.loads(json.dumps(results))
+        problems = compare_results(record["results"], rerun, tolerance)
+        with gzip.open(report_dir / "decisions.jsonl.gz", "rt") as f:
+            if f.read().splitlines() != decisions:
+                problems.insert(0, "event decisions differ from the recorded ones")
+        if problems:
+            raise FinalTestError(
+                f"re-run on {device} does not reproduce the final test recorded on "
+                f"{recorded_device} (tolerance {tolerance}): " + "; ".join(problems[:5])
+            )
+        out["reproduction"] = {
+            "recorded_device": recorded_device,
+            "tolerance": tolerance,
+            "exact": rerun == record["results"],
+            "max_abs_difference": max_difference(record["results"], rerun),
+            "decisions_identical": True,
+        }
+        return out
+
+    report_dir.mkdir(parents=True, exist_ok=True)
+    if not opened_path.exists():
         opened_path.write_text(
             json.dumps(
                 {
@@ -494,30 +589,9 @@ def run(protocol_path: Path, config_path: Path, report_dir: Path) -> dict[str, A
             )
             + "\n"
         )
-    out = {
-        "protocol": str(protocol_path),
-        "protocol_sha256": protocol_sha,
-        "release_id": protocol.model.release_id,
-        "code": code,
-        "results": results,
-    }
     metrics_path.write_text(json.dumps(out, indent=2) + "\n")
     with gzip.open(report_dir / "decisions.jsonl.gz", "wt") as f:
-        for e in ev:
-            frames = [Frame(p) for p in e.frames]
-            f.write(
-                json.dumps(
-                    {
-                        "event_id": e.event_id,
-                        "camera_id": events[e.event_id].camera_id,
-                        "role": e.role,
-                        "label": e.label,
-                        "released": decide(frames, released_cfg).disposition.value,
-                        "rule": decide(frames, rule_cfg).disposition.value,
-                    }
-                )
-                + "\n"
-            )
+        f.writelines(line + "\n" for line in decisions)
     from wildinbox.evaluation.final_test_report import write_report
 
     write_report(report_dir, out, policy)

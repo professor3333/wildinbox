@@ -12,6 +12,7 @@ from pathlib import Path
 from pydantic import BaseModel
 
 from wildinbox.config import ConfigError, WildInboxConfig, load_config
+from wildinbox.devices import DEVICES, resolve_device
 from wildinbox.schemas import EventDecision, ImageMetadata, Prediction, Review
 from wildinbox.settings import Settings
 
@@ -228,7 +229,16 @@ def main(argv: Sequence[str] | None = None) -> int:
     p_ft_aug.add_argument("--config", type=Path, required=True)
     p_ft_aug.add_argument("--out", type=Path, default=Path("reports/experiments/augmentation"))
 
+    def device_arg(p: argparse.ArgumentParser) -> None:
+        p.add_argument(
+            "--device",
+            choices=DEVICES,
+            default="auto",
+            help="Where every model in this command runs (auto: cuda, then mps, then cpu).",
+        )
+
     p_eval = sub.add_parser("evaluate", help="Evaluate a model on development partitions.")
+    device_arg(p_eval)
     p_eval.add_argument(
         "--model", type=Path, default=Path("models/baseline-frozen-effnetb0-logreg-v1")
     )
@@ -250,6 +260,7 @@ def main(argv: Sequence[str] | None = None) -> int:
     p_cal = sub.add_parser(
         "calibrate", help="Fit calibration and choose the operating point (pre-registered rule)."
     )
+    device_arg(p_cal)
     p_cal.add_argument(
         "--rule", type=Path, default=Path("configs/experiments/operating_point_v2.yaml")
     )
@@ -265,6 +276,7 @@ def main(argv: Sequence[str] | None = None) -> int:
     p_unf = sub.add_parser(
         "unfamiliar", help="Evaluate the unfamiliar-input score (pre-registered rule)."
     )
+    device_arg(p_unf)
     p_unf.add_argument("--rule", type=Path, default=Path("configs/experiments/unfamiliar.yaml"))
     p_unf.add_argument("--config", type=Path, default=Path("configs/experiments/baseline.yaml"))
     p_unf.add_argument("--report-dir", type=Path, default=Path("reports/unfamiliar"))
@@ -296,6 +308,7 @@ def main(argv: Sequence[str] | None = None) -> int:
     p_ft = sub.add_parser(
         "final-test", help="Open the locked final test once, under the pre-registered protocol."
     )
+    device_arg(p_ft)
     p_ft.add_argument("--protocol", type=Path, default=Path("configs/experiments/final_test.yaml"))
     p_ft.add_argument("--config", type=Path, default=Path("configs/experiments/baseline.yaml"))
     p_ft.add_argument("--report-dir", type=Path, default=Path("reports/final_test"))
@@ -309,7 +322,7 @@ def main(argv: Sequence[str] | None = None) -> int:
     )
     p_fe.add_argument("--config", type=Path, default=Path("configs/experiments/baseline.yaml"))
     p_fe.add_argument("--report-dir", type=Path, default=Path("reports/final_evaluation"))
-    p_fe.add_argument("--device", choices=["cpu", "mps", "cuda"], default="mps")
+    device_arg(p_fe)
     p_fe.add_argument(
         "--skip-reproduction",
         action="store_true",
@@ -338,6 +351,7 @@ def main(argv: Sequence[str] | None = None) -> int:
     )
     upd_sub = p_upd.add_subparsers(dest="update_command", required=True)
     p_gate = upd_sub.add_parser("gate", help="Apply the pre-registered promotion gate.")
+    device_arg(p_gate)
     p_gate.add_argument(
         "--protocol", type=Path, default=Path("configs/experiments/update_cycle.yaml")
     )
@@ -451,7 +465,13 @@ def main(argv: Sequence[str] | None = None) -> int:
     if args.command == "calibrate":
         from wildinbox.evaluation.calibration import run
 
-        r = run(args.rule, args.config, args.report_dir, args.deviation)
+        r = run(
+            args.rule,
+            args.config,
+            args.report_dir,
+            args.deviation,
+            device=resolve_device(args.device),
+        )
         op = r["operating_point"]
         print(
             f"temperature {r['calibration']['temperature']:.3f}; rule: empty filter "
@@ -465,7 +485,9 @@ def main(argv: Sequence[str] | None = None) -> int:
     if args.command == "unfamiliar":
         from wildinbox.evaluation.unfamiliar import run as run_unfamiliar
 
-        u = run_unfamiliar(args.rule, args.config, args.report_dir)
+        u = run_unfamiliar(
+            args.rule, args.config, args.report_dir, device=resolve_device(args.device)
+        )
         print(
             f"distance score {'adopted' if u['adopted'] else 'not adopted'} "
             f"(detection gain {u['detection_gain_on_fit']:+.3f} on {u['artifact']['method']})"
@@ -487,7 +509,9 @@ def main(argv: Sequence[str] | None = None) -> int:
         from wildinbox.evaluation.final_test import run as run_final_test
 
         try:
-            measured = run_final_test(args.protocol, args.config, args.report_dir)
+            measured = run_final_test(
+                args.protocol, args.config, args.report_dir, device=resolve_device(args.device)
+            )
         except FinalTestError as e:
             print(f"error: {e}", file=sys.stderr)
             return 1
@@ -503,7 +527,11 @@ def main(argv: Sequence[str] | None = None) -> int:
 
         try:
             evaluation = run_final_eval(
-                args.plan, args.config, args.report_dir, args.device, args.skip_reproduction
+                args.plan,
+                args.config,
+                args.report_dir,
+                device=resolve_device(args.device),
+                skip_reproduction=args.skip_reproduction,
             )
         except FinalEvaluationError as e:
             print(f"error: {e}", file=sys.stderr)
@@ -541,7 +569,13 @@ def main(argv: Sequence[str] | None = None) -> int:
         from wildinbox.training.gate import run as run_gate
 
         try:
-            verdict = run_gate(args.protocol, args.candidate, args.config, args.report_dir)
+            verdict = run_gate(
+                args.protocol,
+                args.candidate,
+                args.config,
+                args.report_dir,
+                device=resolve_device(args.device),
+            )
         except GateError as e:
             print(f"error: {e}", file=sys.stderr)
             return 1

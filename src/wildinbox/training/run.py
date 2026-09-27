@@ -118,7 +118,9 @@ def embed(
         ids = [r.source_id for r in chunk]
         path = ctx.cache_dir / f"{name}.{k // CACHE_CHUNK:03d}.npz"
         files = [ctx.images_root / r.storage_path for r in chunk]
-        identity = cache_identity(f"backbone:{ctx.cache_dir.name}", ctx.run.preprocessing, files)
+        identity = cache_identity(
+            f"backbone:{ctx.cache_dir.name}", ctx.run.preprocessing, files, device=device
+        )
         cached = load_cache(path, ids, identity=identity) if use_cache else None
         if cached is None:
             log.info(

@@ -290,33 +290,30 @@ def verify_freeze(plan: dict[str, Any], models_dir: Path = Path("models")) -> di
 # ------------------------------------------------------------------ reproduce
 
 
-def reproduce_final_test(plan: dict[str, Any], config_path: Path) -> dict[str, Any]:
+def reproduce_final_test(plan: dict[str, Any], config_path: Path, device: str) -> dict[str, Any]:
     """Re-run Stage 10 under its unchanged protocol in a scratch copy of its
-    report directory; final_test.run refuses unless the results are identical."""
-    from wildinbox.evaluation.final_test import run
+    report directory; final_test.run refuses unless it reproduces the record
+    (exactly on the recording device, within its stated tolerance elsewhere)."""
+    from wildinbox.evaluation.final_test import FinalTestError, run
 
     ft = plan["final_test"]
-    recorded = Path("reports/final_test")
     with tempfile.TemporaryDirectory() as tmp:
         scratch = Path(tmp) / "final_test"
-        shutil.copytree(recorded, scratch)
+        shutil.copytree(Path("reports/final_test"), scratch)
         start = time.perf_counter()
-        out = run(Path(ft["protocol"]), config_path, scratch)
+        try:
+            out = run(Path(ft["protocol"]), config_path, scratch, device=device)
+        except FinalTestError as e:
+            raise FinalEvaluationError(str(e)) from None
         seconds = time.perf_counter() - start
-
-        def lines(p: Path) -> list[str]:
-            with gzip.open(p, "rt") as f:
-                return f.read().splitlines()
-
-        same_decisions = lines(scratch / "decisions.jsonl.gz") == lines(
-            recorded / "decisions.jsonl.gz"
-        )
-    if not same_decisions:
-        raise FinalEvaluationError("re-run decisions differ from the recorded final test")
-    recorded_results = json.loads((recorded / "metrics.json").read_text())["results"]
+    r = out["reproduction"]
     return {
-        "results_identical": out["results"] == recorded_results,
-        "decisions_identical": same_decisions,
+        "device": device,
+        "recorded_device": r["recorded_device"],
+        "tolerance": r["tolerance"],
+        "results_identical": r["exact"],
+        "max_abs_difference": r["max_abs_difference"],
+        "decisions_identical": r["decisions_identical"],
         "rerun_code": out["code"],
         "seconds": round(seconds, 1),
     }
@@ -326,7 +323,7 @@ def reproduce_final_test(plan: dict[str, Any], config_path: Path) -> dict[str, A
 
 
 def build_records(
-    plan: dict[str, Any], config_path: Path, device: str = "mps"
+    plan: dict[str, Any], config_path: Path, device: str
 ) -> tuple[list[EventRecord], Any]:
     """Every final-test event, scored and decided by the frozen code paths."""
     from dataclasses import replace
@@ -519,7 +516,8 @@ def run(
     plan_path: Path,
     config_path: Path,
     report_dir: Path,
-    device: str = "mps",
+    *,
+    device: str,
     skip_reproduction: bool = False,
 ) -> dict[str, Any]:
     from wildinbox.evaluation.data import box_areas
@@ -530,7 +528,7 @@ def run(
     plan = load_plan(plan_path)
     frozen = verify_freeze(plan)
     reproduction = (
-        {"skipped": True} if skip_reproduction else reproduce_final_test(plan, config_path)
+        {"skipped": True} if skip_reproduction else reproduce_final_test(plan, config_path, device)
     )
     records, ctx = build_records(plan, config_path, device)
     consistency = check_decisions(records, Path("reports/final_test/decisions.jsonl.gz"))
@@ -589,6 +587,7 @@ def run(
         "plan_sha256": _sha(plan_path),
         "frozen_artifacts": frozen,
         "code": git_state(),
+        "device": device,
         "reproduction": reproduction,
         "consistency": consistency,
         "results": _round(results),

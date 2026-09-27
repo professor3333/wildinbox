@@ -98,7 +98,10 @@ class FinetunedPredictor:
         ids = [r.source_id for r in rows]
         files = [self.ctx.images_root / r.storage_path for r in rows]
         identity = cache_identity(
-            f"finetuned:{self.weights_digest}", self.ctx.run.preprocessing, files
+            f"finetuned:{self.weights_digest}",
+            self.ctx.run.preprocessing,
+            files,
+            device=self.device,
         )
         path = self.model_dir / "eval-cache" / self.weights_digest / f"{name}.npz"
         cached = load_cache(path, ids, identity=identity)

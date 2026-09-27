@@ -245,10 +245,17 @@ def write_report(report_dir: Path, out: dict[str, Any]) -> None:
     if rep.get("skipped"):
         add("- **Reproduced:** skipped in this run.")
     else:
+        same = (
+            "identical results"
+            if rep.get("results_identical", True)
+            else f"results within {rep['tolerance']} (largest difference "
+            f"{rep['max_abs_difference']:.2g}) of the record made on {rep['recorded_device']}"
+        )
+        where = f" on {rep['device']}" if "device" in rep else ""
         add(
-            f"- **Reproduced:** the Stage 10 final test was re-run under its unchanged "
-            f"protocol ({rep['seconds']} s, cached scores) and gave identical results and "
-            "identical per-event decisions; the committed record was not rewritten."
+            f"- **Reproduced:** the Stage 10 final test was re-run{where} under its unchanged "
+            f"protocol ({rep['seconds']} s) and gave {same} and identical per-event "
+            "decisions; the committed record was not rewritten."
         )
     add(
         f"- **Consistent:** all {con['events']:,} events were rebuilt with the frozen scoring "
