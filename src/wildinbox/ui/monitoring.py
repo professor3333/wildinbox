@@ -299,4 +299,11 @@ def page(api: ApiClient) -> None:
     with ops_tab:
         operational(m)
     with model_tab:
+        h = m.get("history")
+        if h:
+            st.caption(
+                f"Covers the {h['events_analysed']} event(s) processed in the last "
+                f"{h['days']} days; {h['older_events_excluded']} older event(s) are not "
+                "included."
+            )
         behavior(m)

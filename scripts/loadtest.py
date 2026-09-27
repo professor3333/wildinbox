@@ -21,8 +21,13 @@ separately from processing (the job's server timestamps: queued -> started
 -> finished), checks directly in PostgreSQL that no image was scored twice and
 every event has exactly one decision, and samples container memory on the VM.
 Afterwards it measures metadata API latency (client side, over whatever link
---api goes through) and records the server-side latency the API reports.
-Machine specifications and the served release are recorded with the results.
+--api goes through) for one batch and across the whole history (first and last
+event pages, animal events, batches, cameras), times GET /monitoring, and
+records the server-side latency the API reports. With --probe, the same
+requests also run at a steady pace during every scenario, as reviewers
+browsing while batches process would. Machine specifications, the served
+release, and the database's size before and after (see
+scripts/seed_history.py for synthetic history) are recorded with the results.
 """
 
 from __future__ import annotations
@@ -39,7 +44,7 @@ import threading
 import time
 import uuid
 from concurrent.futures import ThreadPoolExecutor
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from typing import Any
 
@@ -125,6 +130,23 @@ echo "disk=$(df -h / | awk 'NR==2 {print $2 " total, " $4 " free"}')"
         info = dict(
             line.split("=", 1) for line in self.run(script).strip().splitlines() if "=" in line
         )
+        if not info.get("vcpus"):  # not a Linux VM: a local Docker VM (e.g. on macOS)
+            docker = self.run(
+                "docker info --format "
+                "'docker_vm_vcpus={{.NCPU}}\ndocker_vm_memory_bytes={{.MemTotal}}"
+                "\ndocker_vm={{.OperatingSystem}}'"
+            )
+            host = self.run(
+                "echo host_cpu=$(sysctl -n machdep.cpu.brand_string 2>/dev/null); "
+                "echo host_memory_bytes=$(sysctl -n hw.memsize 2>/dev/null); "
+                "echo host_os=$(sw_vers -productName 2>/dev/null) "
+                "$(sw_vers -productVersion 2>/dev/null)"
+            )
+            info.update(
+                line.split("=", 1)
+                for line in (docker + host).strip().splitlines()
+                if "=" in line and line.split("=", 1)[1].strip()
+            )
         info["containers"] = [
             json.loads(line)
             for line in self.run(
@@ -413,6 +435,101 @@ def percentiles(values: list[float]) -> dict[str, float]:
     }
 
 
+def history_targets(client: httpx.Client) -> dict[str, tuple[str, dict[str, Any] | None]]:
+    """The metadata requests the review interface makes, over the whole history
+    rather than one batch: the sidebar's batch list, the review, filtered, and
+    audit queues, the timeline's first and last pages and camera list, and one
+    night of last night's visitors (the newest night with events)."""
+    total = client.get("/events", params={"limit": 1}).json()["total"]
+    dated = {"start_after": "0001-01-01T00:00:00"}
+    n_dated = client.get("/events", params={**dated, "limit": 1}).json()["total"]
+    newest = client.get(
+        "/events", params={**dated, "limit": 1, "offset": max(0, n_dated - 1)}
+    ).json()["events"]
+    day = datetime.fromisoformat(newest[0]["start_at"]) if newest else datetime(2024, 5, 1)
+    night_start = day.replace(hour=18, minute=0, second=0, microsecond=0)
+    if day.hour < 12:
+        night_start -= timedelta(days=1)
+    night = {
+        "start_after": night_start.isoformat(),
+        "start_before": (night_start + timedelta(hours=12)).isoformat(),
+    }
+    return {
+        "GET /batches (sidebar)": ("/batches", {"limit": 50}),
+        "GET /events (review queue)": (
+            "/events",
+            {"disposition": "needs_review", "reviewed": "false", "limit": 8},
+        ),
+        "GET /events (automatically filtered)": (
+            "/events",
+            {"disposition": "likely_empty", "limit": 8},
+        ),
+        "GET /events (audit queue)": (
+            "/events",
+            {"audit": "true", "reviewed": "false", "limit": 8},
+        ),
+        "GET /events (timeline, first page)": ("/events", {"limit": 100}),
+        "GET /events (timeline, last page)": (
+            "/events",
+            {"limit": 100, "offset": max(0, total - 100)},
+        ),
+        "GET /cameras (timeline)": ("/cameras", None),
+        "GET /events (one night's visitors)": ("/events", {**night, "animal": "true", "limit": 12}),
+    }
+
+
+class Probe:
+    """Reviewers browsing while batches process: metadata requests at a steady
+    pace (one every `interval` seconds, cycling through `targets`) and
+    GET /monitoring every `monitoring_every` seconds, each timed per route."""
+
+    def __init__(
+        self,
+        api: str,
+        headers: dict[str, str],
+        targets: dict[str, tuple[str, dict[str, Any] | None]],
+        interval: float = 0.25,
+        monitoring_every: float = 30,
+    ) -> None:
+        self.client = httpx.Client(base_url=api, headers=headers, timeout=120)
+        self.targets, self.interval, self.monitoring_every = targets, interval, monitoring_every
+        self.times: dict[str, list[float]] = {}
+        self.errors: dict[str, int] = {}
+        self.stopping = threading.Event()
+        self.thread = threading.Thread(target=self._run, daemon=True)
+        self.thread.start()
+
+    def _time(self, label: str, path: str, params: dict[str, Any] | None) -> None:
+        t = time.perf_counter()
+        try:
+            self.client.get(path, params=params).raise_for_status()
+        except httpx.HTTPError:
+            self.errors[label] = self.errors.get(label, 0) + 1
+            return
+        self.times.setdefault(label, []).append(time.perf_counter() - t)
+
+    def _run(self) -> None:
+        labels = list(self.targets)
+        n, last_monitoring = 0, 0.0
+        while not self.stopping.is_set():
+            if time.monotonic() - last_monitoring >= self.monitoring_every:
+                last_monitoring = time.monotonic()
+                self._time("GET /monitoring", "/monitoring", None)
+            label = labels[n % len(labels)]
+            self._time(label, *self.targets[label])
+            n += 1
+            self.stopping.wait(self.interval)
+
+    def stop(self) -> dict[str, Any]:
+        self.stopping.set()
+        self.thread.join()
+        self.client.close()
+        return {
+            "routes": {k: percentiles(v) for k, v in sorted(self.times.items())},
+            "errors": self.errors,
+        }
+
+
 def latency(client: httpx.Client, batch_id: str, n: int) -> dict[str, Any]:
     events = client.get("/events", params={"batch_id": batch_id, "limit": 100}).json()["events"]
     job_id = client.get(f"/batches/{batch_id}").json()["job"]["id"]
@@ -422,6 +539,9 @@ def latency(client: httpx.Client, batch_id: str, n: int) -> dict[str, Any]:
         "GET /jobs/{id}": (f"/jobs/{job_id}", None),
         "GET /events (100 per page)": ("/events", {"batch_id": batch_id, "limit": 100}),
         "GET /events/{id}": (None, None),
+        **history_targets(client),
+        # An API capability the interface does not use (it asks for one night).
+        "GET /events?animal=true (all history)": ("/events", {"limit": 100, "animal": "true"}),
     }
     out = {}
     for label, (path, params) in targets.items():
@@ -435,7 +555,31 @@ def latency(client: httpx.Client, batch_id: str, n: int) -> dict[str, Any]:
             times.append(time.perf_counter() - t)
             res.raise_for_status()
         out[label] = percentiles(times)
+    times = []  # not a metadata route: fewer requests
+    for _ in range(max(5, n // 20)):
+        t = time.perf_counter()
+        client.get("/monitoring", timeout=300).raise_for_status()
+        times.append(time.perf_counter() - t)
+    out["GET /monitoring"] = percentiles(times)
     return out
+
+
+def history(vm: Vm) -> dict[str, Any]:
+    """How much the database holds, and how much of it is synthetic."""
+    ((batches, synthetic, images, events, reviews, size),) = vm.sql(
+        "SELECT (SELECT count(*) FROM batches), "
+        "(SELECT count(*) FROM batches WHERE manifest ? 'synthetic_history'), "
+        "(SELECT count(*) FROM images), (SELECT count(*) FROM events), "
+        "(SELECT count(*) FROM reviews), pg_database_size(current_database())"
+    )
+    return {
+        "batches": int(batches),
+        "synthetic_batches": int(synthetic),
+        "images": int(images),
+        "events": int(events),
+        "reviews": int(reviews),
+        "database_mib": round(int(size) / 2**20),
+    }
 
 
 # ------------------------------------------------------------------ main
@@ -455,6 +599,11 @@ def main() -> None:
     ap.add_argument("--latency-requests", type=int, default=200)
     ap.add_argument("--timeout", type=float, default=1800)
     ap.add_argument("--out", type=Path, required=True)
+    ap.add_argument(
+        "--probe",
+        action="store_true",
+        help="time metadata requests and GET /monitoring while each scenario runs",
+    )
     ap.add_argument(
         "--latency-only",
         metavar="BATCH_ID",
@@ -499,6 +648,7 @@ def main() -> None:
             for k in ("id", "weights_sha256", "preprocessing_version", "policy_version", "is_test")
         },
         "machine": vm.machine(),
+        "history_before": history(vm),
         "image_bytes": {
             "batch_dir": str(args.batch_dir),
             "files": len(images),
@@ -513,9 +663,15 @@ def main() -> None:
             print(f"== {name}", flush=True)
             t = time.monotonic()
             sampler.take_window()
-            outcome = run_scenario(
-                name, client, vm, images, metadata, run_tag, limits, args.timeout
-            )
+            probe = Probe(args.api, headers, history_targets(client)) if args.probe else None
+            try:
+                outcome = run_scenario(
+                    name, client, vm, images, metadata, run_tag, limits, args.timeout
+                )
+            finally:
+                during = probe.stop() if probe else None
+            if during:
+                outcome["latency_during"] = during
             outcome["wall_seconds"] = round(time.monotonic() - t, 1)
             outcome["memory_peak_mib"] = sampler.take_window()
             report["scenarios"][name] = outcome
@@ -542,6 +698,7 @@ def main() -> None:
             ]
     finally:
         report["memory"] = sampler.stop()
+        report["history_after"] = history(vm)
         report["finished_at"] = datetime.now(UTC).isoformat()
         args.out.parent.mkdir(parents=True, exist_ok=True)
         args.out.write_text(json.dumps(report, indent=2) + "\n")

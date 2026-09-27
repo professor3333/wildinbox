@@ -17,6 +17,12 @@ operations:
   min_api_requests: 20
   max_storage_gb: 200                # stored originals
 
+# Behaviour, signals, audits, and accuracy analyse the events processed in the
+# last `days` days, so monitoring's cost follows recent volume, not all history.
+# Older events are counted in the response (`history.older_events_excluded`).
+history:
+  days: 90
+
 # Signals that need NO labels, per camera: the camera's most recent events
 # (by capture time) against its earlier events. They can flag that something
 # changed; they cannot say whether accuracy changed.

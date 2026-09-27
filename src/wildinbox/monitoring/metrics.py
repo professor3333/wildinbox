@@ -32,12 +32,22 @@ from pathlib import Path
 from typing import Any
 
 import yaml
-from sqlalchemy import func, select
-from sqlalchemy.orm import Session, selectinload
+from sqlalchemy import exists, func, or_, select
+from sqlalchemy.dialects.postgresql import aggregate_order_by
+from sqlalchemy.orm import Session, aliased, selectinload
 
 from wildinbox.class_map import EMPTY_CLASS
 from wildinbox.evaluation.metrics import wilson
-from wildinbox.storage.models import Batch, Event, Image, Job, Prediction, WorkerProcess
+from wildinbox.storage.models import (
+    Batch,
+    Decision,
+    Event,
+    Image,
+    Job,
+    Prediction,
+    Review,
+    WorkerProcess,
+)
 
 CONFIDENCE_BINS = (0.0, 0.2, 0.4, 0.6, 0.8, 1.0000001)
 AUTOMATIC = ("likely_empty", "species_identified")
@@ -87,8 +97,13 @@ def operations(
     session: Session, lease_seconds: int, cfg: dict[str, Any], now: datetime
 ) -> dict[str, Any]:
     window = now - timedelta(days=cfg["window_days"])
-    jobs = session.scalars(select(Job)).all()
-    by_status = Counter(j.status for j in jobs)
+    # Every job count, but only the jobs still active or finished in the window
+    # as rows: the only ones the checks below look at.
+    counts = session.execute(select(Job.status, func.count()).group_by(Job.status))
+    by_status = Counter({status: n for status, n in counts})
+    jobs = session.scalars(
+        select(Job).where(or_(Job.status.in_(("queued", "running")), Job.finished_at >= window))
+    ).all()
     waiting = [
         j
         for j in jobs
@@ -396,40 +411,111 @@ class EventView:
     reviewed_label: str | None = None
 
 
-def event_views(session: Session) -> list[EventView]:
-    rows = session.execute(
-        select(Event, Batch.created_at)
-        .join(Batch)
-        .options(
-            selectinload(Event.decisions), selectinload(Event.reviews), selectinload(Event.images)
+def event_views(session: Session, since: datetime | None = None) -> list[EventView]:
+    """One lean row per event processed since `since` (all events when None):
+    its latest decision, its current review (the chain's last link, not the
+    newest timestamp), and its frames' night flags and sharpness. A single
+    projected query, so memory holds these fields, not ORM objects with every
+    image, decision, and review."""
+    later = aliased(Review)
+    # Each part reads only the window's events, not everything ever stored.
+    window = select(Event.id).where(Event.created_at >= since) if since is not None else None
+
+    def within(q: Any, event_id: Any) -> Any:
+        return q if window is None else q.where(event_id.in_(window))
+
+    latest = within(
+        select(
+            Decision.event_id,
+            Decision.created_at,
+            Decision.model_release_id,
+            Decision.disposition,
+            Decision.suggested_label,
+            Decision.confidence,
+            Decision.reasons,
+            Decision.audit_selected,
         )
-    ).all()
-    out = []
-    for e, batch_created_at in rows:
-        d = max(e.decisions, key=lambda d: d.created_at, default=None)
-        r = e.current_review
-        q = [i.quality for i in e.images if i.quality and "night" in i.quality]
-        out.append(
-            EventView(
-                camera=e.camera_id or "unknown",
-                start_at=e.start_at,
-                batch_id=str(e.batch_id),
-                batch_created_at=batch_created_at,
-                decided_at=d.created_at if d else None,
-                audit_selected=bool(d.audit_selected) if d else False,
-                reviewed_label=r.confirmed_label if r else None,
-                release=d.model_release_id if d else None,
-                disposition=d.disposition if d else None,
-                label=d.suggested_label if d else None,
-                confidence=d.confidence if d else None,
-                reasons=list(d.reasons) if d else [],
-                review_outcome=r.outcome if r else None,
-                reviewer=r.reviewer if r else None,
-                night=[bool(x["night"]) for x in q],
-                blur=[float(x["blur"]) for x in q],
-            )
+        .distinct(Decision.event_id)
+        .order_by(Decision.event_id, Decision.created_at.desc()),
+        Decision.event_id,
+    ).subquery()
+    current = within(
+        select(Review.event_id, Review.outcome, Review.confirmed_label, Review.reviewer).where(
+            ~exists().where(later.previous_review_id == Review.id)
+        ),
+        Review.event_id,
+    ).subquery()
+    scored = Image.quality.has_key("night")
+    frames = within(
+        select(
+            Image.event_id,
+            func.array_agg(aggregate_order_by(Image.quality["night"].as_boolean(), Image.position))
+            .filter(scored)
+            .label("night"),
+            func.array_agg(aggregate_order_by(Image.quality["blur"].as_float(), Image.position))
+            .filter(scored)
+            .label("blur"),
         )
-    return out
+        .where(Image.event_id.is_not(None))
+        .group_by(Image.event_id),
+        Image.event_id,
+    ).subquery()
+    q = (
+        select(
+            Event.camera_id,
+            Event.start_at,
+            Event.batch_id,
+            Batch.created_at,
+            latest.c.created_at,
+            latest.c.model_release_id,
+            latest.c.disposition,
+            latest.c.suggested_label,
+            latest.c.confidence,
+            latest.c.reasons,
+            latest.c.audit_selected,
+            current.c.outcome,
+            current.c.confirmed_label,
+            current.c.reviewer,
+            frames.c.night,
+            frames.c.blur,
+        )
+        .join(Batch, Batch.id == Event.batch_id)
+        .outerjoin(latest, latest.c.event_id == Event.id)
+        .outerjoin(current, current.c.event_id == Event.id)
+        .outerjoin(frames, frames.c.event_id == Event.id)
+    )
+    if since is not None:
+        q = q.where(Event.created_at >= since)
+    return [
+        EventView(
+            camera=r[0] or "unknown",
+            start_at=r[1],
+            batch_id=str(r[2]),
+            batch_created_at=r[3],
+            decided_at=r[4],
+            release=r[5],
+            disposition=r[6],
+            label=r[7],
+            confidence=r[8],
+            reasons=list(r[9] or []),
+            audit_selected=bool(r[10]),
+            review_outcome=r[11],
+            reviewed_label=r[12],
+            reviewer=r[13],
+            night=list(r[14] or []),
+            blur=list(r[15] or []),
+        )
+        for r in session.execute(q)
+    ]
+
+
+def history_window(session: Session, cfg: dict[str, Any], now: datetime) -> dict[str, Any]:
+    """Which events the model-behaviour views cover: those processed in the last
+    `days` days, so monitoring's work is bounded by recent volume rather than
+    by everything ever uploaded. Older events are counted, not analysed."""
+    since = now - timedelta(days=cfg["days"])
+    older = session.scalar(select(func.count()).select_from(Event).where(Event.created_at < since))
+    return {"days": cfg["days"], "since": since, "older_events_excluded": older or 0}
 
 
 def _window(events: list[EventView]) -> dict[str, Any]:
@@ -1038,13 +1124,19 @@ def summary(
     ops["storage"] = store = storage(session, cfg["operations"], now)
     ops["batches"] = batch_costs(session)
     ops["api"] = api_data = api_health(api or {}, cfg["operations"])
-    views = event_views(session)
+    history = history_window(session, cfg["history"], now)
+    views = event_views(session, history["since"])
     sig = signals(views, cfg["drift"])
     acc = accuracy(views, cfg["accuracy"])
     beh = behavior(views, cfg["behavior"], now)
     aud = audits(views, cfg["audits"])
     return {
         "generated_at": now.isoformat(),
+        "history": {
+            **history,
+            "since": history["since"].isoformat(),
+            "events_analysed": len(views),
+        },
         "operations": ops,
         "behavior": beh,
         "signals": sig,
