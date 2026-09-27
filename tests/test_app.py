@@ -243,6 +243,72 @@ def test_batch_limits_reject_whole_request(client: TestClient, settings: Setting
     assert _count(settings, Batch) == 0
 
 
+def _multipart(size: int, boundary: str = "b0undary") -> tuple[bytes, bytes, bytes]:
+    head = (
+        f'--{boundary}\r\nContent-Disposition: form-data; name="files"; '
+        'filename="big.jpg"\r\nContent-Type: image/jpeg\r\n\r\n'
+    ).encode()
+    return head, b"\xff\xd8\xff" + bytes(size - 3), f"\r\n--{boundary}--\r\n".encode()
+
+
+def test_streamed_batch_counts_actual_file_sizes(settings: Settings) -> None:
+    # Without Content-Length the header check is skipped; the batch limit must
+    # still use each file's real size, not the bytes read up to the file limit.
+    small = settings.model_copy(update={"max_file_bytes": 100, "max_batch_bytes": 500})
+    head, body, tail = _multipart(5_000)
+    with TestClient(create_app(small)) as c:
+        r = c.post(
+            "/batches",
+            content=iter([head, body, tail]),  # chunked: no Content-Length header
+            headers={"content-type": "multipart/form-data; boundary=b0undary"},
+        )
+    assert r.status_code == 413 and r.json()["error"] == "batch_too_large"
+    assert _count(small, Batch) == 0
+
+
+def test_streamed_batch_is_rejected_while_it_arrives(settings: Settings) -> None:
+    import anyio
+
+    from wildinbox.api.app import MULTIPART_OVERHEAD
+
+    budget = settings.max_batch_bytes + MULTIPART_OVERHEAD
+    chunk = 64 * 1024
+    head, _, _ = _multipart(3)
+    pulled = 0
+    sent: list[dict[str, Any]] = []
+
+    async def receive() -> dict[str, Any]:
+        nonlocal pulled
+        pulled += 1
+        body = head if pulled == 1 else b"\x00" * chunk
+        return {"type": "http.request", "body": body, "more_body": pulled < 1_000}  # ~64 MB
+
+    async def send(message: dict[str, Any]) -> None:
+        sent.append(message)
+
+    scope = {
+        "type": "http",
+        "asgi": {"version": "3.0"},
+        "http_version": "1.1",
+        "method": "POST",
+        "scheme": "http",
+        "path": "/batches",
+        "raw_path": b"/batches",
+        "query_string": b"",
+        "root_path": "",
+        "headers": [(b"content-type", b"multipart/form-data; boundary=b0undary")],
+        "client": ("test", 1),
+        "server": ("test", 80),
+    }
+    app = create_app(settings)
+    with TestClient(app):  # runs the lifespan
+        anyio.run(app, scope, receive, send)
+    assert sent[0]["status"] == 413
+    assert json.loads(sent[1]["body"])["error"] == "batch_too_large"
+    assert pulled <= budget // chunk + 2  # stopped reading once over budget
+    assert _count(settings, Batch) == 0
+
+
 def test_duplicate_images_are_recorded_not_reprocessed(client: TestClient) -> None:
     a = jpeg(30)
     first = client.post("/batches", files=_files(("a.jpg", a))).json()
