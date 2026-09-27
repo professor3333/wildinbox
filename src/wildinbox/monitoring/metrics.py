@@ -165,24 +165,28 @@ def operations(
     per_release: dict[str, dict[str, float]] = defaultdict(
         lambda: {"seconds": 0.0, "images": 0.0, "jobs": 0.0}
     )
-    for j in jobs:
-        if j.status == "succeeded" and j.finished_at and j.started_at and j.finished_at >= window:
-            n = (
-                session.scalar(
-                    select(func.count())
-                    .select_from(Prediction)
-                    .join(Image)
-                    .where(
-                        Image.batch_id == j.batch_id,
-                        Prediction.model_release_id == j.model_release_id,
-                    )
-                )
-                or 0
-            )
-            r = per_release[j.model_release_id]
-            r["seconds"] += (j.finished_at - j.started_at).total_seconds()
-            r["images"] += n
-            r["jobs"] += 1
+    done = [
+        j
+        for j in jobs
+        if j.status == "succeeded" and j.finished_at and j.started_at and j.finished_at >= window
+    ]
+    # Predictions per (batch, release), for every finished job in one query.
+    predicted: dict[tuple[Any, str], int] = {
+        (batch_id, release): n
+        for batch_id, release, n in session.execute(
+            select(Image.batch_id, Prediction.model_release_id, func.count())
+            .select_from(Prediction)
+            .join(Image)
+            .where(Image.batch_id.in_({j.batch_id for j in done}))
+            .group_by(Image.batch_id, Prediction.model_release_id)
+        )
+    }
+    for j in done:
+        assert j.finished_at is not None and j.started_at is not None
+        r = per_release[j.model_release_id]
+        r["seconds"] += (j.finished_at - j.started_at).total_seconds()
+        r["images"] += predicted.get((j.batch_id, j.model_release_id), 0)
+        r["jobs"] += 1
     cost = {
         rid: {
             "jobs": int(v["jobs"]),
@@ -193,11 +197,6 @@ def operations(
         }
         for rid, v in per_release.items()
     }
-    done = [
-        j
-        for j in jobs
-        if j.status == "succeeded" and j.finished_at and j.started_at and j.finished_at >= window
-    ]
     latency = {
         "jobs": len(done),
         "queue_wait_seconds": _quantiles(
@@ -303,16 +302,25 @@ def batch_costs(session: Session, limit: int = 20) -> list[dict[str, Any]]:
         .order_by(Batch.created_at.desc())
         .limit(limit)
     ).all()
+    ids = [b.id for b in batches]
+    images: dict[Any, int] = {
+        batch_id: n
+        for batch_id, n in session.execute(
+            select(Image.batch_id, func.count())
+            .where(Image.batch_id.in_(ids))
+            .group_by(Image.batch_id)
+        )
+    }
+    events: dict[Any, int] = {
+        batch_id: n
+        for batch_id, n in session.execute(
+            select(Event.batch_id, func.count())
+            .where(Event.batch_id.in_(ids))
+            .group_by(Event.batch_id)
+        )
+    }
     out = []
     for b in batches:
-        images = (
-            session.scalar(select(func.count()).select_from(Image).where(Image.batch_id == b.id))
-            or 0
-        )
-        events = (
-            session.scalar(select(func.count()).select_from(Event).where(Event.batch_id == b.id))
-            or 0
-        )
         job = max(b.jobs, key=lambda j: j.created_at, default=None)
         run = (
             (job.finished_at - job.started_at).total_seconds()
@@ -325,12 +333,12 @@ def batch_costs(session: Session, limit: int = 20) -> list[dict[str, Any]]:
                 "created_at": b.created_at.isoformat(),
                 "status": b.status,
                 "release": job.model_release_id if job else None,
-                "images": images,
-                "events": events,
+                "images": images.get(b.id, 0),
+                "events": events.get(b.id, 0),
                 "attempts": job.attempts if job else 0,
                 "run_seconds": round(run, 1) if run is not None else None,
-                "seconds_per_1000_images": round(1000 * run / images, 1)
-                if run is not None and images
+                "seconds_per_1000_images": round(1000 * run / images[b.id], 1)
+                if run is not None and images.get(b.id)
                 else None,
             }
         )

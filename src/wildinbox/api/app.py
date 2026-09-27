@@ -17,7 +17,7 @@ from fastapi.responses import HTMLResponse, JSONResponse, PlainTextResponse, Res
 from pydantic import BaseModel, Field, ValidationError
 from sqlalchemy import and_, exists, func, or_, select
 from sqlalchemy.exc import IntegrityError
-from sqlalchemy.orm import Session, aliased, sessionmaker
+from sqlalchemy.orm import Session, aliased, selectinload, sessionmaker
 from starlette.datastructures import UploadFile
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
@@ -226,9 +226,45 @@ def animal_event() -> Any:
     return or_(current_review_names_animal, and_(~reviewed, latest_decision_suggests_animal))
 
 
-def event_row(session: Session, event: Event, detail: bool = False) -> dict[str, Any]:
-    decision = max(event.decisions, key=lambda d: d.created_at, default=None)
-    release = session.get(ModelRelease, decision.model_release_id) if decision else None
+# What `event_row` and the export read from each event, loaded in one query per
+# relationship for a whole page rather than lazily per event.
+EVENT_LOADS = (
+    selectinload(Event.images),
+    selectinload(Event.decisions),
+    selectinload(Event.reviews),
+)
+
+
+def latest_decision(event: Event) -> Decision | None:
+    return max(event.decisions, key=lambda d: d.created_at, default=None)
+
+
+def releases_for(session: Session, events: list[Event]) -> dict[str, ModelRelease]:
+    """The releases behind these events' latest decisions, in one query. The
+    session only holds loaded objects weakly, so `session.get` per event would
+    fetch the same release again for every row."""
+    ids = {d.model_release_id for e in events if (d := latest_decision(e)) is not None}
+    if not ids:
+        return {}
+    return {r.id: r for r in session.scalars(select(ModelRelease).where(ModelRelease.id.in_(ids)))}
+
+
+def event_row(
+    session: Session,
+    event: Event,
+    detail: bool = False,
+    releases: dict[str, ModelRelease] | None = None,
+) -> dict[str, Any]:
+    """One event for the API. Pass `releases` (from `releases_for`) when
+    serializing a list, and load the events with `EVENT_LOADS`."""
+    decision = latest_decision(event)
+    release = None
+    if decision is not None:
+        release = (
+            releases[decision.model_release_id]
+            if releases is not None
+            else session.get(ModelRelease, decision.model_release_id)
+        )
     latest = event.current_review
     row: dict[str, Any] = {
         "id": str(event.id),
@@ -818,13 +854,19 @@ def create_app(
     def view_batch(batch_id: uuid.UUID) -> str:
         with sessions()() as s:
             batch = _batch(s, batch_id)
-            events = s.scalars(
-                select(Event).where(Event.batch_id == batch.id).order_by(Event.start_at, Event.id)
-            ).all()
+            events = list(
+                s.scalars(
+                    select(Event)
+                    .where(Event.batch_id == batch.id)
+                    .order_by(Event.start_at, Event.id)
+                    .options(*EVENT_LOADS)
+                )
+            )
+            releases = releases_for(s, events)
             return views.batch_page(
                 batch_summary(s, batch),
                 [image_row(i) for i in batch.images],
-                [event_row(s, e) for e in events],
+                [event_row(s, e, releases=releases) for e in events],
             )
 
     @app.get("/batches/{batch_id}/export")
@@ -841,22 +883,11 @@ def create_app(
                     select(Event)
                     .where(Event.batch_id == batch.id)
                     .order_by(Event.start_at, Event.id)
+                    .options(*EVENT_LOADS)
                 )
             )
-            latest = {
-                e.id: d
-                for e in events
-                if (d := max(e.decisions, key=lambda d: d.created_at, default=None)) is not None
-            }
-            releases = {
-                r.id: r
-                for r in s.scalars(
-                    select(ModelRelease).where(
-                        ModelRelease.id.in_({d.model_release_id for d in latest.values()})
-                    )
-                )
-            }
-            data = export.rows(events, latest, releases)
+            latest = {e.id: d for e in events if (d := latest_decision(e)) is not None}
+            data = export.rows(events, latest, releases_for(s, events))
         name = f"wildinbox-{batch_id}-observations"
         if format == "json":
             return JSONResponse(
@@ -922,10 +953,18 @@ def create_app(
             if start_before is not None:
                 q = q.where(Event.start_at < _naive(start_before))
             total = s.scalar(select(func.count()).select_from(q.subquery())) or 0
-            events = s.scalars(q.order_by(Event.start_at, Event.id).limit(limit).offset(offset))
+            events = list(
+                s.scalars(
+                    q.order_by(Event.start_at, Event.id)
+                    .limit(limit)
+                    .offset(offset)
+                    .options(*EVENT_LOADS)
+                )
+            )
+            releases = releases_for(s, events)
             nxt = offset + limit if offset + limit < total else None
             return {
-                "events": [event_row(s, e) for e in events],
+                "events": [event_row(s, e, releases=releases) for e in events],
                 "total": total,
                 "limit": limit,
                 "offset": offset,
