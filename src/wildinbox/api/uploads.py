@@ -15,6 +15,7 @@ from datetime import datetime
 from typing import Any
 
 from pydantic import BaseModel, ConfigDict, Field, ValidationError
+from starlette.types import Message, Receive
 
 from wildinbox.settings import Settings
 
@@ -39,6 +40,25 @@ class UploadError(Exception):
     def __init__(self, status: int, code: str, detail: str) -> None:
         super().__init__(detail)
         self.status, self.code, self.detail = status, code, detail
+
+
+def byte_budget(receive: Receive, limit: int) -> Receive:
+    """Wraps an ASGI `receive` so the request body is rejected as soon as more
+    than `limit` bytes have arrived, whatever Content-Length says (or whether
+    it is sent at all). The multipart parser closes its temporary files when
+    this raises."""
+    received = 0
+
+    async def limited() -> Message:
+        nonlocal received
+        message = await receive()
+        if message["type"] == "http.request":
+            received += len(message.get("body", b""))
+            if received > limit:
+                raise UploadError(413, "batch_too_large", f"request body exceeds {limit} bytes")
+        return message
+
+    return limited
 
 
 class FileMetadata(BaseModel):

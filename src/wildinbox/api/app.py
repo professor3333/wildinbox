@@ -26,6 +26,7 @@ from wildinbox.api.auth import PUBLIC_PATHS, principal
 from wildinbox.api.uploads import (
     UploadedFile,
     UploadError,
+    byte_budget,
     check_file,
     manifest,
     parse_metadata,
@@ -510,8 +511,14 @@ def create_app(
                 f"request is {int(length)} bytes; the batch limit is "
                 f"{settings.max_batch_bytes} bytes",
             )
+        # The header check above is only a fast path: a streamed (chunked) body
+        # has no Content-Length, so the budget is also enforced while it arrives.
+        budgeted = Request(
+            request.scope,
+            byte_budget(request.receive, settings.max_batch_bytes + MULTIPART_OVERHEAD),
+        )
         try:
-            form = await request.form(max_files=settings.max_files_per_batch, max_fields=20)
+            form = await budgeted.form(max_files=settings.max_files_per_batch, max_fields=20)
         except StarletteHTTPException as e:
             if "Too many files" in str(e.detail):
                 raise UploadError(
@@ -521,35 +528,37 @@ def create_app(
                 ) from None
             raise UploadError(400, "invalid_upload", str(e.detail)) from None
         marks.append(("receive", time.perf_counter()))  # body read and parsed
-        uploads = [f for f in form.getlist("files") if isinstance(f, UploadFile)]
-        if not uploads:
-            raise UploadError(400, "no_files", "send one or more files in the 'files' field")
-        raw_meta = form.get("metadata")
-        metadata = parse_metadata(raw_meta if isinstance(raw_meta, str) else None)
+        try:  # every rejection below still closes the parser's temporary files
+            uploads = [f for f in form.getlist("files") if isinstance(f, UploadFile)]
+            if not uploads:
+                raise UploadError(400, "no_files", "send one or more files in the 'files' field")
+            raw_meta = form.get("metadata")
+            metadata = parse_metadata(raw_meta if isinstance(raw_meta, str) else None)
 
-        files: list[UploadedFile] = []
-        total = 0
-        for pos, up in enumerate(uploads):
-            data = await up.read(settings.max_file_bytes + 1)
-            total += len(data)
+            # Actual received sizes, not the (truncated) bytes read below.
+            total = sum(up.size or 0 for up in uploads)
             if total > settings.max_batch_bytes:
                 raise UploadError(
                     413,
                     "batch_too_large",
-                    f"batch exceeds the {settings.max_batch_bytes} byte limit",
+                    f"batch is {total} bytes; the limit is {settings.max_batch_bytes} bytes",
                 )
-            name = (up.filename or f"file-{pos}")[:500]
-            files.append(
-                check_file(
-                    pos,
-                    name,
-                    data,
-                    len(data) > settings.max_file_bytes,
-                    settings,
-                    metadata.for_file(name),
+            files: list[UploadedFile] = []
+            for pos, up in enumerate(uploads):
+                data = await up.read(settings.max_file_bytes + 1)
+                name = (up.filename or f"file-{pos}")[:500]
+                files.append(
+                    check_file(
+                        pos,
+                        name,
+                        data,
+                        len(data) > settings.max_file_bytes,
+                        settings,
+                        metadata.for_file(name),
+                    )
                 )
-            )
-        await form.close()
+        finally:
+            await form.close()
         marks.append(("validate", time.perf_counter()))
         response = await run_in_threadpool(_store_batch, files, metadata, idempotency_key, marks)
         phases = {
