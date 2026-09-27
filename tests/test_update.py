@@ -799,21 +799,26 @@ def test_a_v3_cycle_against_deployed_v2_loads_v2_and_refuses_mismatches_first(
     class Loaded(Exception):
         pass
 
+    devices: list[str] = []
+
     def fake_predictor(ctx: Any, model_dir: Path, device: str) -> None:
         loaded.append(model_dir)
-        raise Loaded
+        devices.append(device)
+        if len(loaded) == 2:  # both models built: stop before scoring
+            raise Loaded
 
     monkeypatch.setattr(training_run, "load_context", fake_context)
     monkeypatch.setattr(predictors, "FinetunedPredictor", fake_predictor)
 
     wrong = f"model-v2@{v2.split('@')[1][::-1]}"
     with pytest.raises(GateError, match="is policy version"):
-        gate.run(protocol(wrong), cand, tmp_path / "cfg.yaml", tmp_path / "report")
+        gate.run(protocol(wrong), cand, tmp_path / "cfg.yaml", tmp_path / "report", device="cpu")
     assert contexts == [] and loaded == []  # refused before reading any data
 
     with pytest.raises(Loaded):
-        gate.run(protocol(v2), cand, tmp_path / "cfg.yaml", tmp_path / "report")
-    assert loaded == [root / "model-v2"]  # the baseline is V2, not the current policy's model
+        gate.run(protocol(v2), cand, tmp_path / "cfg.yaml", tmp_path / "report", device="cpu")
+    assert loaded == [root / "model-v2", cand]  # the baseline is V2, not the current policy's model
+    assert devices == ["cpu", "cpu"]  # both models on the one requested device
 
 
 def test_a_second_cycle_never_holds_out_frames_the_deployed_model_was_fit_on(
@@ -972,7 +977,7 @@ def test_the_gate_refuses_holdouts_either_model_was_fit_on(
     )
     monkeypatch.setattr(predictors, "FinetunedPredictor", lambda ctx, d, dev: loaded.append(d))
     with pytest.raises(GateError, match=message):
-        gate.run(p, cand, tmp_path / "cfg.yaml", tmp_path / "report")
+        gate.run(p, cand, tmp_path / "cfg.yaml", tmp_path / "report", device="cpu")
     assert loaded == []  # refused before any model was loaded or scored
 
 

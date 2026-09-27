@@ -105,7 +105,7 @@ def summarise(
     }
 
 
-def run(rule_path: Path, config_path: Path, report_dir: Path) -> dict[str, Any]:
+def run(rule_path: Path, config_path: Path, report_dir: Path, *, device: str) -> dict[str, Any]:
     from wildinbox.datasets.spec import Partition
     from wildinbox.evaluation.data import load_rows
     from wildinbox.evaluation.predictors import FinetunedPredictor
@@ -119,7 +119,7 @@ def run(rule_path: Path, config_path: Path, report_dir: Path) -> dict[str, Any]:
     code = git_state()
     ctx = load_context(config_path, Settings().data_dir)
     meta = json.loads((rule.model / "meta.json").read_text())
-    predictor = FinetunedPredictor(ctx, rule.model, meta["device"])
+    predictor = FinetunedPredictor(ctx, rule.model, device)
     classes = list(predictor.classes)
     # The same temperature `wildinbox calibrate` fits (same function, same
     # partition), computed here so this command does not depend on it.
@@ -225,6 +225,7 @@ def run(rule_path: Path, config_path: Path, report_dir: Path) -> dict[str, Any]:
         "model": meta["name"],
         "rule": str(rule_path),
         "code": code,
+        "device": device,
         "split_version": meta["split_version"],
         "temperature": temperature,
         "species": rule.species.model_dump(),

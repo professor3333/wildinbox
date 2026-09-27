@@ -209,14 +209,16 @@ def test_extract_and_cache(tmp_path: Path) -> None:
     again = extract(fake_model, paths, pre, batch_size=3)
     assert np.array_equal(ext.embeddings, again.embeddings)  # batch size doesn't matter
     ids = [p.name for p in paths]
-    identity = cache_identity("m1", pre, paths)
+    identity = cache_identity("m1", pre, paths, device="cpu")
     save_cache(tmp_path / "c.npz", ids, ext, identity=identity)
-    cached = load_cache(tmp_path / "c.npz", ids, identity=cache_identity("m1", pre, paths))
+    cached = load_cache(
+        tmp_path / "c.npz", ids, identity=cache_identity("m1", pre, paths, device="cpu")
+    )
     assert cached is not None and np.array_equal(cached.embeddings, ext.embeddings)
     assert load_cache(tmp_path / "c.npz", ids[::-1], identity=identity) is None  # other images
 
 
-def test_cache_identity_misses_on_any_change_to_model_preprocessing_or_inputs(
+def test_cache_identity_misses_on_any_change_to_model_device_preprocessing_or_inputs(
     tmp_path: Path,
 ) -> None:
     import os
@@ -232,14 +234,15 @@ def test_cache_identity_misses_on_any_change_to_model_preprocessing_or_inputs(
     ext = extract(lambda x: x.mean(dim=(2, 3)), paths, pre, batch_size=2)
     ids = [p.name for p in paths]
     path = tmp_path / "c.npz"
-    save_cache(path, ids, ext, identity=cache_identity("m1", pre, paths))
+    save_cache(path, ids, ext, identity=cache_identity("m1", pre, paths, device="cpu"))
 
-    def hit(model: str = "m1", preprocessing: Any = pre) -> bool:
-        identity = cache_identity(model, preprocessing, paths)
+    def hit(model: str = "m1", preprocessing: Any = pre, device: str = "cpu") -> bool:
+        identity = cache_identity(model, preprocessing, paths, device=device)
         return load_cache(path, ids, identity=identity) is not None
 
     assert hit()  # unchanged: reused
     assert not hit(model="m2")
+    assert not hit(device="mps")  # computed elsewhere: a run on this device recomputes
     assert not hit(preprocessing=pre.model_copy(update={"crop_size": 192}))
     st = paths[1].stat()
     os.utime(paths[1], ns=(st.st_atime_ns, st.st_mtime_ns + 1_000_000))  # file replaced
@@ -254,7 +257,7 @@ def test_cache_identity_misses_on_any_change_to_model_preprocessing_or_inputs(
         images_per_second=ext.images_per_second,
         peak_rss_mb=ext.peak_rss_mb,
     )
-    assert load_cache(path, ids, identity=cache_identity("m1", pre, paths)) is None
+    assert load_cache(path, ids, identity=cache_identity("m1", pre, paths, device="cpu")) is None
 
 
 # ---------------------------------------------------------- reproducibility
@@ -324,5 +327,6 @@ def test_compare_to_reads_the_reference_before_the_report_is_overwritten(
         report_dir=tmp_path,
         no_benchmark=True,
         compare_to=report,
+        device="cpu",
     )
     assert run_module.evaluate_cli(args) == 1

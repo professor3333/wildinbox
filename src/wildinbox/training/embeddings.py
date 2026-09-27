@@ -121,11 +121,14 @@ def cache_key(spec: BackboneSpec, preprocessing: PreprocessingConfig, split_vers
     return f"{spec.architecture}-{spec.weights}-{hashlib.sha256(raw.encode()).hexdigest()[:12]}"
 
 
-def cache_identity(model: str, preprocessing: PreprocessingConfig, files: list[Path]) -> str:
+def cache_identity(
+    model: str, preprocessing: PreprocessingConfig, files: list[Path], *, device: str
+) -> str:
     """What a cached extraction depends on besides the image ids: the model,
-    the preprocessing, and the input files (path, size, modification time).
-    A change to any of them makes the cache miss instead of returning stale
-    outputs."""
+    the preprocessing, the device, and the input files (path, size,
+    modification time). A change to any of them makes the cache miss instead of
+    returning stale outputs; outputs from another device would otherwise stand
+    in for a run that was asked to compute on this one."""
     digest = hashlib.sha256()
     for f in files:
         st = f.stat()
@@ -133,6 +136,7 @@ def cache_identity(model: str, preprocessing: PreprocessingConfig, files: list[P
     return json.dumps(
         {
             "model": model,
+            "device": device,
             "preprocessing": preprocessing.fingerprint(),
             "inputs": digest.hexdigest(),
         },
