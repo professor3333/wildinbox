@@ -149,7 +149,7 @@ def test_finetuned_model_scores_on_cpu_reproducibly(tmp_path: Path) -> None:
     digest = hashlib.sha256((model_dir / "model.pt").read_bytes()).hexdigest()[:12]
     assert cpu.weights_digest == digest
     first = _score(cpu, rows)
-    cache = model_dir / "eval-cache" / digest / "calibration.npz"
+    cache = model_dir / "eval-cache" / digest / "cpu" / "calibration.npz"
     with np.load(cache) as z:
         assert json.loads(str(z["identity"]))["device"] == "cpu"
     assert [s.probs for s in _score(cpu, rows)] == [s.probs for s in first]  # from the cache

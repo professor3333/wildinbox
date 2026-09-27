@@ -1,0 +1,42 @@
+{
+  "what": "wildinbox final-test --device cpu, re-run against a scratch copy of this record (made on mps)",
+  "date": "2026-09-27",
+  "code": {
+    "commit": "29adb610c59f43b9aeb6fb8eafe04b31d5fc7807",
+    "dirty": false
+  },
+  "hardware": {
+    "machine": "Apple M1, 8 GB",
+    "device": "cpu",
+    "torch": "2.14.0",
+    "python": "3.12.6"
+  },
+  "seconds": 9866,
+  "scored_on_cpu": [
+    "E3 probabilities",
+    "baseline embeddings",
+    "E3 features (unfamiliar score)"
+  ],
+  "reproduction": {
+    "recorded_device": "mps",
+    "tolerance": 0.005,
+    "passed": true,
+    "decisions_identical": true,
+    "floats_compared": 1020,
+    "floats_different": 2,
+    "max_abs_difference": 1e-06,
+    "differences": [
+      {
+        "path": "/unfamiliar_detection/distance/held_out/auroc",
+        "recorded": 0.68154,
+        "cpu": 0.681541
+      },
+      {
+        "path": "/unfamiliar_detection/confidence/held_out/auroc",
+        "recorded": 0.641656,
+        "cpu": 0.641655
+      }
+    ],
+    "everything_else": "identical: every count, label, event decision, and the other 1,018 numbers"
+  }
+}
