@@ -13,6 +13,7 @@ from datetime import date, datetime
 
 import streamlit as st
 
+from wildinbox.datasets.grouping import DEFAULT_GAP_SECONDS, MAX_GAP_SECONDS
 from wildinbox.ui import monitoring, review
 from wildinbox.ui.client import ApiClient, ApiError
 from wildinbox.ui.logic import (
@@ -211,6 +212,18 @@ def upload_page(api: ApiClient) -> None:
             "Photos (JPEG or PNG)", type=["jpg", "jpeg", "png"], accept_multiple_files=True
         )
         camera = st.text_input("Camera name (optional)")
+        gap = st.number_input(
+            "Group photos taken within this many seconds of each other",
+            min_value=0.0,
+            max_value=MAX_GAP_SECONDS,
+            value=DEFAULT_GAP_SECONDS,
+            step=1.0,
+            help=(
+                "Photos from one camera stay in one capture event while each is at most this "
+                "long after the previous one. Sequence ids in the metadata file take precedence. "
+                "Fixed for the batch once uploaded."
+            ),
+        )
         meta_file = st.file_uploader(
             "Card metadata (optional JSON: capture times, sequence ids, cameras per file)",
             type=["json"],
@@ -219,7 +232,7 @@ def upload_page(api: ApiClient) -> None:
         submitted = st.form_submit_button("Upload and process", type="primary")
     if submitted and files:
         try:
-            metadata = card_metadata(camera, meta_file.getvalue() if meta_file else None)
+            metadata = card_metadata(camera, meta_file.getvalue() if meta_file else None, gap)
         except ValueError as e:
             st.error(str(e))
             return
@@ -247,7 +260,11 @@ def upload_page(api: ApiClient) -> None:
             break
         time.sleep(1)
     s = api.batch(batch_id)
-    st.success(f"{s['counts']['events']} capture events ready for review.")
+    grouping = s.get("grouping") or {}
+    st.success(
+        f"{s['counts']['events']} capture events ready for review "
+        f"(grouped within {grouping.get('gap_seconds', DEFAULT_GAP_SECONDS):g} s)."
+    )
     st.button(
         "Review this batch",
         type="primary",

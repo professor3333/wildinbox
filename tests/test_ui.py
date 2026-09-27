@@ -625,6 +625,8 @@ def test_card_metadata_merges_the_file_and_the_camera_name() -> None:
         "camera_id": "north",
     }
     assert card_metadata("north", b'{"camera_id": "cam-7"}') == {"camera_id": "cam-7"}
+    assert card_metadata(None, None, 10.0) == {"gap_seconds": 10.0}
+    assert card_metadata(None, b'{"gap_seconds": 3}', 10.0) == {"gap_seconds": 3}  # file wins
     with pytest.raises(ValueError, match="not valid JSON"):
         card_metadata(None, b"{nope")
     with pytest.raises(ValueError, match="JSON object"):

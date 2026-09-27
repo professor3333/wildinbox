@@ -19,6 +19,7 @@ reviewer left unresolved.
 | `start_at`, `end_at` | First and last capture time of the event's photos, camera local time (ISO 8601); empty if the photos had no time. |
 | `frames` | Number of photos in the event. |
 | `filenames` | The photos' original file names, separated by `;`. |
+| `grouping_rule` | The rule that formed the event: `sequence_id/v2` (the upload's sequence ids, within one camera) or `time_gap/v1(gap_s=G)` (same camera, consecutive photos at most G seconds apart; G is the batch's grouping interval). |
 | `observation` | **The current label**: the latest review's label if a person reviewed the event; otherwise the automatic label if automation decided it; otherwise empty. `empty` means no animal. A species outside the model's list appears as the reviewer typed it (lowercase). |
 | `label_source` | Where `observation` comes from: `review`, `automatic`, `pending_review` (nobody has reviewed it yet), or `unresolved` (a reviewer could not tell). |
 | `review_outcome` | The latest review: `confirmed` (same as the suggestion), `corrected` (different), `unresolved`; empty if not reviewed. |

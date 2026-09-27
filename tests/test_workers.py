@@ -800,3 +800,127 @@ def test_matching_sequence_ids_on_different_cameras_stay_separate_events(
             assert [i["filename"] for i in detail["images"]] == [f"{cam}.jpg"]
         rows = c.get(f"/batches/{batch['id']}/export", params={"format": "json"}).json()
         assert sorted(r["camera_id"] for r in rows["observations"]) == ["north", "south"]
+
+
+# ------------------------------------------------------------ grouping interval
+
+
+def _card(cfg: Settings, files: dict[str, dict[str, Any]], **meta: Any) -> dict[str, Any]:
+    """Upload photos with per-file metadata (and batch-level `meta`), unprocessed."""
+    items = [(name, jpeg(700 + n)) for n, name in enumerate(files)]
+    with TestClient(create_app(cfg, dispatcher=NoopDispatcher())) as c:
+        res = c.post(
+            "/batches",
+            files=_files(*items),
+            data={"metadata": json.dumps({"camera_id": "trail", "files": files, **meta})},
+        )
+        assert res.status_code == 202, res.text
+        return res.json()
+
+
+def _events(cfg: Settings, batch_id: str) -> list[tuple[str, int]]:
+    with session_factory(cfg.database_url)() as s:
+        events = s.scalars(select(Event).where(Event.batch_id == uuid.UUID(batch_id)))
+        return sorted((e.grouping_rule, len(e.images)) for e in events)
+
+
+EIGHT_SECONDS_APART = {
+    "a.jpg": {"captured_at": "2024-05-01T21:00:00"},
+    "b.jpg": {"captured_at": "2024-05-01T21:00:08"},
+}
+
+
+def test_grouping_interval_is_the_batchs_and_retries_reuse_it(
+    worker_settings: Settings, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Eight seconds apart: two events at G=5, one at G=10. A retry after a
+    failed attempt regroups from the recorded interval, even if the default
+    changed in between."""
+    from wildinbox.datasets import grouping
+
+    _patch_scorer(monkeypatch, die_on=None)
+    batches = {
+        "5": _card(worker_settings, EIGHT_SECONDS_APART, gap_seconds=5),
+        "10": _card(worker_settings, EIGHT_SECONDS_APART, gap_seconds=10),
+        "default": _card(worker_settings, EIGHT_SECONDS_APART),
+    }
+    assert len({b["id"] for b in batches.values()}) == 3  # the interval is in the fingerprint
+    assert batches["10"]["grouping"] == {
+        "gap_seconds": 10.0,
+        "gap_source": "request",
+        "time_gap_rule": "time_gap/v1(gap_s=10)",
+        "sequence_rule": "sequence_id/v2",
+    }
+    assert batches["default"]["grouping"]["gap_source"] == "default"
+
+    decide = process._decide
+    failed: set[uuid.UUID] = set()
+
+    def fail_first_attempt(session: Any, events: Any, *args: Any) -> None:
+        batch_id = events[0].batch_id
+        if batch_id not in failed:  # after grouping ran; the attempt rolls back
+            failed.add(batch_id)
+            raise ConnectionError("transient")
+        decide(session, events, *args)
+
+    monkeypatch.setattr(process, "_decide", fail_first_attempt)
+    factory = session_factory(worker_settings.database_url)
+    store = LocalStore(worker_settings.local_store_dir)
+    for batch in batches.values():
+        job_id = uuid.UUID(batch["job"]["id"])
+        assert process_batch(factory, store, job_id, worker_settings) == "queued"
+        monkeypatch.setattr(grouping, "DEFAULT_GAP_SECONDS", 60.0)  # a new default arrives
+        assert process_batch(factory, store, job_id, worker_settings) == "succeeded"
+    assert len(failed) == 3
+    assert _events(worker_settings, batches["5"]["id"]) == [("time_gap/v1(gap_s=5)", 1)] * 2
+    assert _events(worker_settings, batches["10"]["id"]) == [("time_gap/v1(gap_s=10)", 2)]
+    assert _events(worker_settings, batches["default"]["id"]) == [("time_gap/v1(gap_s=5)", 1)] * 2
+
+
+def test_sequence_ids_take_precedence_over_the_interval(
+    worker_settings: Settings, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    _patch_scorer(monkeypatch, die_on=None)
+    files = {  # one sequence 8 s apart; two sequences 2 s apart
+        "a.jpg": {"captured_at": "2024-05-01T21:00:00", "sequence_id": "s1"},
+        "b.jpg": {"captured_at": "2024-05-01T21:00:08", "sequence_id": "s1"},
+        "c.jpg": {"captured_at": "2024-05-01T22:00:00", "sequence_id": "s2"},
+        "d.jpg": {"captured_at": "2024-05-01T22:00:02", "sequence_id": "s3"},
+    }
+    batch = _card(worker_settings, files, gap_seconds=1)
+    factory = session_factory(worker_settings.database_url)
+    store = LocalStore(worker_settings.local_store_dir)
+    assert process_batch(factory, store, uuid.UUID(batch["job"]["id"]), worker_settings) == (
+        "succeeded"
+    )
+    assert _events(worker_settings, batch["id"]) == [
+        ("sequence_id/v2", 1),
+        ("sequence_id/v2", 1),
+        ("sequence_id/v2", 2),
+    ]
+
+
+def test_regrouping_never_discards_reviewed_events(
+    worker_settings: Settings, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    _patch_scorer(monkeypatch, die_on=None)
+    batch = _card(worker_settings, EIGHT_SECONDS_APART, gap_seconds=5)
+    factory = session_factory(worker_settings.database_url)
+    store = LocalStore(worker_settings.local_store_dir)
+    assert process_batch(factory, store, uuid.UUID(batch["job"]["id"]), worker_settings) == (
+        "succeeded"
+    )
+    with TestClient(create_app(worker_settings, dispatcher=NoopDispatcher())) as c:
+        event = c.get("/events", params={"batch_id": batch["id"]}).json()["events"][0]
+        res = c.post(
+            f"/events/{event['id']}/reviews", json={"reviewer": "ann", "outcome": "unresolved"}
+        )
+        assert res.status_code == 201
+    with factory() as s:
+        b = s.get(process.Batch, uuid.UUID(batch["id"]))
+        assert b is not None
+        b.manifest = {**b.manifest, "grouping": {**b.manifest["grouping"], "gap_seconds": 10.0}}
+        with pytest.raises(RuntimeError, match="reviewed event"):
+            process._group_events(s, b)
+        s.rollback()
+    assert _events(worker_settings, batch["id"]) == [("time_gap/v1(gap_s=5)", 1)] * 2

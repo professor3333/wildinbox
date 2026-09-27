@@ -72,8 +72,12 @@ sequenceDiagram
 
 - **Grouping:** supplied sequence ids scoped to their camera (the same id on
   two cameras, or a counter reused hours later, is a different event),
-  otherwise the camera plus capture-time gaps (an editable rule). Events are written only when the whole batch is
-  scored, never from a partial one.
+  otherwise the camera plus capture-time gaps within the upload's grouping
+  interval (`gap_seconds`, default 5 s). The interval is fixed in the batch's
+  manifest at upload, so retries regroup identically and changing the default
+  never regroups an existing batch; a regrouping that would drop a reviewed
+  event is refused. Events are written only when the whole batch is scored,
+  never from a partial one.
 - **Every file keeps its place in its event.** A frame that fails to decode,
   is rejected at upload, or duplicates an earlier file remains a member of the
   event its sequence id or capture time puts it in. A failed member makes the

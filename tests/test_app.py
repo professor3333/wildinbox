@@ -796,3 +796,77 @@ def test_monitoring_queries_do_not_grow_with_batches(client: TestClient) -> None
     six = selects()
     assert six == two, (two, six)
     assert client.get("/monitoring").json()["operations"]["batches"][0]["images"] == 1
+
+
+@pytest.mark.parametrize("gap", [-1, 3601, "NaN", "soon"])
+def test_grouping_interval_is_validated(client: TestClient, gap: Any) -> None:
+    raw = '{"gap_seconds": ' + (gap if gap == "NaN" else json.dumps(gap)) + "}"
+    res = client.post("/batches", files=_files(("a.jpg", jpeg(90))), data={"metadata": raw})
+    assert res.status_code == 422 and res.json()["error"] == "invalid_metadata", res.text
+
+
+def test_grouping_interval_joins_the_fingerprint_only_when_given(client: TestClient) -> None:
+    import hashlib
+
+    from wildinbox.api.uploads import BatchMetadata, UploadedFile, request_fingerprint
+
+    files = [UploadedFile(0, "a.jpg", 3, None, sha256="ab")]
+    legacy = hashlib.sha256(
+        json.dumps(
+            {
+                "files": [["a.jpg", "ab", 3, None]],
+                "metadata": {"camera_id": "trail", "files": {}},
+            },
+            sort_keys=True,
+        ).encode()
+    ).hexdigest()
+    assert request_fingerprint(files, BatchMetadata(camera_id="trail")) == legacy
+    assert request_fingerprint(files, BatchMetadata(camera_id="trail", gap_seconds=5)) != legacy
+
+    def post(meta: dict[str, Any]) -> str:
+        res = client.post(
+            "/batches", files=_files(("a.jpg", jpeg(91))), data={"metadata": json.dumps(meta)}
+        )
+        assert res.status_code in (200, 202), res.text
+        return str(res.json()["id"])
+
+    assert post({"gap_seconds": 0}) == post({"gap_seconds": 0})  # a resubmission
+    assert post({"gap_seconds": 0}) != post({"gap_seconds": 30})
+    assert client.get("/batches", params={"limit": 5}).json()["total"] == 2
+
+
+def test_migration_records_the_grouping_of_earlier_batches(settings: Settings) -> None:
+    with TestClient(create_app(settings)) as c:
+        old = c.post("/batches", files=_files(("a.jpg", jpeg(92)))).json()["id"]
+        chosen = c.post(
+            "/batches", files=_files(("b.jpg", jpeg(93))), data={"metadata": '{"gap_seconds": 9}'}
+        ).json()["id"]
+    cfg = Config(str(REPO_ROOT / "alembic.ini"))
+    cfg.set_main_option("sqlalchemy.url", settings.database_url)
+    engine = create_engine(settings.database_url)
+
+    def grouping(batch_id: str) -> Any:
+        with engine.begin() as conn:
+            return conn.execute(
+                text("SELECT manifest -> 'grouping' FROM batches WHERE id = :id"), {"id": batch_id}
+            ).scalar()
+
+    try:
+        with engine.begin() as conn:  # a batch from before the interval was recorded
+            conn.execute(
+                text("UPDATE batches SET manifest = manifest - 'grouping' WHERE id = :id"),
+                {"id": old},
+            )
+        command.downgrade(cfg, "5d8e2b1f9a47")
+        assert grouping(old) is None and grouping(chosen)["gap_seconds"] == 9
+        command.upgrade(cfg, "head")
+        assert grouping(old) == {
+            "gap_seconds": 5.0,
+            "gap_source": "legacy_default",
+            "time_gap_rule": "time_gap/v1(gap_s=5)",
+        }
+        assert grouping(chosen)["gap_seconds"] == 9  # untouched
+        command.downgrade(cfg, "5d8e2b1f9a47")
+        assert grouping(old) is None and grouping(chosen)["gap_seconds"] == 9
+    finally:
+        command.upgrade(cfg, "head")

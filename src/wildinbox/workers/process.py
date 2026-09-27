@@ -40,11 +40,11 @@ from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.orm import Session, sessionmaker
 
 from wildinbox.datasets.grouping import (
-    DEFAULT_GAP_SECONDS,
     SEQUENCE_RULE,
     GroupableImage,
     group_by_sequence,
     group_by_time_gap,
+    recorded_gap,
     time_gap_rule_id,
 )
 from wildinbox.inference.serving import calibrated, scorer_for
@@ -299,11 +299,9 @@ def _group_events(session: Session, batch: Batch) -> list[Event]:
     without = [
         GroupableImage(str(i.id), i.camera_id, i.captured_at) for i in members if not i.sequence_id
     ]
+    gap = recorded_gap(batch.manifest)  # fixed at upload: every attempt groups alike
     groups = [(SEQUENCE_RULE, g) for g in group_by_sequence(with_seq)]
-    groups += [
-        (time_gap_rule_id(DEFAULT_GAP_SECONDS), g)
-        for g in group_by_time_gap(without, DEFAULT_GAP_SECONDS)
-    ]
+    groups += [(time_gap_rule_id(gap), g) for g in group_by_time_gap(without, gap)]
     usable = ("valid", "duplicate")
     groups = [
         (rule, ids)
@@ -333,8 +331,14 @@ def _group_events(session: Session, batch: Batch) -> list[Event]:
     events = {
         e.group_key: e for e in session.scalars(select(Event).where(Event.batch_id == batch.id))
     }
-    for stale in set(events) - set(keys):  # from an earlier attempt with different inputs
-        session.delete(events.pop(stale))
+    stale = set(events) - set(keys)  # from an earlier attempt with different inputs
+    reviewed = [k for k in stale if events[k].reviews]
+    if reviewed:  # never discard a person's work by regrouping
+        raise RuntimeError(
+            f"regrouping would remove {len(reviewed)} reviewed event(s) from batch {batch.id}"
+        )
+    for key in stale:
+        session.delete(events.pop(key))
     for (_, ids), key in zip(groups, keys, strict=True):
         for i in ids:
             by_id[i].event_id = events[key].id

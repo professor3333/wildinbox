@@ -46,7 +46,8 @@ animals when a camera is somewhere new?**
   sequence metadata; files are checked by content, duplicates recognised by
   hash, and every unusable file gets an explicit error.
 - **Group** photos into capture events (supplied sequence ids, or camera and
-  time gaps).
+  time gaps within a grouping interval chosen per upload, default 5 s, recorded
+  with the batch so retries group the same way).
 - **Suggest** a species per event with a fine-tuned EfficientNet-B0, calibrated,
   and decide each event with a versioned policy: likely empty, species
   identified, or needs review, with machine-readable reasons.
@@ -210,7 +211,7 @@ The demo walk-through, with a real run's output: [`docs/demo.md`](docs/demo.md).
 | Page | What it does |
 |---|---|
 | Getting started | A one-screen guide for first-time users (no other documentation needed). |
-| Upload | Upload photos with a camera name or the card's metadata file (capture times, sequences, cameras per file); follow processing; see unusable files and why. |
+| Upload | Upload photos with a camera name, the grouping interval, or the card's metadata file (capture times, sequences, cameras per file); follow processing; see unusable files and why. |
 | Batches | Progress, counts, and failed files for every upload, ten at a time; **Review this batch** selects any of them, however old. The sidebar's batch selector lists the 50 newest. |
 | Review queue | Events that need a person: frames, suggestion, confidence, and why. Accept, pick another species, choose empty, type an unsupported species, or "can't tell"; every event opens to all frames, per-frame predictions, and its full review history. |
 | Timeline | Every event in time order, 100 per page, filtered by any camera in the batch. |
