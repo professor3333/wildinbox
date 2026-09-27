@@ -21,6 +21,7 @@ from sqlalchemy.orm import Session, sessionmaker
 
 from wildinbox.storage.models import (
     Decision,
+    Image,
     StudyParticipant,
     StudyPlan,
     StudyRating,
@@ -50,6 +51,7 @@ class TrialIn(BaseModel):
     interactions: int = Field(ge=0)
     shown_at: datetime
     decided_at: datetime
+    decision_id: uuid.UUID | None = None  # whose suggestion was shown ("suggested" only)
 
 
 class RatingIn(BaseModel):
@@ -163,6 +165,18 @@ def add_study_routes(
                 raise error(
                     422, "invalid_trial", "this event is not in that block for this participant"
                 )
+            if body.decision_id is not None:
+                shown = s.get(Decision, body.decision_id)
+                if (
+                    body.condition != "suggested"
+                    or shown is None
+                    or shown.event_id != body.event_id
+                ):
+                    raise error(
+                        422,
+                        "invalid_trial",
+                        "decision_id must be this event's decision, shown as a suggestion",
+                    )
             inserted = s.execute(
                 insert(StudyTrial)
                 .values(plan_id=plan_id, **body.model_dump())
@@ -205,9 +219,43 @@ def add_study_routes(
             ids = [uuid.UUID(e) for v in plan.sets.values() for e in v]
             decisions = s.scalars(select(Decision).where(Decision.event_id.in_(ids))).all()
             latest: dict[uuid.UUID, Decision] = {}
+            by_event: dict[uuid.UUID, list[Decision]] = {}
             for d in decisions:
+                by_event.setdefault(d.event_id, []).append(d)
                 if d.event_id not in latest or d.created_at > latest[d.event_id].created_at:
                     latest[d.event_id] = d
+            by_id = {d.id: d for d in decisions}
+            frames = s.execute(
+                select(Image.event_id, Image.id, Image.position, Image.sha256)
+                .where(Image.event_id.in_(ids))
+                .order_by(Image.event_id, Image.position)
+            ).all()
+
+            def decision_out(d: Decision) -> dict[str, Any]:
+                return {
+                    "decision_id": str(d.id),
+                    "model_release_id": d.model_release_id,
+                    "policy_version": d.policy_version,
+                    "disposition": d.disposition,
+                    "suggested_label": d.suggested_label,
+                    "confidence": d.confidence,
+                    "created_at": d.created_at.isoformat(),
+                }
+
+            def displayed(t: StudyTrial) -> dict[str, Any] | None:
+                """The suggestion on screen: the logged decision, or for trials
+                logged before decisions were recorded, the event's latest
+                decision made before the event was shown (what the page loads)."""
+                if t.condition != "suggested":
+                    return None
+                if t.decision_id is not None:
+                    return {**decision_out(by_id[t.decision_id]), "source": "logged"}
+                before = [d for d in by_event.get(t.event_id, []) if d.created_at <= t.shown_at]
+                if not before:
+                    return None
+                d = max(before, key=lambda d: d.created_at)
+                return {**decision_out(d), "source": "latest_before_shown"}
+
             return {
                 "plan": {
                     "id": str(plan.id),
@@ -232,9 +280,24 @@ def add_study_routes(
                         "interactions": t.interactions,
                         "shown_at": t.shown_at.isoformat(),
                         "decided_at": t.decided_at.isoformat(),
+                        "displayed": displayed(t),
                     }
                     for t in trials
                 ],
+                "events": {
+                    str(e): {
+                        "frames": [
+                            {"image_id": str(i), "position": pos, "sha256": sha}
+                            for ev, i, pos, sha in frames
+                            if ev == e
+                        ],
+                        "decisions": [
+                            decision_out(d)
+                            for d in sorted(by_event.get(e, []), key=lambda d: d.created_at)
+                        ],
+                    }
+                    for e in ids
+                },
                 "workload": {
                     "dispositions": dict(Counter(d.disposition for d in latest.values())),
                     "audit_rate": audit_rate,

@@ -98,10 +98,28 @@ uv run wildinbox study analyze --plan-id <study code> --out reports/study/study-
 ```
 
 Writes `README.md` (verdict, per-participant table, exclusions), `metrics.json`,
-and `export.json` (every trial and rating, with ground truth). The verdict is
-one of: descriptive only (too few participants); suggestions made review faster
-without an accuracy drop beyond 5 points; faster but less accurate; or no
-reliable speed gain.
+and `export.json`: every trial and rating with ground truth, and for each
+suggested trial the decision that was on screen (decision, release, policy,
+suggested label, confidence). Every study event is listed with its frames
+(image ids and SHA-256) and all of its decisions. Trials logged before the
+page recorded the decision it showed carry the event's latest decision made
+before the trial (`"source": "latest_before_shown"`); later ones carry the
+logged decision (`"source": "logged"`). The verdict is one of: descriptive only
+(too few participants); suggestions made review faster without an accuracy
+drop beyond 5 points; faster but less accurate; or no reliable speed gain.
+
+Checks beyond the pre-registered analysis are computed offline from the
+export, so anyone can recompute them:
+
+```bash
+uv run wildinbox study posthoc --dir reports/study/study-1 --without author
+```
+
+Writes `POSTHOC.md` and `posthoc.json`: the pre-declared summary without the
+named participants, how often the suggestions were right, how often each
+participant's answer matched the suggestion (and, in the grouped block, the
+suggestion they did not see), and answers on unsupported species and empty
+events.
 
 ## What it can and cannot tell you
 

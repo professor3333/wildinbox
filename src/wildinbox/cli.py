@@ -372,6 +372,17 @@ def main(argv: Sequence[str] | None = None) -> int:
         help="sends WILDINBOX_TOKEN as a bearer token when set",
     )
 
+    p_ph = study_sub.add_parser(
+        "posthoc", help="Checks beyond the pre-registered analysis, from export.json (offline)."
+    )
+    p_ph.add_argument("--dir", type=Path, required=True, help="Study report directory.")
+    p_ph.add_argument(
+        "--without",
+        action="append",
+        default=[],
+        help="Participant code for the pre-declared summary without them (repeatable).",
+    )
+
     p_pol = sub.add_parser("policy", help="Decision-policy artifacts.")
     pol_sub = p_pol.add_subparsers(dest="policy_command", required=True)
     p_up = pol_sub.add_parser("upgrade", help="Same calibration and thresholds, newer policy.")
@@ -560,6 +571,18 @@ def main(argv: Sequence[str] | None = None) -> int:
         up = upgrade(args.source, args.decisions, args.policy_name, args.out)
         print(f"{args.policy_name} artifact {up['artifact_version']} -> {args.out / 'policy.json'}")
         print(f"  decisions whose outcome or reasons changed: {up['decisions_changed']}")
+        return 0
+    if args.command == "study" and args.study_command == "posthoc":
+        import yaml
+
+        from wildinbox.study.cli import PROTOCOL
+        from wildinbox.study.posthoc import posthoc, report
+
+        export = json.loads((args.dir / "export.json").read_text())
+        found = posthoc(export, yaml.safe_load(PROTOCOL.read_text()), args.without)
+        (args.dir / "posthoc.json").write_text(json.dumps(found, indent=2) + "\n")
+        (args.dir / "POSTHOC.md").write_text(report(found))
+        print(f"report -> {args.dir / 'POSTHOC.md'}")
         return 0
     if args.command == "study":
         from wildinbox.api_client import APIError

@@ -6,6 +6,12 @@ edited. This file adds the summary without the author, which was declared in
 [PLAN.md](PLAN.md) before any results were seen, and checks that were chosen
 **after** seeing the results. The post-hoc checks are labelled as such.
 
+Every number below is recomputed from the committed [export.json](export.json)
+by `uv run wildinbox study posthoc --dir reports/study/study-1 --without author`,
+which writes [POSTHOC.md](POSTHOC.md) and [posthoc.json](posthoc.json). The
+export states the suggestion each participant saw; for this study it is the
+event's only decision, made before the first session.
+
 Five participants took part: the author and four volunteers (not trained field
 reviewers). The protocol needs 8, so none of this is a verdict. All numbers
 are descriptive.

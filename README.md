@@ -141,6 +141,7 @@ Every headline claim and where it comes from:
 | Update cycle, promotion gate, rollback restores predictions | `reports/update/`, `reports/monitoring/acceptance.json` | `wildinbox update gate`, `scripts/rollback_restores.py` |
 | Backup and restore | `reports/staging/backup-restore.log` | `deploy/staging/restore_drill.sh` |
 | A stranger can deploy the pinned release | `reports/staging/rehearsal/` | [docs/deployment.md](docs/deployment.md) |
+| Pilot review study: no demonstrated time saving (5 participants, protocol needs 8) | `reports/study/study-1/` (export, pre-registered analysis, post-hoc checks) | `wildinbox study posthoc --dir reports/study/study-1 --without author` |
 
 ## Tech stack
 
@@ -244,7 +245,7 @@ Limits (see `.env.example`): 2,000 files and 1 GiB per batch, 20 MiB per file.
 | Releases | `release register`, `release activate`, `release list` |
 | Update cycle | `snapshot build`, `update gate` |
 | Operations | `api`, `worker`, `ui`, `jobs recover`, `token new`, `monitoring summary`, `monitoring backfill-quality` |
-| Review study | `study plan`, `study analyze` |
+| Review study | `study plan`, `study analyze`, `study posthoc` |
 
 ## Reproduce the data and models
 
@@ -397,10 +398,17 @@ Training the released model: 70 minutes on the M1's GPU (Metal).
   was not adopted; it mostly measures "new camera", not "new species".
 - **Evaluated species were in pretraining:** every unsupported species that
   could be evaluated (except deer) appears in ImageNet-1k.
-- **Reviews in the update cycle were simulated** from ground truth. The timed
-  review study is built and pre-registered
-  ([`docs/review_study.md`](docs/review_study.md)) but has not been run with
-  people, so whether suggestions speed up review is not yet measured.
+- **Reviews in the update cycle were simulated** from ground truth.
+- **Reviewer benefit is not demonstrated.** A pilot of the pre-registered
+  timed review study ([`reports/study/study-1/`](reports/study/study-1/FINDINGS.md),
+  [`docs/review_study.md`](docs/review_study.md)) ran with 5 participants (the
+  author and four volunteers, none trained field reviewers); the protocol needs
+  8, so it is descriptive only. With suggestions, median time per event changed
+  by -1.4 s (95% interval -3.8 to +0.5) and accuracy by -4.2 points (-17.5 to
+  +9.1); without the author, -0.6 s (-1.6 to +0.5). Both intervals include zero.
+  Three participants accepted nearly every suggestion, which were right on 28
+  of 80 events, so the study's projected 57% time saving reflects accepting
+  unchecked suggestions and is not a demonstrated benefit.
 - **Measured on two machines:** a laptop and a 2-vCPU AWS VM with one and two
   workers. One batch is always processed by one worker. `GET /events` (100 per
   page) is the slowest metadata call (p95 360 ms).

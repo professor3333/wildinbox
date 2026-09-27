@@ -213,6 +213,7 @@ def event_row(session: Session, event: Event, detail: bool = False) -> dict[str,
         "decision": None
         if decision is None
         else {
+            "id": str(decision.id),
             "disposition": decision.disposition,
             "suggested_label": decision.suggested_label,
             "confidence": decision.confidence,
