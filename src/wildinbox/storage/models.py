@@ -289,7 +289,10 @@ class Review(Base):
         ),
     )
     id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
-    event_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("events.id", ondelete="CASCADE"))
+    # Indexed: event lists find each event's current review by event.
+    event_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("events.id", ondelete="CASCADE"), index=True
+    )
     reviewer: Mapped[str] = mapped_column(String(200))
     # The authenticated principal that submitted the review: the reviewer
     # itself, or an authorized delegate recording on the reviewer's behalf.

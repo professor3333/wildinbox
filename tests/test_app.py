@@ -610,3 +610,115 @@ def test_thumbnail_shrinks_and_applies_exif_orientation() -> None:
     PILImage.new("RGB", (400, 300)).save(buf, "JPEG", exif=exif)
     out = PILImage.open(io.BytesIO(_thumbnail(buf.getvalue(), 100)))
     assert out.size == (75, 100)  # portrait after rotation, long side 100
+
+
+def test_batch_history_pages_reach_every_batch(client: TestClient) -> None:
+    made = [
+        client.post("/batches", files=_files((f"{n}.jpg", jpeg(70 + n)))).json() for n in range(5)
+    ]
+    first = client.get("/batches", params={"limit": 2}).json()
+    assert first["total"] == 5 and first["next_offset"] == 2
+    assert first["batches"][0]["id"] == made[-1]["id"]  # newest first
+    seen, offset = [], 0
+    while offset is not None:
+        page = client.get("/batches", params={"limit": 2, "offset": offset}).json()
+        seen += [b["id"] for b in page["batches"]]
+        offset = page["next_offset"]
+    assert seen == [b["id"] for b in reversed(made)]  # the oldest is reachable
+    assert all(b["images"] == 1 and b["events"] == 1 for b in first["batches"])
+
+
+def test_camera_catalog_covers_every_event(client: TestClient) -> None:
+    meta = {"files": {"a.jpg": {"camera_id": "north"}, "b.jpg": {"camera_id": "south"}}}
+    batch = client.post(
+        "/batches",
+        files=_files(("a.jpg", jpeg(80)), ("b.jpg", jpeg(81)), ("c.jpg", jpeg(82))),
+        data={"metadata": json.dumps(meta)},
+    ).json()
+    client.post(
+        "/batches", files=_files(("d.jpg", jpeg(83))), data={"metadata": '{"camera_id": "west"}'}
+    )
+    listed = client.get("/cameras", params={"batch_id": batch["id"]}).json()["cameras"]
+    assert listed == [
+        {"camera_id": "north", "events": 1},
+        {"camera_id": "south", "events": 1},
+        {"camera_id": None, "events": 1},
+    ]
+    everywhere = client.get("/cameras").json()["cameras"]
+    assert [c["camera_id"] for c in everywhere] == ["north", "south", "west", None]
+    assert client.get("/batches").json()["batches"][1]["cameras"] == ["north", "south"]
+
+
+def test_animal_filter_matches_the_interfaces_visitor_rule(
+    client: TestClient, settings: Settings
+) -> None:
+    """`animal` is evaluated in SQL over the whole result, so a night with many
+    empty events cannot hide an animal. It must agree with `is_visitor`."""
+    from datetime import timedelta
+
+    from wildinbox.storage.models import Decision as DecisionRow
+    from wildinbox.ui.logic import is_visitor
+
+    # suggestion, reviews (outcome, label) in order, a newer decision's suggestion
+    cases: dict[str, tuple[str | None, list[tuple[str, str | None]], str | None]] = {
+        "suggested-animal": ("raccoon", [], None),
+        "suggested-empty": ("empty", [], None),
+        "no-suggestion": (None, [], None),
+        "corrected-to-animal": ("empty", [("corrected", "raccoon")], None),
+        "corrected-to-empty": ("raccoon", [("corrected", "empty")], None),
+        "unresolved": ("empty", [("unresolved", None)], None),
+        "superseded": ("raccoon", [("confirmed", "raccoon"), ("corrected", "empty")], None),
+        "newer-decision": ("raccoon", [], "empty"),
+    }
+    names = list(cases)
+    meta = {"files": {f"{n}.jpg": {"sequence_id": n} for n in names}}
+    batch = client.post(
+        "/batches",
+        files=_files(*[(f"{n}.jpg", jpeg(90 + i)) for i, n in enumerate(names)]),
+        data={"metadata": json.dumps(meta)},
+    ).json()
+    events = client.get("/events", params={"batch_id": batch["id"]}).json()["events"]
+    images = {
+        i["id"]: i["filename"]
+        for i in client.get(f"/batches/{batch['id']}/images").json()["images"]
+    }
+    by_case = {images[e["image_ids"][0]][:-4]: e["id"] for e in events}
+    with session_factory(settings.database_url)() as s:
+        for name, (suggested, _, newer) in cases.items():
+            d = s.scalar(
+                select(DecisionRow).where(DecisionRow.event_id == uuid.UUID(by_case[name]))
+            )
+            assert d is not None
+            d.suggested_label = suggested
+            if newer:
+                s.add(
+                    DecisionRow(
+                        event_id=d.event_id,
+                        model_release_id=d.model_release_id,
+                        policy_version="later",
+                        disposition="needs_review",
+                        suggested_label=newer,
+                        reasons=[],
+                        created_at=d.created_at + timedelta(hours=1),
+                    )
+                )
+        s.commit()
+    for name, (_, reviews, _) in cases.items():
+        for outcome, label in reviews:
+            res = client.post(
+                f"/events/{by_case[name]}/reviews",
+                json={"reviewer": "ann", "outcome": outcome, "confirmed_label": label},
+            )
+            assert res.status_code == 201, res.text
+
+    rows = client.get("/events", params={"batch_id": batch["id"]}).json()["events"]
+    expected = {e["id"] for e in rows if is_visitor(e)}
+    animal = client.get("/events", params={"batch_id": batch["id"], "animal": True}).json()
+    other = client.get("/events", params={"batch_id": batch["id"], "animal": False}).json()
+    assert {e["id"] for e in animal["events"]} == expected
+    assert {e["id"] for e in other["events"]} == {e["id"] for e in rows} - expected
+    assert {n for n, eid in by_case.items() if eid in expected} == {
+        "suggested-animal",
+        "corrected-to-animal",
+        "unresolved",
+    }

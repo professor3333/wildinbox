@@ -115,3 +115,15 @@ def card_metadata(camera: str | None, raw: bytes | None) -> dict[str, Any] | Non
     if camera and camera.strip() and "camera_id" not in meta:
         meta["camera_id"] = camera.strip()
     return meta or None
+
+
+def batch_label(batch: dict[str, Any]) -> str:
+    """How a batch is shown in selectors: upload time, size, and a short id, so two
+    uploads in the same minute with the same counts stay distinguishable. Takes a
+    `GET /batches` row or a `GET /batches/{id}` summary. Selectors keep the
+    batch id as the value; this is display only."""
+    counts = batch.get("counts") or batch
+    return (
+        f"{batch['created_at'][:16].replace('T', ' ')} · {counts['images']} files · "
+        f"{counts['events']} events · {batch['id'][:8]}"
+    )

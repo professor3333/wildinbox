@@ -61,7 +61,7 @@ def _event(
 ) -> dict[str, Any]:
     return {
         "id": eid,
-        "camera_id": "north",
+        "camera_id": kw.get("camera_id", "north"),
         "start_at": kw.get("start_at", "2024-05-01T21:00:00"),
         "image_ids": kw.get("image_ids", [f"{eid}-a", f"{eid}-b"]),
         "decision": {
@@ -129,6 +129,9 @@ def _png() -> bytes:
 class FakeApi:
     def __init__(self) -> None:
         self.reviews: list[tuple[str, str, str, str | None]] = []
+        self.batch_rows = [
+            {"id": "b1000000-0000", "created_at": "2024-05-02T08:00:00", "images": 6, "events": 3}
+        ]
         self.items = [
             _event("e1", "raccoon"),
             _event("e2", "empty", start_at="2024-05-02T02:00:00"),
@@ -146,10 +149,28 @@ class FakeApi:
         }
 
     def batches(self) -> list[dict[str, Any]]:
-        return [{"id": "b1", "created_at": "2024-05-02T08:00:00", "images": 6, "events": 3}]
+        return list(self.batch_page()["batches"])
+
+    def batch_page(self, limit: int = 50, offset: int = 0) -> dict[str, Any]:
+        rows = self.batch_rows
+        nxt = offset + limit if offset + limit < len(rows) else None
+        return {"batches": rows[offset : offset + limit], "total": len(rows), "next_offset": nxt}
+
+    def cameras(self, batch_id: str | None = None) -> list[dict[str, Any]]:
+        counts: dict[str | None, int] = {}
+        for e in self.items:
+            counts[e.get("camera_id")] = counts.get(e.get("camera_id"), 0) + 1
+        named = sorted(c for c in counts if c)
+        return [{"camera_id": c, "events": counts[c]} for c in [*named, None] if c in counts]
 
     def events(self, **params: Any) -> dict[str, Any]:
         items = list(self.items)
+        if params.get("camera_id"):
+            items = [e for e in items if e.get("camera_id") == params["camera_id"]]
+        if params.get("animal") is not None:
+            items = [e for e in items if is_visitor(e) == params["animal"]]
+        if params.get("reviewed") is True:
+            items = [e for e in items if e["latest_review"]]
         if params.get("disposition"):
             items = [e for e in items if e["decision"]["disposition"] == params["disposition"]]
         if params.get("audit") is not None:
@@ -160,7 +181,8 @@ class FakeApi:
             items = [
                 e
                 for e in items
-                if params["start_after"] <= e["start_at"] < params.get("start_before", "9999")
+                if e["start_at"]
+                and params["start_after"] <= e["start_at"] < params.get("start_before", "9999")
             ]
         off, lim = params.get("offset", 0), params.get("limit", 100)
         page = items[off : off + lim]
@@ -199,10 +221,12 @@ class FakeApi:
         return {**e, "images": images, "reviews": reviews}
 
     def batch(self, batch_id: str) -> dict[str, Any]:
+        row = next((b for b in self.batch_rows if b["id"] == batch_id), self.batch_rows[0])
         return {
-            "created_at": "2024-05-02T08:00:00",
+            "id": row["id"],
+            "created_at": row["created_at"],
             "status": "completed_with_errors",
-            "counts": {"images": 7, "events": 3},
+            "counts": {"images": row["images"], "events": row["events"]},
             "progress": {"images_scored": 6, "images_to_score": 6, "finished": True},
             "failures": [
                 {"filename": "broken.jpg", "stage": "validation", "error": "unreadable image"}
@@ -260,6 +284,96 @@ def test_last_nights_visitors_show_animal_events_of_that_night_only() -> None:
     assert "coyote" not in text  # daytime
     captions = " ".join(c.value for c in at.caption)
     assert "1 animal event(s) of 2" in captions  # the 02:00 event is empty
+
+
+def _night_of_empties(n: int = 500) -> list[dict[str, Any]]:
+    """`n` empty events on one night, then a raccoon from a camera seen only then."""
+    from datetime import timedelta
+
+    start = datetime(2024, 5, 1, 21)
+    items = [
+        _event(f"x{i}", "empty", start_at=(start + timedelta(seconds=i)).isoformat())
+        for i in range(n)
+    ]
+    late = (start + timedelta(seconds=n)).isoformat()
+    return [*items, _event("late", "raccoon", start_at=late, camera_id="late-cam")]
+
+
+def test_visitors_count_the_whole_night_not_one_page() -> None:
+    api = FakeApi()
+    api.items = _night_of_empties()
+    at = _app(api)
+    at.sidebar.radio(key="page").set_value("Last night's visitors").run()
+    assert not at.exception
+    assert not any("No animal events" in i.value for i in at.info)
+    assert any("raccoon" in m.value for m in at.markdown)
+    assert "1 animal event(s) of 501" in " ".join(c.value for c in at.caption)
+
+
+def test_visitors_open_on_the_last_dated_night_despite_undated_events() -> None:
+    api = FakeApi()
+    undated = [_event(f"u{i}", "empty", start_at=None) for i in range(600)]
+    api.items = [*api.items, *undated]  # undated events sort last, as in the API
+    at = _app(api)
+    at.sidebar.radio(key="page").set_value("Last night's visitors").run()
+    assert not at.exception
+    assert at.date_input(key="night").value == date(2024, 5, 1)
+    captions = " ".join(c.value for c in at.caption)
+    assert "600 event(s) have no capture time" in captions
+    assert "1 animal event(s) of 2" in captions
+
+
+def test_timeline_reaches_every_event_and_camera() -> None:
+    api = FakeApi()
+    api.items = _night_of_empties()
+    at = _app(api)
+    at.sidebar.radio(key="page").set_value("Timeline").run()
+    assert not at.exception
+    assert "late-cam" in at.selectbox(key="timeline-camera").options
+    assert not any("late-cam" in m.value for m in at.markdown)  # not on the first page
+    for _ in range(5):
+        at.button(key="next-timeline-All cameras").click().run()
+    assert any("late-cam" in m.value for m in at.markdown)
+    assert at.button(key="next-timeline-All cameras").disabled
+    at.selectbox(key="timeline-camera").set_value("late-cam").run()
+    assert any(c.value.startswith("1 event(s)") for c in at.caption)
+    assert any("late-cam" in m.value for m in at.markdown)
+
+
+def test_lookalike_batches_stay_separate_and_selected() -> None:
+    api = FakeApi()
+    api.batch_rows = [
+        {"id": "aaaa1111-x", "created_at": "2024-05-02T08:00:55", "images": 6, "events": 3},
+        {"id": "bbbb2222-x", "created_at": "2024-05-02T08:00:01", "images": 6, "events": 3},
+    ]
+    at = _app(api)
+    selector = at.sidebar.selectbox(key="batch")
+    assert len(selector.options) == 3 and len(set(selector.options)) == 3
+    selector.set_value("bbbb2222-x").run()
+    api.batch_rows[1] = {**api.batch_rows[1], "images": 9, "events": 5}  # still processing
+    at.run()
+    assert at.sidebar.selectbox(key="batch").value == "bbbb2222-x"
+    assert not at.exception
+
+
+def test_batches_older_than_the_selector_stay_reachable() -> None:
+    api = FakeApi()
+    api.batch_rows = [
+        {"id": f"{n:08d}-x", "created_at": f"2024-05-{1 + n // 24:02d}T{n % 24:02d}:00:00"}
+        | {"images": 1, "events": 1}
+        for n in range(60, 0, -1)
+    ]
+    at = _app(api)
+    assert len(at.sidebar.selectbox(key="batch").options) == 51
+    assert any("newest of 60" in c.value for c in at.sidebar.caption)
+    at.sidebar.radio(key="page").set_value("Batches").run()
+    for _ in range(5):
+        at.button(key="next-batches").click().run()
+    oldest = api.batch_rows[-1]["id"]
+    at.button(key=f"focus-{oldest}").click().run()
+    assert not at.exception
+    assert at.sidebar.radio(key="page").value == "Review queue"
+    assert at.sidebar.selectbox(key="batch").value == oldest
 
 
 def test_monitoring_page_separates_signals_from_measured_accuracy() -> None:

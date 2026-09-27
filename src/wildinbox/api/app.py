@@ -15,9 +15,9 @@ from fastapi import FastAPI, Header, Request
 from fastapi.concurrency import run_in_threadpool
 from fastapi.responses import HTMLResponse, JSONResponse, PlainTextResponse, Response
 from pydantic import BaseModel, Field, ValidationError
-from sqlalchemy import func, select
+from sqlalchemy import and_, exists, func, or_, select
 from sqlalchemy.exc import IntegrityError
-from sqlalchemy.orm import Session, sessionmaker
+from sqlalchemy.orm import Session, aliased, sessionmaker
 from starlette.datastructures import UploadFile
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
@@ -32,6 +32,7 @@ from wildinbox.api.uploads import (
     parse_metadata,
     request_fingerprint,
 )
+from wildinbox.class_map import EMPTY_CLASS
 from wildinbox.config import load_config
 from wildinbox.inference.releases import active_release_id, ensure_test_release, release_notice
 from wildinbox.schemas import Review as ReviewContract
@@ -196,6 +197,33 @@ def image_row(img: Image) -> dict[str, Any]:
         "event_id": str(img.event_id) if img.event_id else None,
         "original_url": f"/images/{img.id}/original" if img.storage_key else None,
     }
+
+
+def animal_event() -> Any:
+    """SQL for "contains an animal by its current label", the rule the review
+    interface's `is_visitor` applies to one event: the current review's label
+    (an unresolved review counts, since a person saw something), otherwise the
+    latest decision's suggestion; empty or no label is not an animal.
+
+    Written as EXISTS clauses, which Postgres plans as semi-joins; the
+    equivalent scalar subqueries inflate the cost estimate enough to trigger
+    JIT compilation, which then dominates a small query."""
+    later_review, later_decision = aliased(Review), aliased(Decision)
+    current_review_names_animal = exists().where(
+        Review.event_id == Event.id,
+        ~exists().where(later_review.previous_review_id == Review.id),
+        or_(Review.outcome == "unresolved", Review.confirmed_label != EMPTY_CLASS),
+    )
+    latest_decision_suggests_animal = exists().where(
+        Decision.event_id == Event.id,
+        Decision.suggested_label != EMPTY_CLASS,
+        ~exists().where(
+            later_decision.event_id == Decision.event_id,
+            later_decision.created_at > Decision.created_at,
+        ),
+    )
+    reviewed = exists().where(Review.event_id == Event.id)
+    return or_(current_review_names_animal, and_(~reviewed, latest_decision_suggests_animal))
 
 
 def event_row(session: Session, event: Event, detail: bool = False) -> dict[str, Any]:
@@ -713,31 +741,68 @@ def create_app(
         return batch
 
     @app.get("/batches")
-    def list_batches(limit: int = 50) -> dict[str, Any]:
-        """Most recent batches first."""
-        limit = max(1, min(limit, 200))
+    def list_batches(limit: int = 50, offset: int = 0) -> dict[str, Any]:
+        """Batches, most recent first, a page at a time: follow `next_offset`
+        to reach every batch, however old."""
+        limit, offset = max(1, min(limit, 200)), max(0, offset)
         with sessions()() as s:
-            batches = s.scalars(
-                select(Batch)
-                .where(Batch.workspace == settings.workspace)
-                .order_by(Batch.created_at.desc())
+            mine = Batch.workspace == settings.workspace
+            total = s.scalar(select(func.count()).select_from(Batch).where(mine)) or 0
+            images = (
+                select(func.count()).where(Image.batch_id == Batch.id).correlate(Batch)
+            ).scalar_subquery()
+            events = (
+                select(func.count()).where(Event.batch_id == Batch.id).correlate(Batch)
+            ).scalar_subquery()
+            rows = s.execute(
+                select(Batch.id, Batch.status, Batch.created_at, images, events)
+                .where(mine)
+                .order_by(Batch.created_at.desc(), Batch.id)
                 .limit(limit)
+                .offset(offset)
             ).all()
+            cameras: dict[uuid.UUID, list[str]] = defaultdict(list)
+            for batch_id, camera in s.execute(
+                select(Image.batch_id, Image.camera_id)
+                .where(Image.batch_id.in_([r.id for r in rows]), Image.camera_id.is_not(None))
+                .distinct()
+                .order_by(Image.batch_id, Image.camera_id)
+            ):
+                cameras[batch_id].append(camera)
             return {
                 "batches": [
                     {
-                        "id": str(b.id),
-                        "status": b.status,
-                        "created_at": b.created_at.isoformat(),
-                        "images": len(b.images),
-                        "events": s.scalar(
-                            select(func.count()).select_from(Event).where(Event.batch_id == b.id)
-                        ),
-                        "cameras": sorted({i.camera_id for i in b.images if i.camera_id}),
+                        "id": str(r.id),
+                        "status": r.status,
+                        "created_at": r.created_at.isoformat(),
+                        "images": r[3],
+                        "events": r[4],
+                        "cameras": cameras[r.id],
                     }
-                    for b in batches
-                ]
+                    for r in rows
+                ],
+                "total": total,
+                "limit": limit,
+                "offset": offset,
+                "next_offset": offset + limit if offset + limit < total else None,
             }
+
+    @app.get("/cameras")
+    def list_cameras(batch_id: uuid.UUID | None = None) -> dict[str, Any]:
+        """Every camera with events (in a batch, or anywhere), with its event count.
+        Events without a camera are counted under `camera_id: null`."""
+        with sessions()() as s:
+            q = (
+                select(Event.camera_id, func.count())
+                .join(Batch)
+                .where(Batch.workspace == settings.workspace)
+            )
+            if batch_id:
+                q = q.where(Event.batch_id == batch_id)
+            rows = s.execute(
+                q.group_by(Event.camera_id).order_by(Event.camera_id.nulls_last())
+            ).all()
+            return {"cameras": [{"camera_id": c, "events": n} for c, n in rows]}
 
     @app.get("/batches/{batch_id}")
     def get_batch(batch_id: uuid.UUID) -> dict[str, Any]:
@@ -823,13 +888,15 @@ def create_app(
         reason: str | None = None,
         reviewed: bool | None = None,
         audit: bool | None = None,
+        animal: bool | None = None,
         start_after: datetime | None = None,
         start_before: datetime | None = None,
         limit: int = 100,
         offset: int = 0,
     ) -> dict[str, Any]:
         """Events in time order. `label` matches the suggested label; `reason`
-        a review reason; `reviewed` whether any human review exists;
+        a review reason; `reviewed` whether any human review exists; `animal`
+        whether the current label (reviewed, else suggested) is an animal;
         `start_after`/`start_before` bound the event's start (camera local time)."""
         limit, offset = max(1, min(limit, 500)), max(0, offset)
         with sessions()() as s:
@@ -848,6 +915,8 @@ def create_app(
                 q = q.where(Event.reviews.any() if reviewed else ~Event.reviews.any())
             if audit is not None:
                 q = q.where(Event.decisions.any(Decision.audit_selected.is_(audit)))
+            if animal is not None:
+                q = q.where(animal_event() if animal else ~animal_event())
             if start_after is not None:
                 q = q.where(Event.start_at >= _naive(start_after))
             if start_before is not None:

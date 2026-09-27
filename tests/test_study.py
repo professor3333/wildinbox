@@ -210,6 +210,9 @@ class StudyApi:
     def batches(self) -> list[dict[str, Any]]:
         return []
 
+    def batch_page(self, limit: int = 50, offset: int = 0) -> dict[str, Any]:
+        return {"batches": [], "total": 0, "next_offset": None}
+
     def study_join(self, plan_id: str, code: str) -> dict[str, Any]:
         return self.plan
 
