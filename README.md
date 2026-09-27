@@ -148,6 +148,7 @@ Every headline claim and where it comes from:
 | 1,000 images in 111 s; metadata p95 < 360 ms (2-vCPU VM) | `reports/staging/workers-1.json` | `scripts/loadtest.py` ([how](reports/staging/README.md#reproduce)) |
 | Worker crash or restart loses and duplicates nothing | `reports/serving/crash-demo.json`, `reports/staging/workers-1.json` | `scripts/crash_demo.py`, `scripts/loadtest.py --scenarios restart` |
 | Update cycle, promotion gate, rollback restores predictions | `reports/update/`, `reports/monitoring/acceptance.json` | `wildinbox update gate`, `scripts/rollback_restores.py` |
+| Deployment to retraining, gate, release, and rollback rehearsed end to end on current code (local stack, simulated reviews) | `reports/rehearsal/` | [reports/rehearsal/README.md](reports/rehearsal/README.md) |
 | Backup and restore | `reports/staging/backup-restore.log` | `deploy/staging/restore_drill.sh` |
 | A stranger can deploy the pinned release | `reports/staging/rehearsal/` | [docs/deployment.md](docs/deployment.md) |
 | Pilot review study: no demonstrated time saving (5 participants, protocol needs 8) | `reports/study/study-1/` (export, pre-registered analysis, post-hoc checks) | `wildinbox study posthoc --dir reports/study/study-1 --without author` |

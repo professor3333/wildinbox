@@ -265,9 +265,10 @@ def test_eval_cache_reuses_unchanged_inputs_and_refuses_other_preprocessing(
         )
 
 
-def test_update_candidate_uses_the_deployed_recipe_unchanged() -> None:
+@pytest.mark.parametrize("candidate", ["finetune-e3-update1", "finetune-e3-rehearsal"])
+def test_update_candidate_uses_the_deployed_recipe_unchanged(candidate: str) -> None:
     e3 = load_finetune_config(REPO_ROOT / "configs/experiments/finetune-e3-deep-balanced.yaml")
-    cand = load_finetune_config(REPO_ROOT / "configs/experiments/finetune-e3-update1.yaml")
+    cand = load_finetune_config(REPO_ROOT / f"configs/experiments/{candidate}.yaml")
     differs = {k for k in e3.model_dump() if e3.model_dump()[k] != cand.model_dump()[k]}
     assert differs == {"name", "description", "snapshot"}
     assert cand.snapshot is not None and e3.snapshot is None

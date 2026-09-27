@@ -1,0 +1,323 @@
+{
+  "label": "local-rehearsal",
+  "run_tag": "local-rehearsal-581ccd17",
+  "started_at": "2026-09-27T08:15:48.455777+00:00",
+  "api": "http://localhost:8000",
+  "release": {
+    "id": "finetune-e3-deep-balanced@7a25aea97c76",
+    "weights_sha256": "3ab6fec236ce4b418acdda78f94078ec3bd6331983e2186bd52aa11a1fd9b360",
+    "preprocessing_version": "6d9a950a6543",
+    "policy_version": "conservative/v2+378312635a29",
+    "is_test": false
+  },
+  "machine": {
+    "instance_type": "",
+    "region": "",
+    "vcpus": "",
+    "memory_bytes": "",
+    "cpu": "",
+    "kernel": "25.6.0",
+    "os": "",
+    "docker": "29.4.0",
+    "disk": "460Gi total, 66Gi free",
+    "containers": [
+      {
+        "Names": "wildinbox-ui-1",
+        "Image": "wildinbox-ui",
+        "Status": "Up 22 seconds (healthy)"
+      },
+      {
+        "Names": "wildinbox-api-1",
+        "Image": "wildinbox-api",
+        "Status": "Up 36 seconds (healthy)"
+      },
+      {
+        "Names": "wildinbox-worker-3",
+        "Image": "wildinbox-worker",
+        "Status": "Up 36 seconds"
+      },
+      {
+        "Names": "wildinbox-postgres-1",
+        "Image": "postgres:16-alpine",
+        "Status": "Up 40 hours (healthy)"
+      },
+      {
+        "Names": "wildinbox-redis-1",
+        "Image": "redis:7-alpine",
+        "Status": "Up 40 hours (healthy)"
+      },
+      {
+        "Names": "wildinbox-objects-1",
+        "Image": "chrislusf/seaweedfs:4.47",
+        "Status": "Up 40 hours (healthy)"
+      },
+      {
+        "Names": "wildinbox-test-pg",
+        "Image": "postgres:16-alpine",
+        "Status": "Up 2 days"
+      }
+    ]
+  },
+  "image_bytes": {
+    "batch_dir": "data/samples/dev-1000",
+    "files": 1000,
+    "total": 109826774,
+    "mean": 109827
+  },
+  "scenarios": {
+    "thousand": {
+      "batches": [
+        {
+          "batch_id": "6963b840-60a6-4760-b87c-1b85eb208f94",
+          "status": "completed",
+          "counts": {
+            "images": 1000,
+            "pending": 0,
+            "valid": 1000,
+            "invalid": 0,
+            "duplicate": 0,
+            "events": 348,
+            "processing_failed": 0
+          },
+          "upload": {
+            "files": 1000,
+            "bytes": 109882774,
+            "seconds": 8.7,
+            "server_phases_seconds": {
+              "receive": 0.47,
+              "validate": 0.14,
+              "store": 5.48,
+              "db": 2.49
+            },
+            "server_after_receive_seconds": 8.11,
+            "transfer_seconds": 0.59,
+            "transfer_mbit_per_s": 1489.9
+          },
+          "processing": {
+            "attempts": 1,
+            "worker": "095fb5d5fafe:1:9c7da94f",
+            "queued_seconds": 1.2,
+            "processing_seconds": 167.2,
+            "images_per_second": 5.98,
+            "run_seconds": 166.0
+          },
+          "integrity": {
+            "images": 1000,
+            "valid": 1000,
+            "predictions": 1000,
+            "duplicate_predictions": 0,
+            "valid_without_prediction": 0,
+            "events": 348,
+            "decisions": 348,
+            "events_without_one_decision": 0,
+            "ok": true
+          },
+          "failures": []
+        }
+      ],
+      "wall_seconds": 176.7,
+      "memory_peak_mib": {
+        "wildinbox-api-1": 560,
+        "wildinbox-objects-1": 532,
+        "wildinbox-postgres-1": 53,
+        "wildinbox-redis-1": 10,
+        "wildinbox-test-pg": 47,
+        "wildinbox-ui-1": 86,
+        "wildinbox-worker-3": 576
+      }
+    },
+    "restart": {
+      "batches": [
+        {
+          "batch_id": "72659d45-de3a-4b63-84bf-4237cee1689e",
+          "status": "completed",
+          "counts": {
+            "images": 1000,
+            "pending": 0,
+            "valid": 1000,
+            "invalid": 0,
+            "duplicate": 0,
+            "events": 348,
+            "processing_failed": 0
+          },
+          "upload": {
+            "files": 1000,
+            "bytes": 109881774,
+            "seconds": 18.03,
+            "server_phases_seconds": {
+              "receive": 2.16,
+              "validate": 1.22,
+              "store": 6.51,
+              "db": 7.29
+            },
+            "server_after_receive_seconds": 15.02,
+            "transfer_seconds": 3.0,
+            "transfer_mbit_per_s": 293.0
+          },
+          "processing": {
+            "attempts": 2,
+            "worker": "095fb5d5fafe:1:af2db53c",
+            "queued_seconds": 246.2,
+            "processing_seconds": 309.8,
+            "images_per_second": 3.23,
+            "run_seconds": 63.7
+          },
+          "integrity": {
+            "images": 1000,
+            "valid": 1000,
+            "predictions": 1000,
+            "duplicate_predictions": 0,
+            "valid_without_prediction": 0,
+            "events": 348,
+            "decisions": 348,
+            "events_without_one_decision": 0,
+            "ok": true
+          },
+          "failures": [],
+          "restart": {
+            "scored_before": 400,
+            "events_before": 0,
+            "restart_seconds": 16.6
+          }
+        }
+      ],
+      "wall_seconds": 321.9,
+      "memory_peak_mib": {
+        "wildinbox-api-1": 590,
+        "wildinbox-objects-1": 506,
+        "wildinbox-postgres-1": 58,
+        "wildinbox-redis-1": 11,
+        "wildinbox-test-pg": 51,
+        "wildinbox-ui-1": 83,
+        "wildinbox-worker-3": 696
+      }
+    }
+  },
+  "latency_client": {
+    "GET /version": {
+      "requests": 200,
+      "p50_ms": 2.9,
+      "p95_ms": 6.0,
+      "max_ms": 7.8
+    },
+    "GET /batches/{id}": {
+      "requests": 200,
+      "p50_ms": 30.6,
+      "p95_ms": 191.3,
+      "max_ms": 491.3
+    },
+    "GET /jobs/{id}": {
+      "requests": 200,
+      "p50_ms": 6.2,
+      "p95_ms": 15.7,
+      "max_ms": 26.7
+    },
+    "GET /events (100 per page)": {
+      "requests": 200,
+      "p50_ms": 132.9,
+      "p95_ms": 1156.5,
+      "max_ms": 2102.6
+    },
+    "GET /events/{id}": {
+      "requests": 200,
+      "p50_ms": 38.9,
+      "p95_ms": 175.6,
+      "max_ms": 1183.0
+    }
+  },
+  "latency_server": {
+    "GET /batches/{batch_id}": {
+      "requests": 557,
+      "p50_ms": 69.3,
+      "p95_ms": 488.8,
+      "responses": 557,
+      "client_errors": 0,
+      "server_errors": 0
+    },
+    "GET /events": {
+      "requests": 209,
+      "p50_ms": 131.5,
+      "p95_ms": 1173.4,
+      "responses": 209,
+      "client_errors": 0,
+      "server_errors": 0
+    },
+    "GET /events/{event_id}": {
+      "requests": 1118,
+      "p50_ms": 14.8,
+      "p95_ms": 66.1,
+      "responses": 1118,
+      "client_errors": 0,
+      "server_errors": 0
+    },
+    "GET /health": {
+      "requests": 167,
+      "p50_ms": 12.6,
+      "p95_ms": 158.9,
+      "responses": 167,
+      "client_errors": 0,
+      "server_errors": 0
+    },
+    "GET /images/{image_id}/original": {
+      "requests": 2000,
+      "p50_ms": 18.0,
+      "p95_ms": 56.1,
+      "responses": 2368,
+      "client_errors": 0,
+      "server_errors": 0
+    },
+    "GET /jobs/{job_id}": {
+      "requests": 205,
+      "p50_ms": 4.8,
+      "p95_ms": 12.0,
+      "responses": 205,
+      "client_errors": 0,
+      "server_errors": 0
+    },
+    "GET /ready": {
+      "requests": 2,
+      "p50_ms": 555.6,
+      "p95_ms": 555.6,
+      "responses": 2,
+      "client_errors": 0,
+      "server_errors": 0
+    },
+    "GET /releases": {
+      "requests": 1,
+      "p50_ms": 234.0,
+      "p95_ms": 234.0,
+      "responses": 1,
+      "client_errors": 0,
+      "server_errors": 0
+    },
+    "GET /version": {
+      "requests": 207,
+      "p50_ms": 1.6,
+      "p95_ms": 3.2,
+      "responses": 207,
+      "client_errors": 0,
+      "server_errors": 0
+    },
+    "POST /batches": {
+      "requests": 2,
+      "p50_ms": 17518.3,
+      "p95_ms": 17518.3,
+      "responses": 2,
+      "client_errors": 0,
+      "server_errors": 0
+    }
+  },
+  "memory": {
+    "peak_mib": {
+      "wildinbox-api-1": 590,
+      "wildinbox-objects-1": 532,
+      "wildinbox-postgres-1": 60,
+      "wildinbox-redis-1": 11,
+      "wildinbox-test-pg": 51,
+      "wildinbox-ui-1": 86,
+      "wildinbox-worker-3": 696
+    },
+    "samples": 1050
+  },
+  "finished_at": "2026-09-27T08:25:49.920597+00:00"
+}
