@@ -102,8 +102,35 @@ def _frame_status(img: Image, has_prediction: bool) -> str:
 def batch_summary(session: Session, batch: Batch) -> dict[str, Any]:
     from wildinbox.storage.models import Prediction
 
-    counts = Counter(i.validation_status for i in batch.images)
-    events = session.scalars(select(Event.id).where(Event.batch_id == batch.id)).all()
+    # Counted in SQL: progress is polled every second while a batch processes,
+    # and loading every image of a large batch per poll starved other requests.
+    counts: Counter[str] = Counter(
+        {
+            status: n
+            for status, n in session.execute(
+                select(Image.validation_status, func.count())
+                .where(Image.batch_id == batch.id)
+                .group_by(Image.validation_status)
+            )
+        }
+    )
+    processing_failed = (
+        session.scalar(
+            select(func.count()).where(
+                Image.batch_id == batch.id, Image.processing_error.is_not(None)
+            )
+        )
+        or 0
+    )
+    events = session.scalar(select(func.count()).where(Event.batch_id == batch.id)) or 0
+    failed = session.scalars(
+        select(Image)
+        .where(
+            Image.batch_id == batch.id,
+            or_(Image.validation_status == "invalid", Image.processing_error.is_not(None)),
+        )
+        .order_by(Image.position)
+    ).all()
     job = batch.jobs[0] if batch.jobs else None
     scored = (
         session.scalar(
@@ -115,7 +142,7 @@ def batch_summary(session: Session, batch: Batch) -> dict[str, Any]:
         if job
         else 0
     )
-    to_score = sum(1 for i in batch.images if i.validation_status in ("pending", "valid"))
+    to_score = counts["pending"] + counts["valid"]
     failures = [
         {
             "image_id": str(i.id),
@@ -123,8 +150,7 @@ def batch_summary(session: Session, batch: Batch) -> dict[str, Any]:
             "stage": "validation" if i.validation_status == "invalid" else "inference",
             "error": i.validation_error or i.processing_error,
         }
-        for i in batch.images
-        if i.validation_status == "invalid" or i.processing_error
+        for i in failed
     ]
     return {
         "id": str(batch.id),
@@ -135,15 +161,15 @@ def batch_summary(session: Session, batch: Batch) -> dict[str, Any]:
         "completed_at": batch.completed_at.isoformat() if batch.completed_at else None,
         "grouping": batch.manifest.get("grouping"),
         "counts": {
-            "images": len(batch.images),
+            "images": sum(counts.values()),
             **{s: counts.get(s, 0) for s in ("pending", "valid", "invalid", "duplicate")},
-            "events": len(events),
-            "processing_failed": sum(1 for i in batch.images if i.processing_error),
+            "events": events,
+            "processing_failed": processing_failed,
         },
         "progress": {
             "images_to_score": to_score,
             "images_scored": int(scored or 0),
-            "images_failed": sum(1 for i in batch.images if i.processing_error),
+            "images_failed": processing_failed,
             "finished": batch.status in ("completed", "completed_with_errors", "failed"),
         },
         "failures": failures,

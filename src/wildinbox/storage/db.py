@@ -12,7 +12,10 @@ from sqlalchemy.orm import Session, sessionmaker
 
 @lru_cache(maxsize=8)
 def engine_for(url: str) -> Engine:
-    return create_engine(url, pool_pre_ping=True)
+    # JIT off: with a year of history, planner estimates for ordinary page and
+    # count queries cross the JIT threshold, and compiling took longer than
+    # running them (measured: 294 of 584 ms for a filtered count).
+    return create_engine(url, pool_pre_ping=True, connect_args={"options": "-c jit=off"})
 
 
 def session_factory(url: str) -> sessionmaker[Session]:

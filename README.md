@@ -394,12 +394,20 @@ worker ([serving report](reports/serving/README.md)):
 | Measure | Result | Target |
 |---|---|---|
 | 1,000 images scored, grouped, and decided | 78.5 s (12.7 images/s) | within 10 minutes |
-| Metadata API p95 latency | 3.5-139 ms | < 500 ms |
+| Metadata API p95 latency, near-empty database | 3.5-139 ms | < 500 ms |
+| Metadata API p95 latency, a year of history (262,000 images, 98,000 events), idle | 6-402 ms ([history load test](reports/history/README.md)) | < 500 ms |
+| The same while one 1,000-image batch processes | 104-475 ms | < 500 ms |
+| The same while two batches process at once, or a worker restarts | 154-980 ms: **target missed** by the review queue, batch list, and timeline | < 500 ms |
 | Worker killed mid-batch (real `SIGKILL`) | resumed; no lost inputs, duplicates, or early events | |
 
 Training the released model: 70 minutes on the M1's GPU (Metal).
 
 ## Limitations
+
+- **Metadata latency misses its target under concurrent processing** on the
+  laptop: with a year of history, the review queue reached 876-980 ms p95 while
+  two batches processed (it is 217 ms idle); monitoring requests took up to
+  13 s ([history load test](reports/history/README.md)).
 
 - **New cameras remain hard:** macro-F1 falls from 0.75 on training cameras to
   0.45 on new ones and varies from 0.24 to 0.57 by camera; small animals (36%

@@ -124,6 +124,7 @@ class Image(Base):
             "validation_status != 'invalid' OR validation_error IS NOT NULL", name="error_reason"
         ),
         Index("ix_images_sha256", "sha256"),
+        Index("ix_images_created_at", "created_at"),  # monitoring's time windows
     )
     id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
     batch_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("batches.id", ondelete="CASCADE"))
@@ -158,7 +159,10 @@ class Image(Base):
 
 class Event(Base):
     __tablename__ = "events"
-    __table_args__ = (UniqueConstraint("batch_id", "group_key"),)
+    __table_args__ = (
+        UniqueConstraint("batch_id", "group_key"),
+        Index("ix_events_created_at", "created_at"),  # monitoring's history window
+    )
     id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
     batch_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("batches.id", ondelete="CASCADE"))
     camera_id: Mapped[str | None] = mapped_column(String(200))
@@ -217,7 +221,10 @@ class Job(Base):
 
 class Prediction(Base):
     __tablename__ = "predictions"
-    __table_args__ = (UniqueConstraint("image_id", "model_release_id"),)
+    __table_args__ = (
+        UniqueConstraint("image_id", "model_release_id"),
+        Index("ix_predictions_created_at", "created_at"),  # monitoring's time windows
+    )
     id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
     image_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("images.id", ondelete="CASCADE"))
     event_id: Mapped[uuid.UUID | None] = mapped_column(

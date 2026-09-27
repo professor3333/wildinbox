@@ -870,3 +870,128 @@ def test_migration_records_the_grouping_of_earlier_batches(settings: Settings) -
         assert grouping(old) is None and grouping(chosen)["gap_seconds"] == 9
     finally:
         command.upgrade(cfg, "head")
+
+
+def _orm_event_views(s: Any) -> list[Any]:
+    """The earlier ORM implementation of `event_views`, kept as the reference."""
+    from sqlalchemy.orm import selectinload
+
+    from wildinbox.monitoring.metrics import EventView
+    from wildinbox.storage.models import Batch as BatchRow
+    from wildinbox.storage.models import Event as EventRow
+
+    out = []
+    for e, created in s.execute(
+        select(EventRow, BatchRow.created_at)
+        .join(BatchRow)
+        .options(
+            selectinload(EventRow.decisions),
+            selectinload(EventRow.reviews),
+            selectinload(EventRow.images),
+        )
+    ).all():
+        d = max(e.decisions, key=lambda d: d.created_at, default=None)
+        r = e.current_review
+        q = [i.quality for i in e.images if i.quality and "night" in i.quality]
+        out.append(
+            EventView(
+                camera=e.camera_id or "unknown",
+                start_at=e.start_at,
+                batch_id=str(e.batch_id),
+                batch_created_at=created,
+                decided_at=d.created_at if d else None,
+                audit_selected=bool(d.audit_selected) if d else False,
+                reviewed_label=r.confirmed_label if r else None,
+                release=d.model_release_id if d else None,
+                disposition=d.disposition if d else None,
+                label=d.suggested_label if d else None,
+                confidence=d.confidence if d else None,
+                reasons=list(d.reasons) if d else [],
+                review_outcome=r.outcome if r else None,
+                reviewer=r.reviewer if r else None,
+                night=[bool(x["night"]) for x in q],
+                blur=[float(x["blur"]) for x in q],
+            )
+        )
+    return out
+
+
+def test_monitoring_event_views_match_the_orm_reading(
+    client: TestClient, settings: Settings
+) -> None:
+    from datetime import timedelta
+
+    from wildinbox.monitoring.metrics import event_views
+    from wildinbox.storage.models import Decision as DecisionRow
+    from wildinbox.storage.models import Image as ImageRow
+
+    meta = {
+        "camera_id": "north",
+        "files": {
+            "a.jpg": {"sequence_id": "s1"},
+            "b.jpg": {"sequence_id": "s1"},
+            "c.jpg": {"sequence_id": "s2", "camera_id": None},
+        },
+    }
+    batch = client.post(
+        "/batches",
+        files=_files(("a.jpg", jpeg(95)), ("b.jpg", jpeg(96)), ("c.jpg", jpeg(97))),
+        data={"metadata": json.dumps(meta)},
+    ).json()
+    events = client.get("/events", params={"batch_id": batch["id"]}).json()["events"]
+    first = events[0]["id"]
+    for outcome, label in (("corrected", "raccoon"), ("unresolved", None)):
+        client.post(
+            f"/events/{first}/reviews",
+            json={"reviewer": "ann", "outcome": outcome, "confirmed_label": label},
+        )
+    with session_factory(settings.database_url)() as s:
+        d = s.scalar(select(DecisionRow).where(DecisionRow.event_id == uuid.UUID(first)))
+        assert d is not None
+        s.add(  # a newer decision under another policy wins
+            DecisionRow(
+                event_id=d.event_id,
+                model_release_id=d.model_release_id,
+                policy_version="later",
+                disposition="species_identified",
+                suggested_label="coyote",
+                confidence=0.9,
+                reasons=[],
+                audit_selected=True,
+                created_at=d.created_at + timedelta(minutes=1),
+            )
+        )
+        img = s.scalar(select(ImageRow).where(ImageRow.original_filename == "b.jpg"))
+        assert img is not None
+        img.quality = None  # a frame without quality is left out of night and blur
+        s.commit()
+        new, reference = event_views(s), _orm_event_views(s)
+    key = lambda v: (v.batch_id, v.start_at is None, v.camera, v.label or "")  # noqa: E731
+    assert sorted(new, key=key) == sorted(reference, key=key)
+    changed = next(v for v in new if v.label == "coyote")
+    assert changed.review_outcome == "unresolved" and changed.audit_selected
+    assert len(changed.night) == 1 and len(changed.blur) == 1
+
+
+def test_monitoring_analyses_only_its_history_window(
+    client: TestClient, settings: Settings
+) -> None:
+    from datetime import timedelta
+
+    from sqlalchemy import update as sa_update
+
+    from wildinbox.storage.models import Event as EventRow
+
+    for n in range(3):
+        client.post("/batches", files=_files((f"{n}.jpg", jpeg(98 + n))))
+    with session_factory(settings.database_url)() as s:
+        old = s.scalars(select(EventRow.id).limit(2)).all()
+        s.execute(
+            sa_update(EventRow)
+            .where(EventRow.id.in_(old))
+            .values(created_at=func.now() - timedelta(days=200))
+        )
+        s.commit()
+    history = client.get("/monitoring").json()["history"]
+    assert history["days"] == 90
+    assert (history["events_analysed"], history["older_events_excluded"]) == (1, 2)
