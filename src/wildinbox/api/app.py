@@ -133,6 +133,7 @@ def batch_summary(session: Session, batch: Batch) -> dict[str, Any]:
         "error": batch.error,
         "created_at": batch.created_at.isoformat(),
         "completed_at": batch.completed_at.isoformat() if batch.completed_at else None,
+        "grouping": batch.manifest.get("grouping"),
         "counts": {
             "images": len(batch.images),
             **{s: counts.get(s, 0) for s in ("pending", "valid", "invalid", "duplicate")},

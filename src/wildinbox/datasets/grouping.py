@@ -18,6 +18,11 @@ The default gap comes from CCT20: every within-sequence gap is <= 3 s, so 5 s
 never splits a trigger burst. Back-to-back re-triggers (19% of consecutive
 sequences start <= 5 s apart) are merged, so a time-grouped event can span
 several triggers of one visit.
+
+An upload may set its own gap (`gap_seconds`, 0 to `MAX_GAP_SECONDS`). The
+effective gap is recorded in the batch's manifest when the batch is created,
+and the worker groups from that record on every attempt, so neither a retry
+nor a later change to the default regroups a batch.
 """
 
 from __future__ import annotations
@@ -33,10 +38,34 @@ SEQUENCE_RULE = "sequence_id/v2"
 # time between two uses of a restarted counter.
 SEQUENCE_SPLIT_SECONDS = 300.0
 DEFAULT_GAP_SECONDS = 5.0
+# One hour: longer gaps would merge unrelated visits into one event.
+MAX_GAP_SECONDS = 3600.0
 
 
 def time_gap_rule_id(gap_seconds: float) -> str:
     return f"time_gap/v1(gap_s={gap_seconds:g})"
+
+
+def batch_grouping(gap_seconds: float | None) -> dict[str, object]:
+    """The grouping a batch is created with, recorded in its manifest: the
+    requested gap, or the default when the upload named none."""
+    gap = DEFAULT_GAP_SECONDS if gap_seconds is None else float(gap_seconds)
+    return {
+        "gap_seconds": gap,
+        "gap_source": "default" if gap_seconds is None else "request",
+        "time_gap_rule": time_gap_rule_id(gap),
+        "sequence_rule": SEQUENCE_RULE,
+    }
+
+
+def recorded_gap(manifest: dict[str, object]) -> float:
+    """The gap a batch was created with. Every batch records one (earlier batches
+    were backfilled with the default of their time), so a missing record is an
+    error rather than a reason to fall back to today's default."""
+    grouping = manifest.get("grouping")
+    if not isinstance(grouping, dict) or "gap_seconds" not in grouping:
+        raise ValueError("batch manifest has no recorded grouping gap")
+    return float(grouping["gap_seconds"])
 
 
 @dataclass(frozen=True)

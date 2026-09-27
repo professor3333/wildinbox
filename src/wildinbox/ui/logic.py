@@ -98,11 +98,14 @@ def label_choices(class_names: list[str]) -> list[str]:
     return [c for c in class_names if c != EMPTY_CLASS] + [EMPTY_CLASS]
 
 
-def card_metadata(camera: str | None, raw: bytes | None) -> dict[str, Any] | None:
+def card_metadata(
+    camera: str | None, raw: bytes | None, gap_seconds: float | None = None
+) -> dict[str, Any] | None:
     """The upload's `metadata` field from an optional card metadata file (the
-    API's format: `camera_id`, `captured_at`, `sequence_id`, or per-file values
-    under `files`) and the optional camera name typed in the form. The camera
-    name fills `camera_id` only when the file does not set one."""
+    API's format: `camera_id`, `captured_at`, `sequence_id`, `gap_seconds`, or
+    per-file values under `files`) and the camera name and grouping interval
+    set in the form. Each form value fills its field only when the file does
+    not set it."""
     meta: dict[str, Any] = {}
     if raw:
         try:
@@ -114,6 +117,8 @@ def card_metadata(camera: str | None, raw: bytes | None) -> dict[str, Any] | Non
         meta = loaded
     if camera and camera.strip() and "camera_id" not in meta:
         meta["camera_id"] = camera.strip()
+    if gap_seconds is not None and "gap_seconds" not in meta:
+        meta["gap_seconds"] = gap_seconds
     return meta or None
 
 

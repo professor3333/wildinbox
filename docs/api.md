@@ -60,7 +60,16 @@ checked, originals written to object storage, rows committed. The rest of the
 client's wait is network transfer.
 
 `metadata` may also give per-file values:
-`{"files": {"IMG_0001.JPG": {"camera_id": "...", "captured_at": "...", "sequence_id": "..."}}}`.
+`{"files": {"IMG_0001.JPG": {"camera_id": "...", "captured_at": "...", "sequence_id": "..."}}}`,
+and the batch's **grouping interval** `gap_seconds` (0 to 3600, default 5):
+photos from one camera without a sequence id stay in one capture event while
+each is at most that many seconds after the previous one. Sequence ids, when
+given, take precedence. The effective interval is recorded in the batch
+(`grouping` in the batch summary: `gap_seconds`, `gap_source` `request` or
+`default`, the `time_gap_rule`), every processing attempt groups from that
+record, and each event carries the rule that formed it (`grouping_rule`, e.g.
+`time_gap/v1(gap_s=10)`). An interval is part of the request's identity:
+the same files with a different interval make a new batch.
 Repeating a request (same `Idempotency-Key`, or identical content without
 one) returns the existing batch with `"duplicate_request": true`; reusing a key
 for different content is `409`. Files are checked by content, not extension:

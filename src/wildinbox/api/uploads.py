@@ -17,6 +17,7 @@ from typing import Any
 from pydantic import BaseModel, ConfigDict, Field, ValidationError
 from starlette.types import Message, Receive
 
+from wildinbox.datasets.grouping import DEFAULT_GAP_SECONDS, MAX_GAP_SECONDS, batch_grouping
 from wildinbox.settings import Settings
 
 SIGNATURES: list[tuple[bytes, str]] = [
@@ -76,6 +77,17 @@ class BatchMetadata(BaseModel):
         default=None, max_length=200, description="Default for all files."
     )
     files: dict[str, FileMetadata] = Field(default_factory=dict, description="Per filename.")
+    gap_seconds: float | None = Field(
+        default=None,
+        ge=0,
+        le=MAX_GAP_SECONDS,
+        allow_inf_nan=False,
+        description=(
+            "Grouping interval G: photos from one camera without a sequence id stay in one "
+            f"event while consecutive capture times are at most G seconds apart. Default "
+            f"{DEFAULT_GAP_SECONDS:g}. Sequence ids, when supplied, take precedence."
+        ),
+    )
 
     def for_file(self, filename: str) -> FileMetadata:
         own = self.files.get(filename, FileMetadata())
@@ -152,11 +164,15 @@ def check_file(
 
 
 def request_fingerprint(files: list[UploadedFile], metadata: BatchMetadata) -> str:
-    """Identifies an identical resubmission: same files, names, order, and metadata."""
-    payload = {
+    """Identifies an identical resubmission: same files, names, order, and metadata,
+    including the grouping interval. The interval joins the fingerprint only when
+    supplied, so requests without one keep the fingerprints they always had."""
+    payload: dict[str, Any] = {
         "files": [[f.filename, f.sha256, f.size, f.error_code] for f in files],
-        "metadata": metadata.model_dump(mode="json"),
+        "metadata": metadata.model_dump(mode="json", exclude={"gap_seconds"}),
     }
+    if metadata.gap_seconds is not None:
+        payload["gap_seconds"] = metadata.gap_seconds
     return hashlib.sha256(json.dumps(payload, sort_keys=True).encode()).hexdigest()
 
 
@@ -177,6 +193,7 @@ def manifest(
             for f in files
         ],
         "metadata": metadata.model_dump(mode="json"),
+        "grouping": batch_grouping(metadata.gap_seconds),
         "limits": {
             "max_files_per_batch": settings.max_files_per_batch,
             "max_file_bytes": settings.max_file_bytes,

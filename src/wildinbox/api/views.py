@@ -8,6 +8,7 @@ from __future__ import annotations
 from html import escape
 from typing import Any
 
+from wildinbox.datasets.grouping import DEFAULT_GAP_SECONDS, MAX_GAP_SECONDS
 from wildinbox.settings import Settings
 
 _STYLE = """
@@ -67,6 +68,8 @@ def upload_page(settings: Settings, auth_required: bool = False) -> str:
   <label>Photos (JPEG or PNG, up to {settings.max_files_per_batch} files,
     {limit_mb} MiB each)<br><input type="file" name="files" multiple required></label>
   <label>Camera id (optional)<br><input type="text" name="camera" maxlength="200"></label>
+  <label>Group photos within this many seconds (optional, default {DEFAULT_GAP_SECONDS:g})<br>
+    <input type="number" name="gap" min="0" max="{MAX_GAP_SECONDS:g}" step="any"></label>
   {token_field}
   <div><button type="submit">Upload</button> <span id="msg" class="muted"></span></div>
 </form>
@@ -76,7 +79,10 @@ document.getElementById("upload").addEventListener("submit", async (ev) => {{
   const form = ev.target, msg = document.getElementById("msg");
   const body = new FormData();
   for (const f of form.files.files) body.append("files", f);
-  if (form.camera.value) body.append("metadata", JSON.stringify({{camera_id: form.camera.value}}));
+  const meta = {{}};
+  if (form.camera.value) meta.camera_id = form.camera.value;
+  if (form.gap.value !== "") meta.gap_seconds = Number(form.gap.value);
+  if (Object.keys(meta).length) body.append("metadata", JSON.stringify(meta));
   msg.textContent = "Uploading...";
   const headers = form.token ? {{Authorization: "Bearer " + form.token.value}} : {{}};
   const res = await fetch("/batches", {{method: "POST", body, headers}});
