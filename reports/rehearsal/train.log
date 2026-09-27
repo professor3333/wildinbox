@@ -1,0 +1,41 @@
+/Users/dcxhagoromo/code/wildinbox/src/wildinbox/training/finetune.py:371: UserWarning: Converting a tensor with requires_grad=True to a scalar may lead to unexpected behavior.
+Consider using tensor.detach() first. (Triggered internally at /Users/runner/work/pytorch/pytorch/torch/csrc/autograd/generated/python_variable_methods.cpp:821.)
+  total_loss += float(loss) * len(y)
+INFO wildinbox.training.finetune finetune-e3-rehearsal epoch 1 step 0/666 loss 2.0912
+INFO wildinbox.training.finetune finetune-e3-rehearsal epoch 1 step 100/666 loss 1.7844
+INFO wildinbox.training.finetune finetune-e3-rehearsal epoch 1 step 200/666 loss 1.4429
+INFO wildinbox.training.finetune finetune-e3-rehearsal epoch 1 step 300/666 loss 1.2170
+INFO wildinbox.training.finetune finetune-e3-rehearsal epoch 1 step 400/666 loss 1.0686
+INFO wildinbox.training.finetune finetune-e3-rehearsal epoch 1 step 500/666 loss 0.9685
+INFO wildinbox.training.finetune finetune-e3-rehearsal epoch 1 step 600/666 loss 0.8852
+INFO wildinbox.training.finetune finetune-e3-rehearsal epoch 1 done: loss 0.8457, 1669 s
+Python(43168) MallocStackLogging: can't turn off malloc stack logging because it was not enabled.
+Python(43242) MallocStackLogging: can't turn off malloc stack logging because it was not enabled.
+INFO wildinbox.training.finetune finetune-e3-rehearsal epoch 2 step 0/666 loss 0.5289
+INFO wildinbox.training.finetune finetune-e3-rehearsal epoch 2 step 100/666 loss 0.4869
+INFO wildinbox.training.finetune finetune-e3-rehearsal epoch 2 step 200/666 loss 0.4422
+INFO wildinbox.training.finetune finetune-e3-rehearsal epoch 2 step 300/666 loss 0.4203
+INFO wildinbox.training.finetune finetune-e3-rehearsal epoch 2 step 400/666 loss 0.3970
+INFO wildinbox.training.finetune finetune-e3-rehearsal epoch 2 step 500/666 loss 0.3729
+INFO wildinbox.training.finetune finetune-e3-rehearsal epoch 2 step 600/666 loss 0.3618
+INFO wildinbox.training.finetune finetune-e3-rehearsal epoch 2 done: loss 0.3514, 908 s
+Python(47512) MallocStackLogging: can't turn off malloc stack logging because it was not enabled.
+Python(47526) MallocStackLogging: can't turn off malloc stack logging because it was not enabled.
+INFO wildinbox.training.finetune finetune-e3-rehearsal epoch 3 step 0/666 loss 0.2556
+INFO wildinbox.training.finetune finetune-e3-rehearsal epoch 3 step 100/666 loss 0.2780
+INFO wildinbox.training.finetune finetune-e3-rehearsal epoch 3 step 200/666 loss 0.2793
+INFO wildinbox.training.finetune finetune-e3-rehearsal epoch 3 step 300/666 loss 0.2743
+INFO wildinbox.training.finetune finetune-e3-rehearsal epoch 3 step 400/666 loss 0.2666
+INFO wildinbox.training.finetune finetune-e3-rehearsal epoch 3 step 500/666 loss 0.2562
+INFO wildinbox.training.finetune finetune-e3-rehearsal epoch 3 step 600/666 loss 0.2541
+INFO wildinbox.training.finetune finetune-e3-rehearsal epoch 3 done: loss 0.2509, 573 s
+Python(50630) MallocStackLogging: can't turn off malloc stack logging because it was not enabled.
+Python(50631) MallocStackLogging: can't turn off malloc stack logging because it was not enabled.
+Python(50632) MallocStackLogging: can't turn off malloc stack logging because it was not enabled.
+Python(50633) MallocStackLogging: can't turn off malloc stack logging because it was not enabled.
+2026/09/27 15:31:22 INFO mlflow.agent.hint: Load the `instrumenting-with-mlflow-tracing` skill at /Users/dcxhagoromo/code/wildinbox/.venv/lib/python3.12/site-packages/mlflow/assistant/skills/instrumenting-with-mlflow-tracing/SKILL.md before writing any tracing code; it ships with this MLflow install. Set MLFLOW_DISABLE_AGENT_HINT=1 to silence this.
+Python(50690) MallocStackLogging: can't turn off malloc stack logging because it was not enabled.
+Python(50691) MallocStackLogging: can't turn off malloc stack logging because it was not enabled.
+Python(50692) MallocStackLogging: can't turn off malloc stack logging because it was not enabled.
+INFO wildinbox.training.finetune fine-tuned model saved to models/finetune-e3-rehearsal
+fine-tuned model -> models/finetune-e3-rehearsal

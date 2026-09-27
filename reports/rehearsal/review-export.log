@@ -1,0 +1,5 @@
+batch 6963b840: completed, 1000 photos -> 348 events
+dispositions: {'needs_review': 348}
+corrected event 9b84e721: suggested dog (17%) -> opossum
+export: 348 rows, label sources {'pending_review': 347, 'review': 1}
+corrected row: observation=opossum source=review reviewer=rehearsal-reviewer release=finetune-e3-deep-balanced@7a25aea97c76 policy=conservative/v2+378312635a29
