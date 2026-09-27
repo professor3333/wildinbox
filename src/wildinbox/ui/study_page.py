@@ -138,6 +138,7 @@ def _decide(
             "interactions": s.setdefault("interactions", {}).get(key, 0) + 1,
             "shown_at": datetime.fromtimestamp(shown, UTC).isoformat(),
             "decided_at": datetime.fromtimestamp(now, UTC).isoformat(),
+            "decision_id": s.setdefault("shown_decision", {}).get(key),
         },
     )
     s["i"] += 1
@@ -172,6 +173,7 @@ def _trial(
             cols[n % 3].image(data, use_container_width=True)
     if step["condition"] == "suggested":
         d = event.get("decision") or {}
+        s.setdefault("shown_decision", {})[eid] = d.get("id")  # logged with the trial
         conf = d.get("confidence")
         reasons = "; ".join(REASON_TEXT.get(r, r) for r in d.get("reasons", []))
         st.markdown(

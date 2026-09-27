@@ -218,6 +218,7 @@ class StudyApi:
             "id": eid,
             "image_ids": [f"{eid}-a"],
             "decision": {
+                "id": f"decision-{eid}",
                 "suggested_label": "raccoon",
                 "confidence": 0.7,
                 "reasons": ["low_confidence"],
@@ -270,6 +271,9 @@ def test_study_page_hides_suggestions_in_the_grouped_condition_and_logs_timing()
         (2, "grouped", "skunk", 2),
     ]
     assert all(t["seconds"] >= 0 and t["participant"] == "P7" for t in api.trials)
+    assert [t["decision_id"] for t in api.trials] == [
+        f"decision-{t['event_id']}" if t["condition"] == "suggested" else None for t in api.trials
+    ]
     assert [(r["block"], r["difficulty"]) for r in api.ratings] == [(1, 2), (2, 4)]
     assert any("Thank you" in s.value for s in at.success)
 
@@ -372,3 +376,108 @@ def test_study_commands_work_against_a_token_protected_api(
                 err = capsys.readouterr().err
                 assert path in err and f"401 Unauthorized ({sent} sent)" in err
                 assert "WILDINBOX_TOKEN" in err
+
+
+def test_export_states_the_suggestion_each_trial_showed(settings: object) -> None:  # noqa: F811
+    from .test_uploads import jpeg
+
+    files = [
+        ("files", (f"{i}.jpg", jpeg(i, exif_time=f"2024:05:0{i + 1} 21:00:00"), "image/jpeg"))
+        for i in range(2)
+    ]
+    with TestClient(create_app(settings)) as c:  # type: ignore[arg-type]
+        batch = c.post("/batches", files=files).json()
+        grouped, suggested = c.get("/events", params={"batch_id": batch["id"]}).json()["events"]
+        practice = [str(uuid.uuid4()), str(uuid.uuid4())]
+        sets = {"A": [grouped["id"]], "B": [suggested["id"]], "practice": practice}
+        plan = c.post(
+            "/study/plans",
+            json={
+                "name": "p",
+                "protocol_sha256": "0" * 64,
+                "sets": sets,
+                "truth": {e: None for v in sets.values() for e in v},
+            },
+        ).json()["id"]
+        assert c.post(f"/study/plans/{plan}/participants", json={"code": "P0"}).json()["arm"] == 0
+        now = datetime.now(UTC).isoformat()
+
+        def trial(event: dict[str, Any], block: int, condition: str, **extra: Any) -> Any:
+            return c.post(
+                f"/study/plans/{plan}/trials",
+                json={
+                    "participant": "P0",
+                    "block": block,
+                    "condition": condition,
+                    "event_id": event["id"],
+                    "label": None,
+                    "seconds": 1.0,
+                    "interactions": 1,
+                    "shown_at": now,
+                    "decided_at": now,
+                    **extra,
+                },
+            )
+
+        shown = suggested["decision"]["id"]
+        # Only the event's own decision, and only when a suggestion was on screen.
+        assert trial(grouped, 1, "grouped", decision_id=shown).status_code == 422
+        assert trial(suggested, 2, "suggested", decision_id=str(uuid.uuid4())).status_code == 422
+        assert trial(suggested, 2, "suggested", decision_id=shown).status_code == 201
+        assert trial(grouped, 1, "grouped").status_code == 201
+        # A trial logged without the decision (as study-1's were): the event's
+        # latest decision made before it was shown.
+        assert c.post(f"/study/plans/{plan}/participants", json={"code": "P1"}).json()["arm"] == 1
+        assert trial(grouped, 1, "suggested", participant="P1").status_code == 201
+        export = c.get(f"/study/plans/{plan}/export").json()
+
+    by_event = {t["event_id"]: t for t in export["trials"] if t["participant"] == "P0"}
+    assert by_event[grouped["id"]]["displayed"] is None
+    (older,) = [t["displayed"] for t in export["trials"] if t["participant"] == "P1"]
+    assert older["source"] == "latest_before_shown"
+    assert older["decision_id"] == grouped["decision"]["id"]
+    d = by_event[suggested["id"]]["displayed"]
+    assert d["source"] == "logged" and d["decision_id"] == shown
+    assert d["suggested_label"] == suggested["decision"]["suggested_label"]
+    assert d["confidence"] == suggested["decision"]["confidence"]
+    assert d["model_release_id"] == suggested["decision"]["model_release_id"]
+    frames = export["events"][suggested["id"]]["frames"]
+    assert [f["image_id"] for f in frames] == suggested["image_ids"]
+    assert all(len(f["sha256"]) == 64 for f in frames)
+    assert export["events"][practice[0]] == {"frames": [], "decisions": []}
+
+
+def test_posthoc_counts_agreement_with_the_suggestion_shown() -> None:
+    from wildinbox.study.posthoc import posthoc, report
+
+    export = _export(8, speedup=2.0)
+    truth = export["plan"]["truth"]
+    export["plan"]["sets"] = build_sets(truth, 40, 3, seed=2)
+    # The model always suggests raccoon; participants always answer the truth.
+    export["events"] = {e: {"decisions": [{"suggested_label": "raccoon"}]} for e in truth}
+    for t in export["trials"]:
+        shown = t["condition"] == "suggested"
+        t["displayed"] = {"suggested_label": "raccoon", "source": "logged"} if shown else None
+
+    found = posthoc(export, PROTOCOL, without=["P0"])
+    timed = [e for s in ("A", "B") for e in export["plan"]["sets"][s]]
+    raccoons = sum(truth[e] == "raccoon" for e in timed)
+    s = found["suggestions"]
+    assert (s["timed_events"], s["correct"], s["correct_on_supported"]) == (80, raccoons, raccoons)
+    assert s["unsupported_events"] == sum(truth[e] == "skunk" for e in timed)
+    assert s["displayed_sources"] == {"logged": 8 * 40}
+    for code, row in found["participants"].items():
+        for c in ("grouped", "suggested"):
+            mine = [t for t in export["trials"] if t["participant"] == code]
+            events = [t["event_id"] for t in mine if t["condition"] == c]
+            assert row[c]["matches_model"] == sum(truth[e] == "raccoon" for e in events)
+            assert row[c]["accuracy"] == 1.0
+    a = found["answers"]["suggested"]
+    assert a["answered_other_species"] == a["unsupported_decisions"] > 0
+    assert found["summary_without"]["participants_analysed"] == 7
+    assert "Pre-declared: without P0" in report(found)
+
+    export["trials"][-1]["displayed"] = None
+    export["trials"][-1]["condition"] = "suggested"
+    with pytest.raises(ValueError, match="no displayed decision"):
+        posthoc(export, PROTOCOL, without=[])

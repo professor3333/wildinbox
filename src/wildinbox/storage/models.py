@@ -350,6 +350,8 @@ class StudyTrial(Base):
     interactions: Mapped[int] = mapped_column(Integer)
     shown_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
     decided_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    # The decision whose suggestion was on screen ("suggested" condition only).
+    decision_id: Mapped[uuid.UUID | None] = mapped_column()
 
 
 class StudyRating(Base):

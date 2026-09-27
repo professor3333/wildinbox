@@ -1,0 +1,140 @@
+{
+  "without": [
+    "author"
+  ],
+  "summary_without": {
+    "participants_analysed": 4,
+    "participants_excluded": [],
+    "enough_participants": false,
+    "median_seconds": {
+      "grouped": 2.37775,
+      "suggested": 1.87975
+    },
+    "median_seconds_difference": -0.6187500000000001,
+    "median_seconds_difference_ci95": [
+      -1.5975,
+      0.45100000000000007
+    ],
+    "share_faster_with_suggestions": 0.5,
+    "mean_accuracy": {
+      "grouped": 0.48125,
+      "suggested": 0.44743589743589746
+    },
+    "mean_accuracy_difference": -0.033814102564102555,
+    "mean_accuracy_difference_ci95": [
+      -0.2,
+      0.1323717948717949
+    ],
+    "verdict": "descriptive only: 4 participant(s), the protocol needs 8",
+    "workload": {
+      "events": 1000,
+      "needs_review_share": 1.0,
+      "automatic_share": 0.0,
+      "audit_rate": 0.05,
+      "grouped_minutes": 39.62916666666667,
+      "system_minutes": 31.329166666666666,
+      "audit_minutes": 0.0,
+      "time_saved_share": 0.20944169908526977
+    }
+  },
+  "suggestions": {
+    "timed_events": 80,
+    "correct": 28,
+    "unsupported_events": 24,
+    "supported_events": 56,
+    "correct_on_supported": 28,
+    "displayed_sources": {
+      "latest_before_shown": 200
+    }
+  },
+  "participants": {
+    "P1": {
+      "grouped": {
+        "trials": 40,
+        "matches_model": 22,
+        "accuracy": 0.5,
+        "median_seconds": 2.69
+      },
+      "suggested": {
+        "trials": 40,
+        "matches_model": 39,
+        "accuracy": 0.325,
+        "median_seconds": 1.0925
+      }
+    },
+    "P2": {
+      "grouped": {
+        "trials": 40,
+        "matches_model": 21,
+        "accuracy": 0.55,
+        "median_seconds": 2.2115
+      },
+      "suggested": {
+        "trials": 40,
+        "matches_model": 40,
+        "accuracy": 0.325,
+        "median_seconds": 0.8285
+      }
+    },
+    "P3": {
+      "grouped": {
+        "trials": 40,
+        "matches_model": 13,
+        "accuracy": 0.375,
+        "median_seconds": 2.234
+      },
+      "suggested": {
+        "trials": 40,
+        "matches_model": 22,
+        "accuracy": 0.55,
+        "median_seconds": 2.685
+      }
+    },
+    "P4": {
+      "grouped": {
+        "trials": 40,
+        "matches_model": 16,
+        "accuracy": 0.5,
+        "median_seconds": 2.5215
+      },
+      "suggested": {
+        "trials": 40,
+        "matches_model": 23,
+        "accuracy": 0.5897435897435898,
+        "median_seconds": 2.667
+      }
+    },
+    "author": {
+      "grouped": {
+        "trials": 40,
+        "matches_model": 13,
+        "accuracy": 0.45,
+        "median_seconds": 4.5855
+      },
+      "suggested": {
+        "trials": 40,
+        "matches_model": 40,
+        "accuracy": 0.375,
+        "median_seconds": 0.742
+      }
+    }
+  },
+  "answers": {
+    "grouped": {
+      "unsupported_decisions": 60,
+      "answered_other_species": 3,
+      "answered_empty": 42,
+      "answered_cant_tell": 0,
+      "empty_decisions": 35,
+      "empty_recognised": 33
+    },
+    "suggested": {
+      "unsupported_decisions": 60,
+      "answered_other_species": 0,
+      "answered_empty": 26,
+      "answered_cant_tell": 0,
+      "empty_decisions": 35,
+      "empty_recognised": 29
+    }
+  }
+}
