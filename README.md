@@ -211,10 +211,10 @@ The demo walk-through, with a real run's output: [`docs/demo.md`](docs/demo.md).
 |---|---|
 | Getting started | A one-screen guide for first-time users (no other documentation needed). |
 | Upload | Upload photos with a camera name or the card's metadata file (capture times, sequences, cameras per file); follow processing; see unusable files and why. |
-| Batches | Progress, counts, and failed files for every upload. |
+| Batches | Progress, counts, and failed files for every upload, ten at a time; **Review this batch** selects any of them, however old. The sidebar's batch selector lists the 50 newest. |
 | Review queue | Events that need a person: frames, suggestion, confidence, and why. Accept, pick another species, choose empty, type an unsupported species, or "can't tell"; every event opens to all frames, per-frame predictions, and its full review history. |
-| Timeline | Events by day and camera. |
-| Last night's visitors | The best frame of every animal event in one night. |
+| Timeline | Every event in time order, 100 per page, filtered by any camera in the batch. |
+| Last night's visitors | The best frame of every animal event in one night, 12 per page; counts cover the whole night. |
 | Automatically filtered | Events automation set aside as empty; label one to recover it. |
 | Audit queue | A random sample (default 5%, `WILDINBOX_AUDIT_RATE`) of automatic decisions, each with the rule that chose it. |
 | Export | The observation CSV ([format](docs/export_format.md)). |
@@ -230,9 +230,10 @@ appended; the model's suggestion is never overwritten.
 | Endpoint | Purpose |
 |---|---|
 | `POST /batches` | Upload `files` plus optional `metadata`; returns `202` with the batch and job. `Idempotency-Key` makes retries safe. |
-| `GET /batches`, `GET /batches/{id}` | Recent batches; progress, counts, every failed file, job lifecycle, pinned release |
+| `GET /batches`, `GET /batches/{id}` | Every batch, newest first, a page at a time; progress, counts, every failed file, job lifecycle, pinned release |
 | `GET /batches/{id}/export` | Observations with provenance (`?format=csv` or `json`); columns in [`docs/export_format.md`](docs/export_format.md) |
-| `GET /events`, `GET /events/{id}` | Paginated, filterable events; frames, predictions, decision, reviews |
+| `GET /events`, `GET /events/{id}` | Paginated, filterable events (including `animal`, by current label); frames, predictions, decision, reviews |
+| `GET /cameras` | Every camera with events, and how many |
 | `POST /events/{id}/reviews` | Append a review |
 | `GET /version`, `GET /releases` | Active release; all releases and the activation history |
 | `GET /health`, `GET /ready` | Liveness; readiness (database, queue, object store, expected release loaded) |

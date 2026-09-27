@@ -58,7 +58,19 @@ class ApiClient:
         return out
 
     def batches(self) -> list[dict[str, Any]]:
-        out: list[dict[str, Any]] = self._json(self.http.get("/batches"))["batches"]
+        """The most recent batches; `batch_page` reaches older ones."""
+        out: list[dict[str, Any]] = self.batch_page()["batches"]
+        return out
+
+    def batch_page(self, limit: int = 50, offset: int = 0) -> dict[str, Any]:
+        out: dict[str, Any] = self._json(
+            self.http.get("/batches", params={"limit": limit, "offset": offset})
+        )
+        return out
+
+    def cameras(self, batch_id: str | None = None) -> list[dict[str, Any]]:
+        params = {"batch_id": batch_id} if batch_id else None
+        out: list[dict[str, Any]] = self._json(self.http.get("/cameras", params=params))["cameras"]
         return out
 
     def batch(self, batch_id: str) -> dict[str, Any]:

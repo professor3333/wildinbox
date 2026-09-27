@@ -10,22 +10,22 @@ from __future__ import annotations
 import os
 import time
 from datetime import date, datetime
-from typing import Any
 
 import streamlit as st
 
 from wildinbox.ui import monitoring, review
 from wildinbox.ui.client import ApiClient, ApiError
 from wildinbox.ui.logic import (
+    batch_label,
     card_metadata,
     current_label,
-    is_visitor,
     last_night,
     night_window,
     representative_frame,
 )
 
 PAGE_SIZE = 8
+VISITOR_PAGE = 12
 OTHER = "other species…"
 CANT_TELL = "can't tell"
 
@@ -73,19 +73,6 @@ def when(ts: str | None) -> str:
     return datetime.fromisoformat(ts).strftime("%a %d %b %Y, %H:%M:%S")
 
 
-def batch_label(b: dict[str, Any]) -> str:
-    return f"{b['created_at'][:16].replace('T', ' ')} · {b['images']} files · {b['events']} events"
-
-
-def _focus_batch(api: ApiClient, batch_id: str) -> None:
-    """Select a batch everywhere and open its review queue (runs before the rerun)."""
-    for b in api.batches():
-        if b["id"] == batch_id:
-            st.session_state["batch"] = batch_label(b)
-            st.session_state["page"] = "Review queue"
-            return
-
-
 # ------------------------------------------------------------------ sidebar
 
 
@@ -118,7 +105,7 @@ def sidebar(api: ApiClient) -> tuple[str, str | None, str, list[str]]:
         reviewer = st.sidebar.text_input("Your name (recorded with reviews)", key="reviewer")
     try:
         version = api.version()
-        batches = api.batches()
+        listing = api.batch_page()
     except (ApiError, OSError) as e:
         st.error(f"The API is not reachable: {e}")
         st.stop()
@@ -128,9 +115,32 @@ def sidebar(api: ApiClient) -> tuple[str, str | None, str, list[str]]:
             release.get("notice") or "TEST predictor: suggestions are not model output."
         )
     st.sidebar.caption(f"Release `{release.get('id')}`  \nPolicy `{release.get('policy_version')}`")
-    options = {"All batches": None} | {batch_label(b): b["id"] for b in batches}
-    label = st.sidebar.selectbox("Batch", list(options), key="batch")
-    return page, options[label], reviewer.strip(), list(release.get("class_names") or [])
+    # Options are batch ids; labels are display only, so two batches that look
+    # alike stay separate and a selection survives its counts changing.
+    labels = {b["id"]: batch_label(b) for b in listing["batches"]}
+    selected = st.session_state.get("batch", review.ALL_BATCHES)
+    if selected != review.ALL_BATCHES and selected not in labels:
+        try:  # an older batch, chosen on the Batches page
+            labels[selected] = batch_label(api.batch(selected))
+        except ApiError:
+            st.session_state["batch"] = review.ALL_BATCHES
+    batch_id = st.sidebar.selectbox(
+        "Batch",
+        [review.ALL_BATCHES, *labels],
+        key="batch",
+        format_func=lambda i: "All batches" if i == review.ALL_BATCHES else labels[i],
+    )
+    if listing["total"] > len(listing["batches"]):
+        st.sidebar.caption(
+            f"Showing the {len(listing['batches'])} newest of {listing['total']} batches; "
+            "open older ones from the Batches page."
+        )
+    return (
+        page,
+        None if batch_id == review.ALL_BATCHES else batch_id,
+        reviewer.strip(),
+        list(release.get("class_names") or []),
+    )
 
 
 # ------------------------------------------------------------------ visitors
@@ -138,36 +148,44 @@ def sidebar(api: ApiClient) -> tuple[str, str | None, str, list[str]]:
 
 def visitors_page(api: ApiClient, batch_id: str | None) -> None:
     st.header("Last night's visitors")
+    # The default night comes from the newest events with a capture time;
+    # undated events sort last and would otherwise crowd them out.
+    dated = {"batch_id": batch_id, "start_after": "0001-01-01T00:00:00"}
     try:
         total = api.events(batch_id=batch_id, limit=1)["total"]
-        recent = api.events(batch_id=batch_id, limit=500, offset=max(0, total - 500))["events"]
+        n_dated = api.events(**dated, limit=1)["total"]
+        recent = api.events(**dated, limit=500, offset=max(0, n_dated - 500))["events"]
     except ApiError as e:
         st.error(e.detail)
         return
     starts = [datetime.fromisoformat(e["start_at"]) for e in recent if e.get("start_at")]
     day = st.date_input("Night starting on", value=last_night(starts, date.today()), key="night")
     start, end = night_window(day)
-    events = api.events(
-        batch_id=batch_id, start_after=start.isoformat(), start_before=end.isoformat(), limit=500
-    )["events"]
-    visitors = [e for e in events if is_visitor(e)]
-    undated = (
-        api.events(batch_id=batch_id, limit=1)["total"]
-        - api.events(batch_id=batch_id, start_after="0001-01-01T00:00:00", limit=1)["total"]
-    )
+    window = {
+        "batch_id": batch_id,
+        "start_after": start.isoformat(),
+        "start_before": end.isoformat(),
+    }
+    # Every count is the API's total over the whole night, not over the page shown.
+    key = f"visitors-{day}"
+    offset = st.session_state.get(f"offset-{key}", 0)
+    in_window = api.events(**window, limit=1)["total"]
+    page = api.events(**window, animal=True, limit=VISITOR_PAGE, offset=offset)
+    animals = page["total"]
+    reviewed = api.events(**window, animal=True, reviewed=True, limit=1)["total"]
+    undated = total - n_dated
     if undated:
         st.caption(f"{undated} event(s) have no capture time and cannot be placed on a night.")
-    reviewed = sum(1 for e in visitors if e.get("latest_review"))
     st.caption(
-        f"{start:%a %d %b %Y %H:%M} to {end:%a %d %b %H:%M}: {len(visitors)} animal event(s) of "
-        f"{len(events)}, {reviewed} reviewed. Unreviewed labels are suggestions. Capture events "
+        f"{start:%a %d %b %Y %H:%M} to {end:%a %d %b %H:%M}: {animals} animal event(s) of "
+        f"{in_window}, {reviewed} reviewed. Unreviewed labels are suggestions. Capture events "
         "are not individual animals or counts."
     )
-    if not visitors:
+    if not animals:
         st.info("No animal events in this window.")
         return
     cols = st.columns(3)
-    for n, event in enumerate(visitors):
+    for n, event in enumerate(page["events"]):
         detail = api.event(event["id"])
         frame = representative_frame(detail)
         label, source = current_label(event)
@@ -180,6 +198,7 @@ def visitors_page(api: ApiClient, batch_id: str | None) -> None:
             st.caption(
                 f"{event.get('camera_id') or 'unknown camera'} · {when(event.get('start_at'))}"
             )
+    review.pager(key, offset, VISITOR_PAGE, animals, page["next_offset"])
 
 
 # ------------------------------------------------------------------ upload and export
@@ -233,8 +252,8 @@ def upload_page(api: ApiClient) -> None:
         "Review this batch",
         type="primary",
         key="review-uploaded",
-        on_click=_focus_batch,
-        args=(api, batch_id),
+        on_click=review.focus_batch,
+        args=(batch_id,),
     )
     if s["failures"]:
         st.warning(f"{len(s['failures'])} file(s) could not be used:")

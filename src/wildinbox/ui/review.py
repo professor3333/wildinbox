@@ -13,11 +13,35 @@ from typing import Any
 import streamlit as st
 
 from wildinbox.ui.client import ApiClient, ApiError
-from wildinbox.ui.logic import REASON_TEXT, current_label, label_choices, review_for
+from wildinbox.ui.logic import REASON_TEXT, batch_label, current_label, label_choices, review_for
 
 PAGE_SIZE = 8
+TIMELINE_PAGE = 100
+BATCH_PAGE = 10
+ALL_BATCHES = "all"
+ALL_CAMERAS = "All cameras"
 OTHER = "other species…"
 CANT_TELL = "can't tell"
+
+
+def focus_batch(batch_id: str) -> None:
+    """Select a batch everywhere and open its review queue (a button callback, so
+    it runs before the sidebar's selector is drawn). The selector's value is the
+    batch id, so the choice survives the batch's counts changing."""
+    st.session_state["batch"] = batch_id
+    st.session_state["page"] = "Review queue"
+
+
+def pager(key: str, offset: int, size: int, total: int, next_offset: int | None) -> None:
+    """Previous/next controls over a server-paginated list kept at `offset-<key>`."""
+    prev, info, nxt = st.columns([1, 2, 1])
+    if prev.button("Previous", disabled=offset == 0, key=f"prev-{key}"):
+        st.session_state[f"offset-{key}"] = max(0, offset - size)
+        st.rerun()
+    info.caption(f"{offset + 1}-{min(offset + size, total)} of {total}")
+    if nxt.button("Next", disabled=next_offset is None, key=f"next-{key}"):
+        st.session_state[f"offset-{key}"] = next_offset
+        st.rerun()
 
 
 def when(ts: str | None) -> str:
@@ -187,14 +211,7 @@ def _paged(
     st.caption(f"{total} capture event(s). Capture events are not individual animals.")
     for event in page["events"]:
         event_card(api, thumbnail, event, reviewer, classes)
-    prev, info, nxt = st.columns([1, 2, 1])
-    if prev.button("Previous", disabled=offset == 0, key=f"prev-{key}"):
-        st.session_state[f"offset-{key}"] = max(0, offset - PAGE_SIZE)
-        st.rerun()
-    info.caption(f"{offset + 1}-{min(offset + PAGE_SIZE, total)} of {total}")
-    if nxt.button("Next", disabled=page["next_offset"] is None, key=f"next-{key}"):
-        st.session_state[f"offset-{key}"] = page["next_offset"]
-        st.rerun()
+    pager(key, offset, PAGE_SIZE, total, page["next_offset"])
 
 
 def review_page(
@@ -270,28 +287,40 @@ def audit_page(
 def timeline_page(api: ApiClient, thumbnail: Any, batch_id: str | None) -> None:
     st.header("Timeline")
     try:
-        events = api.events(batch_id=batch_id, limit=500)["events"]
+        cameras = api.cameras(batch_id)
     except ApiError as err:
         st.error(err.detail)
         return
-    if not events:
+    if not cameras:
         st.info("No events yet. Upload a memory card on the Upload page.")
         return
-    cameras = sorted({ev.get("camera_id") or "unknown camera" for ev in events})
-    chosen = st.multiselect("Cameras", cameras, default=cameras, key="timeline-cameras")
+    # The camera list comes from every event in scope, not from the page shown.
+    options = [ALL_CAMERAS, *(c["camera_id"] for c in cameras if c["camera_id"])]
+    if st.session_state.get("timeline-camera") not in options:
+        st.session_state["timeline-camera"] = ALL_CAMERAS  # e.g. after changing batch
+    choice = st.selectbox("Camera", options, key="timeline-camera")
+    camera = None if choice == ALL_CAMERAS else choice
+    key = f"timeline-{choice}"
+    offset = st.session_state.get(f"offset-{key}", 0)
+    try:
+        page = api.events(batch_id=batch_id, camera_id=camera, limit=TIMELINE_PAGE, offset=offset)
+    except ApiError as err:
+        st.error(err.detail)
+        return
     by_day: dict[str, list[dict[str, Any]]] = defaultdict(list)
-    for ev in events:
-        if (ev.get("camera_id") or "unknown camera") in chosen:
-            day = ev["start_at"][:10] if ev.get("start_at") else "no capture time"
-            by_day[day].append(ev)
+    for ev in page["events"]:
+        day = ev["start_at"][:10] if ev.get("start_at") else "no capture time"
+        by_day[day].append(ev)
+    unnamed = sum(c["events"] for c in cameras if not c["camera_id"])
     st.caption(
-        f"{sum(len(v) for v in by_day.values())} events on {len(by_day)} day(s), camera time. "
-        "Badges: ✅ confirmed by a person · ⚙️ automatic · 🤖 suggestion not yet reviewed · "
-        "❔ unresolved."
+        f"{page['total']} event(s) in time order, camera time"
+        + (f"; {unnamed} without a camera name are under {ALL_CAMERAS}" if unnamed else "")
+        + ". Badges: ✅ confirmed by a person · ⚙️ automatic · 🤖 suggestion not yet "
+        "reviewed · ❔ unresolved."
     )
-    for day in sorted(by_day, reverse=True):
-        with st.expander(f"{day} · {len(by_day[day])} event(s)"):
-            for e in sorted(by_day[day], key=lambda x: x.get("start_at") or ""):
+    for day, events in by_day.items():  # the page is already in time order
+        with st.expander(f"{day} · {len(events)} event(s) on this page"):
+            for e in events:
                 c1, c2, c3 = st.columns([1, 3, 4])
                 data = thumbnail(api, e["image_ids"][0], 320) if e["image_ids"] else None
                 if data:
@@ -301,28 +330,29 @@ def timeline_page(api: ApiClient, thumbnail: Any, batch_id: str | None) -> None:
                     f"{e.get('camera_id') or 'unknown camera'} · {len(e['image_ids'])} frame(s)"
                 )
                 c3.markdown(badge(e))
+    if page["total"]:
+        pager(key, offset, TIMELINE_PAGE, page["total"], page["next_offset"])
 
 
 def batches_page(api: ApiClient) -> None:
     st.header("Batches")
+    offset = st.session_state.get("offset-batches", 0)
     try:
-        batches = api.batches()
+        listing = api.batch_page(limit=BATCH_PAGE, offset=offset)
     except ApiError as e:
         st.error(e.detail)
         return
-    if not batches:
+    if not listing["total"]:
         st.info("No batches yet. Upload a memory card on the Upload page.")
         return
+    st.caption(f"{listing['total']} batch(es), newest first. Every one stays reachable here.")
     if st.button("Refresh", key="batches-refresh"):
         st.rerun()
-    for b in batches:
+    for b in listing["batches"]:
         s = api.batch(b["id"])
         p = s["progress"]
         with st.container(border=True):
-            st.markdown(
-                f"**{s['created_at'][:16].replace('T', ' ')}** · {s['counts']['images']} files · "
-                f"{s['counts']['events']} events · status **{s['status']}**"
-            )
+            st.markdown(f"**{batch_label(s)}** · status **{s['status']}**")
             done = p["images_scored"] / max(p["images_to_score"], 1)
             st.progress(
                 min(done, 1.0), text=f"{p['images_scored']} of {p['images_to_score']} scored"
@@ -336,6 +366,13 @@ def batches_page(api: ApiClient) -> None:
                         ],
                         hide_index=True,
                     )
+            st.button(
+                "Review this batch",
+                key=f"focus-{b['id']}",
+                on_click=focus_batch,
+                args=(b["id"],),
+            )
+    pager("batches", offset, BATCH_PAGE, listing["total"], listing["next_offset"])
 
 
 def getting_started_page() -> None:
