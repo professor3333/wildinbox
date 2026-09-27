@@ -41,18 +41,53 @@ def _kept(box: tuple[float, float, float, float], crop: tuple[float, float, floa
 def test_safe_crop_never_cuts_an_animal(box: tuple[float, float, float, float]) -> None:
     rng = random.Random(0)
     for _ in range(300):
-        crop = safe_crop_window([box], rng, (0.2, 1.0), 0.9, aspect=0.75)
+        crop = safe_crop_window([box], rng, (0.2, 1.0), 0.9, image_aspect=4 / 3)
         assert _kept(box, crop) >= 0.9
 
 
 def test_safe_crop_falls_back_to_full_frame_when_impossible() -> None:
     whole = [(0.0, 0.0, 1.0, 1.0)]  # animal fills the frame: only the full crop keeps it
-    assert safe_crop_window(whole, random.Random(1), (0.2, 0.5), 0.9, aspect=0.75) == (
+    assert safe_crop_window(whole, random.Random(1), (0.2, 0.5), 0.9, image_aspect=4 / 3) == (
         0.0,
         0.0,
         1.0,
         1.0,
     )
+
+
+E3_CONFIG = REPO_ROOT / "configs/experiments/finetune-e3-deep-balanced.yaml"
+
+
+@pytest.mark.parametrize("size", [(1600, 900), (900, 1600), (1600, 1200), (1200, 1600), (800, 800)])
+@pytest.mark.parametrize("boxes", [None, [(0.45, 0.4, 0.1, 0.12)]])
+def test_crops_keep_the_requested_pixel_aspect_ratio(
+    size: tuple[int, int], boxes: list[tuple[float, float, float, float]] | None
+) -> None:
+    a = load_finetune_config(E3_CONFIG).augmentation
+    aug = TrainAugmentation(
+        PRE,
+        crop_scale=a.crop_scale,
+        unboxed_crop_scale=a.unboxed_crop_scale,
+        min_box_kept=a.min_box_kept,
+        photometric=False,
+    )
+    img = Image.new("RGB", size)
+    cropped = 0
+    for seed in range(200):
+        out, moved = aug.crop(img, boxes, random.Random(seed))
+        if out.size == img.size:
+            continue  # full-image fallback keeps the image's own shape
+        cropped += 1
+        ratio = out.width / out.height
+        # Rounding to whole pixels moves the ratio by well under 1% at these sizes.
+        assert 0.75 * 0.99 <= ratio <= 4 / 3 * 1.01, (size, seed, out.size)
+        for bx, by, bw, bh in moved:
+            inside = (min(bx + bw, 1) - max(bx, 0)) * (min(by + bh, 1) - max(by, 0)) / (bw * bh)
+            assert inside >= a.min_box_kept - 1e-6
+    # Boxed images must actually be cropped, or the checks above are vacuous. (An
+    # unboxed 16:9 frame has no 4:3 crop covering >= 80% of it, so it keeps the full frame.)
+    if boxes:
+        assert cropped > 150
 
 
 def _aug(photometric: bool = True) -> TrainAugmentation:

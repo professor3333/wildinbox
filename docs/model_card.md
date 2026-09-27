@@ -43,7 +43,12 @@ empty. One suggested species per event; mixed-species events stay in review.
 - Fine-tuning: blocks 3-8 + classification head trainable, class-balanced
   sampling, horizontal flip and box-safe random crops (no crop removes more
   than 10% of an annotated animal), 3 epochs, lr 0.0003, batch 32, seed
-  20260924.
+  20260924. These weights were trained before a fix to the crop aspect
+  ratio: the crop code swapped width and height, so crops from nonsquare
+  images were stretched well outside the intended 3:4 to 4:3 range before
+  being resized to a square. How much this affected the reported metrics is
+  unknown. Retraining with the corrected crops is a new experiment, not a
+  reproduction of these weights.
 - Lineage: code `7d4a388`, MLflow run `b57ee7aa105949519561a99c78bca741`,
   preprocessing `6d9a950a6543` (shared by training and inference).
 - Published weights: the release bundle (weights, class map, preprocessing,

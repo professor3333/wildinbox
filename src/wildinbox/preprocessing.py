@@ -100,18 +100,21 @@ def safe_crop_window(
     rng: random.Random,
     scale: tuple[float, float],
     min_box_kept: float,
-    aspect: float,
+    image_aspect: float,
     ratio: tuple[float, float] = (3 / 4, 4 / 3),
     tries: int = 20,
 ) -> tuple[float, float, float, float]:
     """A random crop (fractions of the image) that keeps >= `min_box_kept` of
     every annotated animal box. Falls back to the full image, so a crop can
-    never remove the animal while the label still says it is there."""
+    never remove the animal while the label still says it is there.
+
+    `image_aspect` is the image's width / height; `ratio` bounds the crop's
+    width / height in pixels, so fractions are divided by the image aspect."""
     for _ in range(tries):
         area = rng.uniform(*scale)
         r = math.exp(rng.uniform(math.log(ratio[0]), math.log(ratio[1])))
-        w = math.sqrt(area * r / aspect)
-        h = math.sqrt(area * aspect / r)
+        w = math.sqrt(area * r / image_aspect)
+        h = math.sqrt(area * image_aspect / r)
         if w > 1 or h > 1:
             continue
         crop = (rng.uniform(0, 1 - w), rng.uniform(0, 1 - h), w, h)
@@ -162,7 +165,7 @@ class TrainAugmentation:
         """Returns the cropped (and maybe flipped) image and the boxes in its frame."""
         scale = self.crop_scale if boxes else self.unboxed_crop_scale
         x, y, w, h = safe_crop_window(
-            boxes or [], rng, scale, self.min_box_kept, aspect=img.height / img.width
+            boxes or [], rng, scale, self.min_box_kept, image_aspect=img.width / img.height
         )
         W, H = img.size
         out = img.crop((round(x * W), round(y * H), round((x + w) * W), round((y + h) * H)))
