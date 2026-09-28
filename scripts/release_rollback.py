@@ -2,9 +2,14 @@
 
     uv run python scripts/make_sample_batch.py --partition calibration --images 60 \\
         --seed release-demo --out data/samples/release-demo
-    uv run python scripts/release_rollback.py
+    uv run python scripts/release_rollback.py --gate reports/update/<candidate> \\
+        --model-dir models/<candidate>
 
-1. Refuse unless the gate report says promote.
+1. Refuse, before contacting the deployment, unless the gate record authorizes
+   the release (`promotion.release_authorization`): a consistent promote under
+   the per-species policy. A record without a policy marker (cycle 1, the
+   rehearsal) or gated with --legacy-policy is released only with
+   --legacy-policy, to reproduce a recorded cycle.
 2. Register the candidate inside the deployment and activate it.
 3. Process batch A: it must run on the candidate.
 4. Roll back: re-activate the previous release.
@@ -25,6 +30,8 @@ from pathlib import Path
 from typing import Any
 
 import httpx
+
+from wildinbox.training.promotion import PolicyError, release_authorization
 
 
 def auth_headers() -> dict[str, str]:
@@ -73,15 +80,19 @@ def main() -> None:
     parser.add_argument(
         "--legacy-policy",
         action="store_true",
-        help="Release a candidate gated with --legacy-policy (reproducing a recorded cycle).",
+        help="Release a gate record without the per-species policy (one gated with "
+        "--legacy-policy, or recorded before the policy existed), to reproduce a cycle.",
     )
     args = parser.parse_args()
-    api = httpx.Client(base_url=args.url, timeout=60, headers=auth_headers())
 
     gate = json.loads((args.gate / "metrics.json").read_text())
-    check(gate["promote"], f"gate passed for {gate['candidate_release']}")
-    if gate.get("promotion_policy") == "legacy":
-        check(args.legacy_policy, "legacy-policy gate released only with --legacy-policy")
+    try:
+        policy = release_authorization(gate, allow_legacy=args.legacy_policy)
+    except PolicyError as e:
+        print(f"FAIL gate record {args.gate}: {e}")
+        sys.exit(1)
+    check(True, f"gate promoted {gate['candidate_release']} under the {policy} policy")
+    api = httpx.Client(base_url=args.url, timeout=60, headers=auth_headers())
     previous = api.get("/version").json()["active_release"]["id"]
     check(previous == gate["deployed_release"], f"deployed release is {previous}")
 
