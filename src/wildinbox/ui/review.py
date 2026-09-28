@@ -330,7 +330,8 @@ def timeline_page(api: ApiClient, thumbnail: Any, batch_id: str | None) -> None:
         by_day[day].append(ev)
     unnamed = sum(c["events"] for c in cameras if not c["camera_id"])
     st.caption(
-        f"{page['total']} event(s) in time order, camera time"
+        f"{count(page['total'], page.get('total_exact', True))} event(s) in time order, "
+        "camera time"
         + (f"; {unnamed} without a camera name are under {ALL_CAMERAS}" if unnamed else "")
         + ". Badges: ✅ confirmed by a person · ⚙️ automatic · 🤖 suggestion not yet "
         "reviewed · ❔ unresolved."

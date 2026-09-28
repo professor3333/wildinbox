@@ -186,9 +186,14 @@ class FakeApi:
             ]
         off, lim = params.get("offset", 0), params.get("limit", 100)
         page = items[off : off + lim]
+        # The API's count floor: with exact_total=False it stops counting
+        # 10,000 past the page (wildinbox.api.app.COUNT_AHEAD).
+        cap = off + lim + 10_000 if params.get("exact_total") is False else None
+        total = len(items) if cap is None else min(len(items), cap)
         return {
             "events": page,
-            "total": len(items),
+            "total": total,
+            "total_exact": cap is None or total < cap,
             "next_offset": off + lim if off + lim < len(items) else None,
         }
 
@@ -631,3 +636,30 @@ def test_card_metadata_merges_the_file_and_the_camera_name() -> None:
         card_metadata(None, b"{nope")
     with pytest.raises(ValueError, match="JSON object"):
         card_metadata(None, b"[1, 2]")
+
+
+def _large_history(n: int = 12_000) -> FakeApi:
+    api = FakeApi()
+    api.items = [_event(str(i), "raccoon", image_ids=[]) for i in range(n)]
+    return api
+
+
+def test_a_count_floor_is_shown_as_one_everywhere_it_appears() -> None:
+    at = _app(_large_history())  # opens on the review queue
+    assert not at.exception, at.exception
+    queue = next(c.value for c in at.caption if "capture event(s)" in c.value)
+    assert queue.startswith("10,008+ ")  # 8 per page, counted 10,000 past it
+    at.sidebar.radio(key="page").set_value("Timeline").run()
+    assert not at.exception, at.exception
+    heading = next(c.value for c in at.caption if "event(s) in time order" in c.value)
+    pages = next(c.value for c in at.caption if " of " in c.value and c.value[0].isdigit())
+    assert heading.startswith("10,100+ ") and pages.endswith("of 10,100+")
+
+
+def test_exact_totals_are_shown_without_a_floor_mark() -> None:
+    at = _app(_large_history(250))
+    at.sidebar.radio(key="page").set_value("Timeline").run()
+    assert not at.exception, at.exception
+    captions = [c.value for c in at.caption]
+    assert any(c.startswith("250 event(s) in time order") for c in captions)
+    assert not any("+" in c.split(" ")[0] for c in captions if "event(s)" in c)

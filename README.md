@@ -395,19 +395,30 @@ worker ([serving report](reports/serving/README.md)):
 |---|---|---|
 | 1,000 images scored, grouped, and decided | 78.5 s (12.7 images/s) | within 10 minutes |
 | Metadata API p95 latency, near-empty database | 3.5-139 ms | < 500 ms |
-| Metadata API p95 latency, a year of history (262,000 images, 98,000 events), idle | 6-402 ms ([history load test](reports/history/README.md)) | < 500 ms |
-| The same while one 1,000-image batch processes | 104-475 ms | < 500 ms |
-| The same while two batches process at once, or a worker restarts | 154-980 ms: **target missed** by the review queue, batch list, and timeline | < 500 ms |
+| Metadata API p95 latency, a year of history (~115,000 events), idle: worst route | 145-208 ms ([concurrency report](reports/history/concurrency/README.md)) | < 500 ms |
+| The same while one 1,000-image batch processes: every metadata request pooled | 495-871 ms across the final runs: **not reliably within target** | < 500 ms |
+| The same while two batches are uploaded and processed, or a worker restarts: pooled | 538-923 ms: **target missed** | < 500 ms |
+| `GET /monitoring` with that history (not a metadata route) | 0.14-2.2 s under load (0.08-0.26 s idle); the first call after a restart, uncached, about 7 s | |
 | Worker killed mid-batch (real `SIGKILL`) | resumed; no lost inputs, duplicates, or early events | |
+
+The latency rows are from a laptop that was 13-16 GB into swap, not from the
+declared server hardware, and its load moved results by up to 2x between runs
+of the same code. The earlier
+[history load test](reports/history/README.md) reported the worst route's p95
+(idle 6-402 ms, one batch 104-475 ms, two batches or a restart 154-980 ms,
+monitoring up to 13 s). Its probe shared the uploader's process, which
+overstated latency around uploads; those figures are kept there as measured.
 
 Training the released model: 70 minutes on the M1's GPU (Metal).
 
 ## Limitations
 
-- **Metadata latency misses its target under concurrent processing** on the
-  laptop: with a year of history, the review queue reached 876-980 ms p95 while
-  two batches processed (it is 217 ms idle); monitoring requests took up to
-  13 s ([history load test](reports/history/README.md)).
+- **Metadata latency is within target idle but not while batches process**
+  on the laptop: with a year of history, pooled p95 was 495-871 ms during one
+  batch and 538-923 ms during two batches or a restart, against 145-208 ms for
+  the worst idle route. Each cause found was fixed and measured, but whether
+  the target holds on the declared server hardware has not been measured
+  ([concurrency report](reports/history/concurrency/README.md)).
 
 - **New cameras remain hard:** macro-F1 falls from 0.75 on training cameras to
   0.45 on new ones and varies from 0.24 to 0.57 by camera; small animals (36%
