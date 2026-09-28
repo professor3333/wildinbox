@@ -47,6 +47,13 @@ it is not read again, and v1's result against the 50% target stays on record.
    20,793 images ([`manifests/fresh-cameras-v2.json`](../manifests/fresh-cameras-v2.json);
    v1's output is kept beside it). Cameras whose sequence ids are per image
    are left out, a limitation of the experiment.
+   **Development cameras acquired** (fresh test not downloaded): 8,956
+   images, all accepted by `wildinbox data ingest`
+   ([`manifests/cct_fresh_dev.lock.json`](../manifests/cct_fresh_dev.lock.json)),
+   grouped into 3,107 capture events by `wildinbox dataset fresh`
+   ([`configs/splits/cct_fresh_dev.yaml`](../configs/splits/cct_fresh_dev.yaml),
+   [`manifests/cct-fresh-dev-v1.lock.json`](../manifests/cct-fresh-dev-v1.lock.json)).
+   No camera, file, or near-duplicate image is shared with CCT20.
 3. **Development**, on the adaptation-development cameras (plus the four CCT20
    development cameras): choose the adaptation method, N, the per-camera
    threshold rule, and the v2 target.
