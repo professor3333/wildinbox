@@ -154,3 +154,42 @@ def test_a_protocol_outside_any_repository_has_no_provenance(tmp_path: Path) -> 
     assert prov["first_committed"] is None
     assert prov["committed_before_reviews"] is None
     assert prov["committed_before_training"] is None
+
+
+def test_absent_history_is_unknown_but_present_history_can_say_no(repo: Path) -> None:
+    before = _git("rev-parse", "HEAD")  # the repository before the protocol existed
+    commit = _commit_protocol("gate: 1\n", "2026-09-25T06:00:00+00:00")
+    snap = _snapshot(repo, ["2026-09-25T10:19:19+00:00"])
+
+    def trained_at(c: str) -> bool | None:
+        out: bool | None = protocol_provenance(PROTOCOL, snap, {"commit": c, "dirty": False})[
+            "committed_before_training"
+        ]
+        return out
+
+    assert trained_at(commit) is True
+    assert trained_at("0" * 40) is None  # a commit this clone does not have
+    assert trained_at(before) is False  # present, and the protocol was not in it
+    PROTOCOL.write_text("gate: 2\n")
+    _git("commit", "-qam", "edit", at="2026-09-25T07:00:00+00:00")
+    PROTOCOL.write_text("gate: 1\n")  # the file under test is the first version again
+    assert trained_at(_git("rev-parse", "HEAD")) is False  # present, other content
+
+
+def test_a_shallow_clone_does_not_claim_the_protocol_came_after_the_reviews(
+    repo: Path, tmp_path_factory: pytest.TempPathFactory, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    _commit_protocol("gate: 1\n", "2026-09-25T06:00:00+00:00")  # before the reviews
+    (repo / "README").write_text("later\n")
+    _git("commit", "-qam", "later", at="2026-09-26T00:00:00+00:00")  # after them
+    snap = _snapshot(repo, ["2026-09-25T10:19:19+00:00"])
+    full = protocol_provenance(PROTOCOL, snap, {})
+    assert full["committed_before_reviews"] is True
+
+    clone = tmp_path_factory.mktemp("clone") / "repo"
+    _git("clone", "-q", "--depth", "1", f"file://{repo}", str(clone))
+    monkeypatch.chdir(clone)
+    shallow = protocol_provenance(PROTOCOL, snap, {})
+    # The oldest commit it can see is the later one, where the clone was cut.
+    assert shallow["first_committed"]["committed_at"].startswith("2026-09-26")
+    assert shallow["committed_before_reviews"] is None
