@@ -14,7 +14,14 @@ acceptance targets. Everything later is built and tested against this file.
 - **One suggested species per event.** Mixed-species events stay reviewable.
 - Species outside the supported set are never relabeled as `empty`.
 
-Supported species: _TBD — chosen from training-set counts (dataset stage)._
+Supported species: **bobcat, cat, coyote, dog, opossum, rabbit, raccoon**,
+plus `empty`. Chosen from the training partition by a rule fixed before the
+counts were known (at least 500 single-species training events, and at least 3
+training cameras with at least 20 events each); seven species met it, one more
+than the planned "about six" ([dataset](dataset.md#supported-classes)).
+Every other CCT20 animal (squirrel, skunk, bird, rodent, badger, fox, deer) is
+an **unsupported species**: its ground-truth label is kept, it is never used as
+an `empty` example, and it is never fit.
 
 ## Core workflow
 
@@ -55,7 +62,7 @@ Every event receives exactly one:
 | Disposition | Condition |
 |---|---|
 | Likely empty (automatically filtered) | All usable frames strongly support `empty` above the validated empty threshold, **and** automatic filtering is enabled for this operating point |
-| Supported species identified | Frames agree on one supported species above the validated acceptance threshold, the unfamiliar-input score is acceptable, **and** automatic acceptance is enabled |
+| Supported species identified | Frames agree on one supported species above the validated acceptance threshold, no frame is flagged as unfamiliar (only possible once an unfamiliar-input score is adopted; none is in v1), **and** automatic acceptance is enabled |
 | Needs review | Anything else: low confidence, any frame suggesting an animal in an otherwise empty-looking event, conflicting species, possible unsupported input, or automation not enabled |
 
 Automatic filtering and automatic acceptance are **off by default** and are
@@ -64,6 +71,37 @@ event goes to review with its suggestion attached.
 
 A random sample of automatically handled events is also sent for audit, so
 confident mistakes are measured.
+
+### Status in the v1 release
+
+**Implemented.**
+- The released policy (`conservative/v2`) has automatic filtering and
+  automatic acceptance both off. Every event is *needs review* with reason
+  `automation_disabled`, carrying its suggestion and confidence.
+- Unsupported species keep their ground-truth labels in the dataset manifest
+  and are never relabeled or trained as `empty`. Reviewers can name an
+  unsupported species or mark an event *unresolved*, and the export keeps it.
+- The policy sends any frame flagged as unfamiliar to review
+  (`possible_unknown`), but serving computes no unfamiliar-input score, so v1
+  never raises that reason.
+
+**Demonstrated** (locked final test, 594 unsupported-species events): none was
+automatically accepted as a known species, and every animal event, supported
+or not, stayed out of the filtered bucket. Both follow from nothing being
+automated. They are not evidence that the model recognises unfamiliar species.
+
+**Not established.**
+- **Recognising an unfamiliar species at inference.** The distance-based
+  score was evaluated and not adopted: it mostly measures "new camera", not
+  "new species" ([unfamiliar inputs](../reports/unfamiliar/README.md)).
+  Confidence alone is not evidence that an input belongs to a supported
+  class.
+- **Protection once automation is enabled.** The one evaluated operating
+  point, an empty filter at 0.65 (not released), would have filtered 17 of the
+  594 unsupported-species events as empty (97.14% retained, below the 98%
+  target) ([final evaluation](../reports/final_evaluation/README.md)).
+  Today the protection for unsupported species is that a person reviews every
+  event.
 
 ## Supported-input specification
 
@@ -115,11 +153,14 @@ frame suggests an animal, or filtering is not enabled, it goes to *needs
 review*.
 
 **An unfamiliar species.** The system does not claim to recognise it. If its
-confidence or unfamiliar-input score fails the policy, the event goes to
-*needs review* flagged as a possible unsupported input; the reviewer labels it
-manually or marks it *unresolved*. It is never relabeled as `empty`. How often
-such inputs are wrongly auto-accepted as a known species is measured in
-evaluation, not assumed to be zero.
+confidence (or, once one is adopted, its unfamiliar-input score) fails the
+policy, the event goes to *needs review*; the reviewer labels it manually or
+marks it *unresolved*. Its ground-truth label is never relabeled as `empty`.
+How often such inputs are wrongly auto-accepted as a known species is measured
+in evaluation, not assumed to be zero. In v1 no unfamiliar-input score is used
+and automation is off, so these events reach review because every event does,
+not because they were recognised as unfamiliar (see *Status in the v1
+release*).
 
 **A corrupted file.** It fails decoding during validation, is quarantined with
 a reason, and is listed as a failed file for the batch. It is never passed to

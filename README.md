@@ -419,8 +419,12 @@ Training the released model: 70 minutes on the M1's GPU (Metal).
 - **The final test has been used:** it was measured twice without any choice
   made from it. A genuinely fresh assessment, or any automation restricted to
   particular cameras or hours, needs new held-out cameras.
-- **Unfamiliar species are not reliably flagged:** the distance-based score
-  was not adopted; it mostly measures "new camera", not "new species".
+- **Unfamiliar species are not flagged:** the distance-based score was not
+  adopted (it mostly measures "new camera", not "new species"), so serving
+  computes none. Their ground-truth labels are preserved for evaluation, and
+  "0 of 594 accepted as known" holds because nothing is accepted
+  automatically: the protection today is that a person reviews every event
+  ([requirements](docs/requirements.md#status-in-the-v1-release)).
 - **Evaluated species were in pretraining:** every unsupported species that
   could be evaluated (except deer) appears in ImageNet-1k.
 - **Reviews in the update cycle were simulated** from ground truth.

@@ -1,6 +1,6 @@
 # Update candidate: `finetune-e3-update1`
 
-Protocol [`configs/experiments/update_cycle.yaml`](../../../configs/experiments/update_cycle.yaml), committed before any review was collected or candidate trained. Snapshot `0837a1422904`: 1066 images from 371 reviewed events. **Reviews were simulated from the dataset's ground truth** (reviewer `simulated-ground-truth`).
+Protocol [`configs/experiments/update_cycle.yaml`](../../../configs/experiments/update_cycle.yaml) (sha256 `508deb5534f0`): not shown to predate the reviews; committed before the candidate was trained ([evidence](#protocol-provenance)). Snapshot `0837a1422904`: 1066 images from 371 reviewed events. **Reviews were simulated from the dataset's ground truth** (reviewer `simulated-ground-truth`).
 
 ## Decision
 
@@ -41,6 +41,19 @@ Protocol [`configs/experiments/update_cycle.yaml`](../../../configs/experiments/
 |---|---|---|
 | calibration cameras | 0.452 | 0.491 |
 | seen camera diagnostic | 0.747 | 0.752 |
+
+## Protocol provenance
+
+| Evidence | Value |
+|---|---|
+| Protocol content | sha256 `508deb5534f0` |
+| First committed with this content | `0877050` at 2026-09-25T11:44:54+05:45 |
+| Earliest review in the snapshot | not recorded in the snapshot |
+| Candidate trained at | `5c65fe4`, clean tree |
+| Committed before the reviews | not established |
+| Committed before training | yes |
+
+Read from git history, the snapshot's review times, and the candidate's training record; nothing is claimed that they do not show. This is about when the rules were fixed, not a check of the metrics above.
 
 ## Development data only
 

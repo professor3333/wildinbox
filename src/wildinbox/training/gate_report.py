@@ -18,18 +18,79 @@ def _lost(m: dict[str, Any]) -> str:
     return f"{h['animal_events_suggested_empty']} / {h['animal_events']}"
 
 
+def _provenance_claim(prov: dict[str, Any] | None) -> str:
+    """The protocol's timing, claimed only as far as the evidence shows."""
+    if prov is None:
+        return "; when it was committed relative to the reviews and training was not recorded"
+    reviews = {
+        True: "committed before the snapshot's first review",
+        False: "committed after the snapshot's reviews were made",
+        None: "not shown to predate the reviews",
+    }[prov["committed_before_reviews"]]
+    training = {
+        True: "committed before the candidate was trained",
+        False: "not the version the candidate was trained with",
+        None: "not shown to predate training",
+    }[prov["committed_before_training"]]
+    return f": {reviews}; {training} ([evidence](#protocol-provenance))"
+
+
+def _yes_no(v: bool | None) -> str:
+    return {True: "yes", False: "**no**", None: "not established"}[v]
+
+
+def _provenance_section(prov: dict[str, Any]) -> list[str]:
+    first, code = prov["first_committed"], prov["training_code"]
+    if code["commit"] is None:
+        trained = "not recorded"
+    else:
+        trained = f"`{code['commit'][:7]}`" + (
+            ", with uncommitted changes" if code["dirty"] else ", clean tree"
+        )
+    return [
+        "## Protocol provenance",
+        "",
+        _t(
+            ["Evidence", "Value"],
+            [
+                ["Protocol content", f"sha256 `{prov['protocol_sha256'][:12]}`"],
+                [
+                    "First committed with this content",
+                    f"`{first['commit'][:7]}` at {first['committed_at']}"
+                    if first
+                    else "not found in git history",
+                ],
+                [
+                    "Earliest review in the snapshot",
+                    prov["earliest_review_at"] or "not recorded in the snapshot",
+                ],
+                ["Candidate trained at", trained],
+                ["Committed before the reviews", _yes_no(prov["committed_before_reviews"])],
+                ["Committed before training", _yes_no(prov["committed_before_training"])],
+            ],
+        ),
+        "",
+        "Read from git history, the snapshot's review times, and the candidate's "
+        "training record; nothing is claimed that they do not show. This is about when "
+        "the rules were fixed, not a check of the metrics above.",
+        "",
+    ]
+
+
 def write_report(report_dir: Path, out: dict[str, Any]) -> Path:
     d, c = out["results"]["deployed"], out["results"]["candidate"]
     snap = out["snapshot"]
     checks = out["checks"]
+    prov = out.get("protocol_provenance")
     # candidates trained before snapshot/v2 recorded a single `reviewer`
     reviewers = snap.get("approved_reviewers") or [snap["reviewer"]]
     simulated = reviewers == ["simulated-ground-truth"]
     md = [
         f"# Update candidate: `{out['candidate']}`",
         "",
-        f"Protocol [`{out['protocol']}`](../../../{out['protocol']}), committed before any "
-        f"review was collected or candidate trained. Snapshot `{snap['version']}`: "
+        f"Protocol [`{out['protocol']}`](../../../{out['protocol']}) "
+        f"(sha256 `{out['protocol_sha256'][:12]}`){_provenance_claim(prov)}. "
+        f"Snapshot `{snap['version']}`: "
         f"{snap['images']} images from {snap['events']} reviewed events"
         + (
             ". **Reviews were simulated from the dataset's ground truth** "
@@ -126,6 +187,7 @@ def write_report(report_dir: Path, out: dict[str, Any]) -> Path:
             ],
         ),
         "",
+        *(_provenance_section(prov) if prov else []),
         "## Development data only",
         "",
         *(

@@ -248,6 +248,7 @@ def run(
     from wildinbox.evaluation.predictors import FinetunedPredictor
     from wildinbox.evaluation.run import _round, _score
     from wildinbox.settings import Settings
+    from wildinbox.training.provenance import protocol_provenance
     from wildinbox.training.run import git_state, load_context
 
     protocol = yaml.safe_load(protocol_path.read_text())
@@ -432,6 +433,9 @@ def run(
         "candidate": cand_meta["name"],
         "candidate_release": f"{cand_meta['name']}@{policy['artifact_version']}",
         "snapshot": snap,
+        "protocol_provenance": protocol_provenance(
+            protocol_path, snapshot_dir, cand_meta.get("code") or {}
+        ),
         "code": git_state(),
         "device": device,
         "results": results,
@@ -453,3 +457,26 @@ def run(
 
     write_report(report_dir, out)
     return out
+
+
+def record_provenance(report_dir: Path, candidate_dir: Path) -> dict[str, Any]:
+    """Add the protocol's provenance to an earlier gate's record and re-render
+    its report; the gate's results are left as they were."""
+    from wildinbox.training.gate_report import write_report
+    from wildinbox.training.provenance import protocol_provenance
+
+    path = report_dir / "metrics.json"
+    out = json.loads(path.read_text())
+    protocol_path = Path(out["protocol"])
+    if hashlib.sha256(protocol_path.read_bytes()).hexdigest() != out["protocol_sha256"]:
+        raise GateError(f"{protocol_path} has changed since this gate ran")
+    cand_meta = json.loads((candidate_dir / "meta.json").read_text())
+    if cand_meta["name"] != out["candidate"]:
+        raise GateError(f"{candidate_dir} is not the gated candidate {out['candidate']}")
+    out["protocol_provenance"] = protocol_provenance(
+        protocol_path, Path(out["snapshot"]["path"]), cand_meta.get("code") or {}
+    )
+    path.write_text(json.dumps(out, indent=2) + "\n")
+    write_report(report_dir, out)
+    provenance: dict[str, Any] = out["protocol_provenance"]
+    return provenance
