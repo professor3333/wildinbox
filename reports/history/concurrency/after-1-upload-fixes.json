@@ -1,0 +1,948 @@
+{
+  "label": "laptop-history-upload-fixes-1",
+  "run_tag": "laptop-history-upload-fixes-1-f945a582",
+  "started_at": "2026-09-28T13:37:54.496756+00:00",
+  "api": "http://localhost:8000",
+  "release": {
+    "id": "finetune-e3-deep-balanced@7a25aea97c76",
+    "weights_sha256": "3ab6fec236ce4b418acdda78f94078ec3bd6331983e2186bd52aa11a1fd9b360",
+    "preprocessing_version": "6d9a950a6543",
+    "policy_version": "conservative/v2+378312635a29",
+    "is_test": false
+  },
+  "machine": {
+    "instance_type": "",
+    "region": "",
+    "vcpus": "",
+    "memory_bytes": "",
+    "cpu": "",
+    "kernel": "25.6.0",
+    "os": "",
+    "docker": "29.4.0",
+    "disk": "460Gi total, 55Gi free",
+    "docker_vm_vcpus": "8",
+    "docker_vm_memory_bytes": "4180443136",
+    "docker_vm": "OrbStack",
+    "host_cpu": "Apple M1",
+    "host_memory_bytes": "8589934592",
+    "host_os": "macOS 26.6.2",
+    "containers": [
+      {
+        "Names": "wildinbox-history-ui-1",
+        "Image": "wildinbox-history-ui",
+        "Status": "Up 28 seconds (healthy)"
+      },
+      {
+        "Names": "wildinbox-history-api-1",
+        "Image": "wildinbox-history-api",
+        "Status": "Up 38 seconds (healthy)"
+      },
+      {
+        "Names": "wildinbox-history-worker-1",
+        "Image": "wildinbox-history-worker",
+        "Status": "Up 38 seconds"
+      },
+      {
+        "Names": "wildinbox-history-postgres-1",
+        "Image": "postgres:16-alpine",
+        "Status": "Up 22 hours (healthy)"
+      },
+      {
+        "Names": "wildinbox-history-redis-1",
+        "Image": "redis:7-alpine",
+        "Status": "Up 23 hours (healthy)"
+      },
+      {
+        "Names": "wildinbox-history-objects-1",
+        "Image": "chrislusf/seaweedfs:4.47",
+        "Status": "Up 23 hours (healthy)"
+      },
+      {
+        "Names": "wildinbox-test-pg",
+        "Image": "postgres:16-alpine",
+        "Status": "Up 3 days"
+      }
+    ]
+  },
+  "history_before": {
+    "batches": 286,
+    "synthetic_batches": 250,
+    "images": 284050,
+    "events": 105679,
+    "reviews": 20598,
+    "database_mib": 506
+  },
+  "image_bytes": {
+    "batch_dir": "data/samples/dev-1000",
+    "files": 1000,
+    "total": 109826774,
+    "mean": 109827
+  },
+  "scenarios": {
+    "small": {
+      "batches": [
+        {
+          "batch_id": "57c061f8-2cba-4f89-a5bf-5da058c17cf2",
+          "status": "completed",
+          "counts": {
+            "images": 24,
+            "pending": 0,
+            "valid": 24,
+            "invalid": 0,
+            "duplicate": 0,
+            "events": 23,
+            "processing_failed": 0
+          },
+          "upload": {
+            "files": 24,
+            "bytes": 2946126,
+            "seconds": 2.17,
+            "server_phases_seconds": {
+              "receive": 0.09,
+              "validate": 0.01,
+              "store": 1.73,
+              "db": 0.11
+            },
+            "server_after_receive_seconds": 1.85,
+            "transfer_seconds": 0.32,
+            "transfer_mbit_per_s": 73.7
+          },
+          "processing": {
+            "attempts": 1,
+            "worker": "cfb7d038e13c:1:6afc0fa4",
+            "queued_seconds": 0.6,
+            "processing_seconds": 6.0,
+            "images_per_second": 4.02,
+            "run_seconds": 5.4
+          },
+          "integrity": {
+            "images": 24,
+            "valid": 24,
+            "predictions": 24,
+            "duplicate_predictions": 0,
+            "valid_without_prediction": 0,
+            "events": 23,
+            "decisions": 23,
+            "events_without_one_decision": 0,
+            "ok": true
+          },
+          "failures": []
+        }
+      ],
+      "latency_during": {
+        "routes": {
+          "GET /batches (sidebar)": {
+            "requests": 1,
+            "p50_ms": 328.2,
+            "p95_ms": 328.2,
+            "max_ms": 328.2
+          },
+          "GET /events (review queue)": {
+            "requests": 1,
+            "p50_ms": 221.5,
+            "p95_ms": 221.5,
+            "max_ms": 221.5
+          },
+          "GET /monitoring": {
+            "requests": 1,
+            "p50_ms": 8352.2,
+            "p95_ms": 8352.2,
+            "max_ms": 8352.2
+          }
+        },
+        "errors": {}
+      },
+      "wall_seconds": 10.1,
+      "memory_peak_mib": {
+        "wildinbox-history-api-1": 491,
+        "wildinbox-history-objects-1": 295,
+        "wildinbox-history-postgres-1": 441,
+        "wildinbox-history-redis-1": 9,
+        "wildinbox-history-ui-1": 73,
+        "wildinbox-history-worker-1": 379,
+        "wildinbox-test-pg": 22
+      }
+    },
+    "thousand": {
+      "batches": [
+        {
+          "batch_id": "859db727-bae9-4c54-b44f-302bef3014f2",
+          "status": "completed",
+          "counts": {
+            "images": 1000,
+            "pending": 0,
+            "valid": 1000,
+            "invalid": 0,
+            "duplicate": 0,
+            "events": 348,
+            "processing_failed": 0
+          },
+          "upload": {
+            "files": 1000,
+            "bytes": 109896774,
+            "seconds": 7.4,
+            "server_phases_seconds": {
+              "receive": 0.5,
+              "validate": 0.17,
+              "store": 5.17,
+              "db": 1.43
+            },
+            "server_after_receive_seconds": 6.77,
+            "transfer_seconds": 0.63,
+            "transfer_mbit_per_s": 1395.5
+          },
+          "processing": {
+            "attempts": 1,
+            "worker": "cfb7d038e13c:1:6afc0fa4",
+            "queued_seconds": 0.4,
+            "processing_seconds": 85.0,
+            "images_per_second": 11.76,
+            "run_seconds": 84.7
+          },
+          "integrity": {
+            "images": 1000,
+            "valid": 1000,
+            "predictions": 1000,
+            "duplicate_predictions": 0,
+            "valid_without_prediction": 0,
+            "events": 348,
+            "decisions": 348,
+            "events_without_one_decision": 0,
+            "ok": true
+          },
+          "failures": []
+        }
+      ],
+      "latency_during": {
+        "routes": {
+          "GET /batches (sidebar)": {
+            "requests": 30,
+            "p50_ms": 124.0,
+            "p95_ms": 268.5,
+            "max_ms": 553.9
+          },
+          "GET /cameras (timeline)": {
+            "requests": 30,
+            "p50_ms": 40.7,
+            "p95_ms": 105.7,
+            "max_ms": 431.3
+          },
+          "GET /events (audit queue)": {
+            "requests": 30,
+            "p50_ms": 99.1,
+            "p95_ms": 494.2,
+            "max_ms": 576.3
+          },
+          "GET /events (automatically filtered)": {
+            "requests": 30,
+            "p50_ms": 139.4,
+            "p95_ms": 683.9,
+            "max_ms": 1449.5
+          },
+          "GET /events (one night's visitors)": {
+            "requests": 30,
+            "p50_ms": 50.9,
+            "p95_ms": 264.3,
+            "max_ms": 271.5
+          },
+          "GET /events (review queue)": {
+            "requests": 30,
+            "p50_ms": 154.5,
+            "p95_ms": 635.8,
+            "max_ms": 675.4
+          },
+          "GET /events (timeline, first page)": {
+            "requests": 30,
+            "p50_ms": 73.7,
+            "p95_ms": 298.6,
+            "max_ms": 323.7
+          },
+          "GET /events (timeline, last page)": {
+            "requests": 30,
+            "p50_ms": 134.0,
+            "p95_ms": 447.5,
+            "max_ms": 522.6
+          },
+          "GET /monitoring": {
+            "requests": 4,
+            "p50_ms": 27.9,
+            "p95_ms": 34.0,
+            "max_ms": 34.0
+          }
+        },
+        "errors": {}
+      },
+      "wall_seconds": 94.1,
+      "memory_peak_mib": {
+        "wildinbox-history-api-1": 713,
+        "wildinbox-history-objects-1": 469,
+        "wildinbox-history-postgres-1": 451,
+        "wildinbox-history-redis-1": 10,
+        "wildinbox-history-ui-1": 73,
+        "wildinbox-history-worker-1": 661,
+        "wildinbox-test-pg": 22
+      }
+    },
+    "invalid": {
+      "batches": [
+        {
+          "batch_id": "26b463ad-8f62-4128-8f30-f9f0a0602865",
+          "status": "completed_with_errors",
+          "counts": {
+            "images": 26,
+            "pending": 0,
+            "valid": 20,
+            "invalid": 6,
+            "duplicate": 0,
+            "events": 20,
+            "processing_failed": 0
+          },
+          "upload": {
+            "files": 26,
+            "bytes": 23537879,
+            "seconds": 0.62,
+            "server_phases_seconds": {
+              "receive": 0.1,
+              "validate": 0.02,
+              "store": 0.37,
+              "db": 0.08
+            },
+            "server_after_receive_seconds": 0.48,
+            "transfer_seconds": 0.14,
+            "transfer_mbit_per_s": 1345.0
+          },
+          "processing": {
+            "attempts": 1,
+            "worker": "cfb7d038e13c:1:6afc0fa4",
+            "queued_seconds": 0.2,
+            "processing_seconds": 1.9,
+            "images_per_second": 10.74,
+            "run_seconds": 1.7
+          },
+          "integrity": {
+            "images": 26,
+            "valid": 20,
+            "predictions": 20,
+            "duplicate_predictions": 0,
+            "valid_without_prediction": 0,
+            "events": 20,
+            "decisions": 20,
+            "events_without_one_decision": 0,
+            "ok": true
+          },
+          "failures": [
+            {
+              "filename": "corrupt.jpg",
+              "stage": "validation",
+              "error": "unreadable image: OSError: Truncated File Read"
+            },
+            {
+              "filename": "truncated.jpg",
+              "stage": "validation",
+              "error": "unreadable image: OSError: image file is truncated (18 bytes not processed)"
+            },
+            {
+              "filename": "empty.jpg",
+              "stage": "validation",
+              "error": "empty_file: file is empty (0 bytes)"
+            },
+            {
+              "filename": "notes.txt",
+              "stage": "validation",
+              "error": "unsupported_type: unsupported file type (unrecognised format); only JPEG and PNG are accepted"
+            },
+            {
+              "filename": "animation.gif",
+              "stage": "validation",
+              "error": "unsupported_type: unsupported file type (GIF); only JPEG and PNG are accepted"
+            },
+            {
+              "filename": "huge.jpg",
+              "stage": "validation",
+              "error": "file_too_large: file is larger than the 20 MiB per-file limit"
+            }
+          ],
+          "invalid_files": {
+            "corrupt.jpg": "unreadable image: OSError: Truncated File Read",
+            "truncated.jpg": "unreadable image: OSError: image file is truncated (18 bytes not processed)",
+            "empty.jpg": "empty_file: file is empty (0 bytes)",
+            "notes.txt": "unsupported_type: unsupported file type (unrecognised format); only JPEG and PNG are accepted",
+            "animation.gif": "unsupported_type: unsupported file type (GIF); only JPEG and PNG are accepted",
+            "huge.jpg": "file_too_large: file is larger than the 20 MiB per-file limit"
+          },
+          "every_invalid_file_explained": true
+        }
+      ],
+      "latency_during": {
+        "routes": {
+          "GET /batches (sidebar)": {
+            "requests": 1,
+            "p50_ms": 85.4,
+            "p95_ms": 85.4,
+            "max_ms": 85.4
+          },
+          "GET /cameras (timeline)": {
+            "requests": 1,
+            "p50_ms": 26.5,
+            "p95_ms": 26.5,
+            "max_ms": 26.5
+          },
+          "GET /events (audit queue)": {
+            "requests": 1,
+            "p50_ms": 194.3,
+            "p95_ms": 194.3,
+            "max_ms": 194.3
+          },
+          "GET /events (automatically filtered)": {
+            "requests": 1,
+            "p50_ms": 70.3,
+            "p95_ms": 70.3,
+            "max_ms": 70.3
+          },
+          "GET /events (one night's visitors)": {
+            "requests": 1,
+            "p50_ms": 48.1,
+            "p95_ms": 48.1,
+            "max_ms": 48.1
+          },
+          "GET /events (review queue)": {
+            "requests": 1,
+            "p50_ms": 182.9,
+            "p95_ms": 182.9,
+            "max_ms": 182.9
+          },
+          "GET /events (timeline, first page)": {
+            "requests": 1,
+            "p50_ms": 68.4,
+            "p95_ms": 68.4,
+            "max_ms": 68.4
+          },
+          "GET /events (timeline, last page)": {
+            "requests": 1,
+            "p50_ms": 173.2,
+            "p95_ms": 173.2,
+            "max_ms": 173.2
+          },
+          "GET /monitoring": {
+            "requests": 1,
+            "p50_ms": 12.1,
+            "p95_ms": 12.1,
+            "max_ms": 12.1
+          }
+        },
+        "errors": {}
+      },
+      "wall_seconds": 3.3,
+      "memory_peak_mib": {
+        "wildinbox-history-api-1": 525,
+        "wildinbox-history-objects-1": 490,
+        "wildinbox-history-postgres-1": 407,
+        "wildinbox-history-redis-1": 11,
+        "wildinbox-history-ui-1": 57,
+        "wildinbox-history-worker-1": 666,
+        "wildinbox-test-pg": 21
+      }
+    },
+    "concurrent": {
+      "batches": [
+        {
+          "batch_id": "059fbebe-d963-4857-b73a-ae569fe45a40",
+          "status": "completed",
+          "counts": {
+            "images": 1000,
+            "pending": 0,
+            "valid": 1000,
+            "invalid": 0,
+            "duplicate": 0,
+            "events": 348,
+            "processing_failed": 0
+          },
+          "upload": {
+            "files": 1000,
+            "bytes": 109900774,
+            "seconds": 11.08,
+            "server_phases_seconds": {
+              "receive": 1.27,
+              "validate": 0.2,
+              "store": 8.58,
+              "db": 0.52
+            },
+            "server_after_receive_seconds": 9.31,
+            "transfer_seconds": 1.77,
+            "transfer_mbit_per_s": 496.7
+          },
+          "processing": {
+            "attempts": 1,
+            "worker": "cfb7d038e13c:1:6afc0fa4",
+            "queued_seconds": 94.4,
+            "processing_seconds": 191.6,
+            "images_per_second": 5.22,
+            "run_seconds": 97.2
+          },
+          "integrity": {
+            "images": 1000,
+            "valid": 1000,
+            "predictions": 1000,
+            "duplicate_predictions": 0,
+            "valid_without_prediction": 0,
+            "events": 348,
+            "decisions": 348,
+            "events_without_one_decision": 0,
+            "ok": true
+          },
+          "failures": []
+        },
+        {
+          "batch_id": "1e1e81dd-6bb3-4a8b-ad21-e2b9b8f11cb2",
+          "status": "completed",
+          "counts": {
+            "images": 1000,
+            "pending": 0,
+            "valid": 1000,
+            "invalid": 0,
+            "duplicate": 0,
+            "events": 348,
+            "processing_failed": 0
+          },
+          "upload": {
+            "files": 1000,
+            "bytes": 109900774,
+            "seconds": 6.25,
+            "server_phases_seconds": {
+              "receive": 0.65,
+              "validate": 0.42,
+              "store": 4.26,
+              "db": 0.69
+            },
+            "server_after_receive_seconds": 5.37,
+            "transfer_seconds": 0.88,
+            "transfer_mbit_per_s": 999.1
+          },
+          "processing": {
+            "attempts": 1,
+            "worker": "cfb7d038e13c:1:6afc0fa4",
+            "queued_seconds": 0.5,
+            "processing_seconds": 99.0,
+            "images_per_second": 10.1,
+            "run_seconds": 98.5
+          },
+          "integrity": {
+            "images": 1000,
+            "valid": 1000,
+            "predictions": 1000,
+            "duplicate_predictions": 0,
+            "valid_without_prediction": 0,
+            "events": 348,
+            "decisions": 348,
+            "events_without_one_decision": 0,
+            "ok": true
+          },
+          "failures": []
+        }
+      ],
+      "started_at": "2026-09-28T13:39:50.618345+00:00",
+      "makespan_seconds": 196.4,
+      "images_per_second": 10.18,
+      "distinct_workers": 1,
+      "latency_during": {
+        "routes": {
+          "GET /batches (sidebar)": {
+            "requests": 64,
+            "p50_ms": 142.0,
+            "p95_ms": 371.9,
+            "max_ms": 615.0
+          },
+          "GET /cameras (timeline)": {
+            "requests": 63,
+            "p50_ms": 38.4,
+            "p95_ms": 119.9,
+            "max_ms": 258.9
+          },
+          "GET /events (audit queue)": {
+            "requests": 63,
+            "p50_ms": 142.8,
+            "p95_ms": 309.9,
+            "max_ms": 583.0
+          },
+          "GET /events (automatically filtered)": {
+            "requests": 64,
+            "p50_ms": 151.5,
+            "p95_ms": 399.4,
+            "max_ms": 765.3
+          },
+          "GET /events (one night's visitors)": {
+            "requests": 63,
+            "p50_ms": 59.3,
+            "p95_ms": 241.2,
+            "max_ms": 340.4
+          },
+          "GET /events (review queue)": {
+            "requests": 64,
+            "p50_ms": 184.7,
+            "p95_ms": 507.3,
+            "max_ms": 779.1
+          },
+          "GET /events (timeline, first page)": {
+            "requests": 63,
+            "p50_ms": 85.9,
+            "p95_ms": 337.5,
+            "max_ms": 907.6
+          },
+          "GET /events (timeline, last page)": {
+            "requests": 63,
+            "p50_ms": 150.6,
+            "p95_ms": 444.9,
+            "max_ms": 706.1
+          },
+          "GET /monitoring": {
+            "requests": 7,
+            "p50_ms": 67.3,
+            "p95_ms": 183.5,
+            "max_ms": 183.5
+          }
+        },
+        "errors": {}
+      },
+      "wall_seconds": 204.8,
+      "memory_peak_mib": {
+        "wildinbox-history-api-1": 768,
+        "wildinbox-history-objects-1": 610,
+        "wildinbox-history-postgres-1": 486,
+        "wildinbox-history-redis-1": 12,
+        "wildinbox-history-ui-1": 65,
+        "wildinbox-history-worker-1": 647,
+        "wildinbox-test-pg": 22
+      }
+    },
+    "restart": {
+      "batches": [
+        {
+          "batch_id": "b563f891-3cfb-4560-bedf-50c70aedb587",
+          "status": "completed",
+          "counts": {
+            "images": 1000,
+            "pending": 0,
+            "valid": 1000,
+            "invalid": 0,
+            "duplicate": 0,
+            "events": 348,
+            "processing_failed": 0
+          },
+          "upload": {
+            "files": 1000,
+            "bytes": 109895774,
+            "seconds": 9.0,
+            "server_phases_seconds": {
+              "receive": 3.27,
+              "validate": 0.27,
+              "store": 4.87,
+              "db": 0.4
+            },
+            "server_after_receive_seconds": 5.54,
+            "transfer_seconds": 3.47,
+            "transfer_mbit_per_s": 253.4
+          },
+          "processing": {
+            "attempts": 2,
+            "worker": "cfb7d038e13c:1:2944f57f",
+            "queued_seconds": 334.3,
+            "processing_seconds": 401.9,
+            "images_per_second": 2.49,
+            "run_seconds": 67.7
+          },
+          "integrity": {
+            "images": 1000,
+            "valid": 1000,
+            "predictions": 1000,
+            "duplicate_predictions": 0,
+            "valid_without_prediction": 0,
+            "events": 348,
+            "decisions": 348,
+            "events_without_one_decision": 0,
+            "ok": true
+          },
+          "failures": [],
+          "restart": {
+            "scored_before": 400,
+            "events_before": 0,
+            "restart_seconds": 13.8
+          }
+        }
+      ],
+      "latency_during": {
+        "routes": {
+          "GET /batches (sidebar)": {
+            "requests": 87,
+            "p50_ms": 137.1,
+            "p95_ms": 436.8,
+            "max_ms": 1384.1
+          },
+          "GET /cameras (timeline)": {
+            "requests": 86,
+            "p50_ms": 60.2,
+            "p95_ms": 259.9,
+            "max_ms": 903.7
+          },
+          "GET /events (audit queue)": {
+            "requests": 86,
+            "p50_ms": 114.1,
+            "p95_ms": 593.0,
+            "max_ms": 864.6
+          },
+          "GET /events (automatically filtered)": {
+            "requests": 86,
+            "p50_ms": 148.9,
+            "p95_ms": 561.5,
+            "max_ms": 1056.0
+          },
+          "GET /events (one night's visitors)": {
+            "requests": 86,
+            "p50_ms": 66.2,
+            "p95_ms": 274.8,
+            "max_ms": 761.4
+          },
+          "GET /events (review queue)": {
+            "requests": 86,
+            "p50_ms": 188.0,
+            "p95_ms": 426.0,
+            "max_ms": 576.7
+          },
+          "GET /events (timeline, first page)": {
+            "requests": 86,
+            "p50_ms": 87.2,
+            "p95_ms": 378.7,
+            "max_ms": 1116.4
+          },
+          "GET /events (timeline, last page)": {
+            "requests": 85,
+            "p50_ms": 166.7,
+            "p95_ms": 657.7,
+            "max_ms": 1180.9
+          },
+          "GET /monitoring": {
+            "requests": 11,
+            "p50_ms": 91.3,
+            "p95_ms": 1741.3,
+            "max_ms": 1741.3
+          }
+        },
+        "errors": {
+          "GET /events (timeline, last page)": 1
+        }
+      },
+      "wall_seconds": 315.5,
+      "memory_peak_mib": {
+        "wildinbox-history-api-1": 686,
+        "wildinbox-history-objects-1": 599,
+        "wildinbox-history-postgres-1": 528,
+        "wildinbox-history-redis-1": 12,
+        "wildinbox-history-ui-1": 56,
+        "wildinbox-history-worker-1": 734,
+        "wildinbox-test-pg": 19
+      }
+    }
+  },
+  "latency_client": {
+    "GET /version": {
+      "requests": 200,
+      "p50_ms": 2.4,
+      "p95_ms": 63.2,
+      "max_ms": 413.1
+    },
+    "GET /batches/{id}": {
+      "requests": 200,
+      "p50_ms": 11.8,
+      "p95_ms": 22.5,
+      "max_ms": 80.0
+    },
+    "GET /jobs/{id}": {
+      "requests": 200,
+      "p50_ms": 6.6,
+      "p95_ms": 12.7,
+      "max_ms": 100.4
+    },
+    "GET /events (100 per page)": {
+      "requests": 200,
+      "p50_ms": 15.6,
+      "p95_ms": 44.8,
+      "max_ms": 125.2
+    },
+    "GET /events/{id}": {
+      "requests": 200,
+      "p50_ms": 9.4,
+      "p95_ms": 20.2,
+      "max_ms": 65.9
+    },
+    "GET /batches (sidebar)": {
+      "requests": 200,
+      "p50_ms": 33.2,
+      "p95_ms": 65.7,
+      "max_ms": 252.2
+    },
+    "GET /events (review queue)": {
+      "requests": 200,
+      "p50_ms": 59.6,
+      "p95_ms": 145.2,
+      "max_ms": 281.2
+    },
+    "GET /events (automatically filtered)": {
+      "requests": 200,
+      "p50_ms": 45.4,
+      "p95_ms": 91.9,
+      "max_ms": 183.5
+    },
+    "GET /events (audit queue)": {
+      "requests": 200,
+      "p50_ms": 45.8,
+      "p95_ms": 97.9,
+      "max_ms": 243.3
+    },
+    "GET /events (timeline, first page)": {
+      "requests": 200,
+      "p50_ms": 26.1,
+      "p95_ms": 59.9,
+      "max_ms": 89.3
+    },
+    "GET /events (timeline, last page)": {
+      "requests": 200,
+      "p50_ms": 78.6,
+      "p95_ms": 150.9,
+      "max_ms": 310.3
+    },
+    "GET /cameras (timeline)": {
+      "requests": 200,
+      "p50_ms": 21.2,
+      "p95_ms": 49.5,
+      "max_ms": 131.3
+    },
+    "GET /events (one night's visitors)": {
+      "requests": 200,
+      "p50_ms": 19.1,
+      "p95_ms": 34.3,
+      "max_ms": 150.3
+    },
+    "GET /events?animal=true (all history)": {
+      "requests": 200,
+      "p50_ms": 334.8,
+      "p95_ms": 503.0,
+      "max_ms": 821.9
+    },
+    "GET /monitoring": {
+      "requests": 10,
+      "p50_ms": 4.8,
+      "p95_ms": 46.6,
+      "max_ms": 46.6
+    }
+  },
+  "latency_server": {
+    "GET /batches": {
+      "requests": 388,
+      "p50_ms": 53.9,
+      "p95_ms": 297.0,
+      "responses": 388,
+      "client_errors": 0,
+      "server_errors": 0
+    },
+    "GET /batches/{batch_id}": {
+      "requests": 798,
+      "p50_ms": 41.2,
+      "p95_ms": 244.6,
+      "responses": 798,
+      "client_errors": 0,
+      "server_errors": 0
+    },
+    "GET /cameras": {
+      "requests": 385,
+      "p50_ms": 24.9,
+      "p95_ms": 100.2,
+      "responses": 385,
+      "client_errors": 0,
+      "server_errors": 0
+    },
+    "GET /events": {
+      "requests": 2000,
+      "p50_ms": 50.6,
+      "p95_ms": 351.7,
+      "responses": 2741,
+      "client_errors": 0,
+      "server_errors": 0
+    },
+    "GET /events/{event_id}": {
+      "requests": 205,
+      "p50_ms": 7.6,
+      "p95_ms": 17.0,
+      "responses": 205,
+      "client_errors": 0,
+      "server_errors": 0
+    },
+    "GET /health": {
+      "requests": 244,
+      "p50_ms": 4.7,
+      "p95_ms": 84.4,
+      "responses": 244,
+      "client_errors": 0,
+      "server_errors": 0
+    },
+    "GET /jobs/{job_id}": {
+      "requests": 205,
+      "p50_ms": 5.0,
+      "p95_ms": 9.4,
+      "responses": 205,
+      "client_errors": 0,
+      "server_errors": 0
+    },
+    "GET /monitoring": {
+      "requests": 34,
+      "p50_ms": 39.0,
+      "p95_ms": 1179.7,
+      "responses": 34,
+      "client_errors": 0,
+      "server_errors": 0
+    },
+    "GET /ready": {
+      "requests": 1,
+      "p50_ms": 3481.9,
+      "p95_ms": 3481.9,
+      "responses": 1,
+      "client_errors": 0,
+      "server_errors": 0
+    },
+    "GET /version": {
+      "requests": 206,
+      "p50_ms": 1.3,
+      "p95_ms": 42.1,
+      "responses": 206,
+      "client_errors": 0,
+      "server_errors": 0
+    },
+    "POST /batches": {
+      "requests": 6,
+      "p50_ms": 7342.8,
+      "p95_ms": 10945.2,
+      "responses": 6,
+      "client_errors": 0,
+      "server_errors": 0
+    }
+  },
+  "memory": {
+    "peak_mib": {
+      "wildinbox-history-api-1": 768,
+      "wildinbox-history-objects-1": 610,
+      "wildinbox-history-postgres-1": 528,
+      "wildinbox-history-redis-1": 12,
+      "wildinbox-history-ui-1": 73,
+      "wildinbox-history-worker-1": 734,
+      "wildinbox-test-pg": 22
+    },
+    "samples": 1561
+  },
+  "history_after": {
+    "batches": 292,
+    "synthetic_batches": 250,
+    "images": 288100,
+    "events": 107114,
+    "reviews": 20598,
+    "database_mib": 515
+  },
+  "finished_at": "2026-09-28T13:52:54.394405+00:00"
+}
