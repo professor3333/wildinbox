@@ -1,0 +1,81 @@
+# Review study 2: a single-reviewer, pre-registered study (DRAFT until the
+# fields marked TO FIX are filled and this file is committed; no session may
+# start before that commit).
+#
+# Why a second study: study 1 (reports/study/study-1/FINDINGS.md) showed
+# suggestions right on 28 of 80 events and three of five participants
+# accepting nearly all of them. Recruiting more people for that interface
+# would not help. Study 2 changes the suggestions and the interaction first.
+#
+# Scope, declared before any session: ONE participant, the author, who also
+# took part in study 1 (and accepted 40 of 40 suggestions there). The result
+# can show faster review without unacceptable accuracy loss FOR THIS
+# REVIEWER on these cameras; it cannot show that reviewers in general
+# benefit. The author knows the hypothesis and is not blind to condition.
+version: 1
+question: >-
+  For one reviewer, is assisted review (improved suggestions and interaction)
+  faster than grouped review, with an accuracy loss of at most 10 points?
+
+conditions:
+  grouped: "events shown one at a time; the reviewer picks the label; no suggestion"
+  assisted: >-
+    same, plus a suggestion ONLY when its confidence reaches the display
+    threshold, otherwise "no suggestion". No separate Accept button: the
+    suggested label's button is highlighted and is chosen like any other.
+    "Other species" can be suggested. Every frame opens at full resolution.
+
+suggestions:
+  # TO FIX after the v2 development comparison: the method, its N reviewed
+  # events per camera, and the display threshold. Suggestions are computed
+  # offline for every study event and stored in the plan, with their sha256
+  # recorded, before the first session.
+  method: null
+  reviewed_events_per_camera: null
+  display_threshold: null   # per camera, chosen without that camera (leave-one-camera-out)
+
+events:
+  # Later events (after each camera's reviewed ones) of the 8 adaptation-
+  # development cameras (manifests/fresh-cameras-v2.json). The reviewer has
+  # never seen them. Not the locked fresh test, and not CCT20 (seen in study 1).
+  source: data/splits/cct-fresh-dev-v1
+  per_condition: 160
+  practice_per_condition: 5          # first session only; not analysed
+  # Two disjoint sets, matched on ground-truth label mix; each event is seen once.
+  seed: 20260928
+
+schedule:
+  # 8 timed sessions of 40 events, one condition per session, ABBA-balanced
+  # so practice and fatigue fall evenly on both conditions. At least one hour
+  # between sessions.
+  sessions: 8
+  events_per_session: 40
+  order: [grouped, assisted, assisted, grouped, assisted, grouped, grouped, assisted]
+  min_minutes_between_sessions: 60
+
+measures:
+  primary: seconds_per_event          # from the frames appearing to the label being saved
+  accuracy: >-
+    chosen label vs ground truth (supported species, empty, other species,
+    can't tell counts as wrong)
+  secondary:
+    - accuracy_when_suggestion_shown_vs_not
+    - wrong_suggestions_followed       # automation bias: of shown wrong suggestions, share chosen
+    - share_of_events_with_a_suggestion
+    - difficulty                       # 1-5, after each session
+
+analysis:
+  unit: event                         # one participant, so events are the units
+  time_effect: >-
+    difference of median seconds per event (assisted minus grouped), 95%
+    bootstrap interval resampling events within sessions (10,000 resamples)
+  accuracy_effect: >-
+    difference of accuracy (assisted minus grouped), 95% bootstrap interval
+    resampling events within sessions
+  success: >-
+    the time interval lies entirely below 0 AND the accuracy interval's lower
+    bound is above -0.10. Anything else is reported as not demonstrated.
+  bootstrap_resamples: 10000
+  max_accuracy_drop: 0.10
+  exclude:
+    max_seconds_per_event: 180        # an interruption; excluded and reported

@@ -328,6 +328,10 @@ class StudyPlan(Base):
     protocol_sha256: Mapped[str] = mapped_column(String(64))
     sets: Mapped[dict[str, Any]]  # {"A": [event ids], "B": [...], "practice": [...]}
     truth: Mapped[dict[str, Any]]  # event id -> ground-truth label (None: mixed / unknown)
+    # Study 2 (review_study_2.yaml): {"kind": "single_reviewer", "schedule",
+    # "events_per_session", "suggestions": {event id: {label, confidence, shown}}}.
+    # None: study 1's crossover design.
+    design: Mapped[dict[str, Any] | None]
     created_at: Mapped[datetime] = _now()
 
 
@@ -347,12 +351,12 @@ class StudyTrial(Base):
     __tablename__ = "study_trials"
     __table_args__ = (
         UniqueConstraint("plan_id", "participant", "event_id"),
-        CheckConstraint(_in("condition", ("grouped", "suggested")), name="condition"),
+        CheckConstraint(_in("condition", ("grouped", "suggested", "assisted")), name="condition"),
     )
     id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=True)
     plan_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("study_plans.id", ondelete="CASCADE"))
     participant: Mapped[str] = mapped_column(String(50))
-    block: Mapped[int] = mapped_column(Integer)  # 0 practice, 1 and 2 timed blocks
+    block: Mapped[int] = mapped_column(Integer)  # 0 practice, then timed blocks (sessions)
     condition: Mapped[str] = mapped_column(String(20))
     event_id: Mapped[uuid.UUID] = mapped_column()
     label: Mapped[str | None] = mapped_column(String(100))  # None: "can't tell"

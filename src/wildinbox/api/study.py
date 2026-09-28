@@ -27,7 +27,13 @@ from wildinbox.storage.models import (
     StudyRating,
     StudyTrial,
 )
-from wildinbox.study.design import ARMS, CONDITIONS, assignment
+from wildinbox.study.design import (
+    ARMS,
+    ASSISTED,
+    SINGLE_REVIEWER,
+    TRIAL_CONDITIONS,
+    plan_assignment,
+)
 
 
 class PlanIn(BaseModel):
@@ -35,6 +41,9 @@ class PlanIn(BaseModel):
     protocol_sha256: str = Field(pattern=r"^[0-9a-f]{64}$")
     sets: dict[str, list[uuid.UUID]]
     truth: dict[uuid.UUID, str | None]
+    # Study 2: {"kind": "single_reviewer", "schedule": [...], "events_per_session": n,
+    # "suggestions": {event id: {"label", "confidence", "shown"}}}; None for study 1.
+    design: dict[str, Any] | None = None
 
 
 class JoinIn(BaseModel):
@@ -43,7 +52,7 @@ class JoinIn(BaseModel):
 
 class TrialIn(BaseModel):
     participant: str = Field(min_length=1, max_length=50)
-    block: int = Field(ge=0, le=2)
+    block: int = Field(ge=0, le=64)
     condition: str
     event_id: uuid.UUID
     label: str | None = Field(default=None, max_length=100)
@@ -56,7 +65,7 @@ class TrialIn(BaseModel):
 
 class RatingIn(BaseModel):
     participant: str = Field(min_length=1, max_length=50)
-    block: int = Field(ge=1, le=2)
+    block: int = Field(ge=1, le=64)
     condition: str
     difficulty: int = Field(ge=1, le=5)
 
@@ -93,12 +102,28 @@ def add_study_routes(
             raise error(422, "invalid_plan", "an event appears in more than one set")
         if missing := [str(e) for e in ids if e not in body.truth]:
             raise error(422, "invalid_plan", f"no ground truth for {missing[:3]}")
+        sets = {k: [str(e) for e in v] for k, v in body.sets.items()}
+        if body.design is not None:
+            if body.design.get("kind") != SINGLE_REVIEWER:
+                raise error(422, "invalid_plan", f"design kind must be {SINGLE_REVIEWER!r}")
+            try:
+                plan_assignment(sets, body.design, 0)
+            except (KeyError, ValueError) as e:
+                raise error(422, "invalid_plan", f"invalid design: {e}") from None
+            unknown = set(body.design.get("suggestions", {})) - {str(e) for e in ids}
+            if unknown:
+                raise error(
+                    422,
+                    "invalid_plan",
+                    f"suggestions for events not in the plan: {sorted(unknown)[:3]}",
+                )
         with sessions()() as s:
             plan = StudyPlan(
                 name=body.name,
                 protocol_sha256=body.protocol_sha256,
-                sets={k: [str(e) for e in v] for k, v in body.sets.items()},
+                sets=sets,
                 truth={str(k): v for k, v in body.truth.items()},
+                design=body.design,
             )
             s.add(plan)
             s.commit()
@@ -143,10 +168,31 @@ def add_study_routes(
                 p = StudyParticipant(plan_id=plan_id, code=body.code, arm=n % len(ARMS))
                 s.add(p)
                 s.commit()
-            return {"participant": p.code, "classes": classes, **assignment(plan.sets, p.arm)}
+            a = plan_assignment(plan.sets, plan.design, p.arm)
+            logged = s.scalars(
+                select(StudyTrial.event_id).where(
+                    StudyTrial.plan_id == plan_id, StudyTrial.participant == p.code
+                )
+            ).all()
+            assisted = {
+                e
+                for part in (a["practice"], a["blocks"])
+                for x in part
+                if x["condition"] == ASSISTED
+                for e in x["events"]
+            }
+            suggestions = (plan.design or {}).get("suggestions", {})
+            return {
+                "participant": p.code,
+                "classes": classes,
+                **a,
+                # Only for events this participant reviews assisted; never ground truth.
+                "suggestions": {e: v for e, v in suggestions.items() if e in assisted},
+                "logged": sorted(str(e) for e in logged),  # to resume a later session
+            }
 
     def expected(plan: StudyPlan, arm: int, block: int, condition: str, event_id: str) -> bool:
-        a = assignment(plan.sets, arm)
+        a = plan_assignment(plan.sets, plan.design, arm)
         if block == 0:
             return any(
                 x["condition"] == condition and event_id in x["events"] for x in a["practice"]
@@ -156,8 +202,8 @@ def add_study_routes(
 
     @app.post("/study/plans/{plan_id}/trials", status_code=201)
     def log_trial(plan_id: uuid.UUID, body: TrialIn) -> Any:
-        if body.condition not in CONDITIONS:
-            raise error(422, "invalid_trial", f"condition must be one of {CONDITIONS}")
+        if body.condition not in TRIAL_CONDITIONS:
+            raise error(422, "invalid_trial", f"condition must be one of {TRIAL_CONDITIONS}")
         with sessions()() as s:
             plan = plan_or_404(s, plan_id)
             p = participant_or_404(s, plan_id, body.participant)
@@ -242,10 +288,22 @@ def add_study_routes(
                     "created_at": d.created_at.isoformat(),
                 }
 
+            plan_suggestions = (plan.design or {}).get("suggestions", {})
+
             def displayed(t: StudyTrial) -> dict[str, Any] | None:
-                """The suggestion on screen: the logged decision, or for trials
+                """The suggestion on screen: in study 2 the plan's suggestion when
+                it was shown; in study 1 the logged decision, or for trials
                 logged before decisions were recorded, the event's latest
                 decision made before the event was shown (what the page loads)."""
+                if t.condition == ASSISTED:
+                    sug = plan_suggestions.get(str(t.event_id))
+                    if not sug or not sug.get("shown"):
+                        return None
+                    return {
+                        "suggested_label": sug["label"],
+                        "confidence": sug["confidence"],
+                        "source": "plan",
+                    }
                 if t.condition != "suggested":
                     return None
                 if t.decision_id is not None:
@@ -263,6 +321,7 @@ def add_study_routes(
                     "protocol_sha256": plan.protocol_sha256,
                     "sets": plan.sets,
                     "truth": plan.truth,
+                    "design": plan.design,
                     "classes": classes,
                 },
                 "participants": [

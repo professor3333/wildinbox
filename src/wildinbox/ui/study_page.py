@@ -1,10 +1,14 @@
-"""The participant's view of the timed review study (configs/study/review_study.yaml).
+"""The participant's view of the timed review studies.
 
 One event at a time. In the "grouped" condition the reviewer sees only the
-frames; in "suggested" also the model's suggestion, its confidence, the review
-reasons, and a one-click Accept. Seconds run from the moment the event's frames
-are on screen to the moment its label is saved. Choices go to the study log,
-never to production reviews.
+frames. Study 1 (configs/study/review_study.yaml), "suggested": also the
+model's suggestion, its confidence, the review reasons, and a one-click
+Accept. Study 2 (configs/study/review_study_2.yaml), "assisted": the plan's
+suggestion only when it reaches the display threshold (otherwise "no
+suggestion"), no Accept button (the suggested label's button is highlighted
+and chosen like any other), and full-size frames. Seconds run from the moment
+the event's frames are on screen to the moment its label is saved. Choices go
+to the study log, never to production reviews.
 """
 
 from __future__ import annotations
@@ -22,6 +26,9 @@ from wildinbox.ui.logic import REASON_TEXT, label_choices
 
 PROTOCOL = Path("configs/study/review_study.yaml")
 CANT_TELL = "can't tell"
+OTHER_SPECIES = "other species"
+ASSISTED = "assisted"
+BREAK_SECONDS = 60 * 60  # review_study_2.yaml: schedule.min_minutes_between_sessions
 
 
 def _state() -> dict[str, Any]:
@@ -57,7 +64,14 @@ def study_page(api: ApiClient, thumbnail: Any) -> None:
             except ApiError as e:
                 st.error(e.detail)
                 return
-            s.update({"plan": plan_id.strip(), "code": code.strip(), "stage": "consent", "i": 0})
+            logged = set(s["assignment"].get("logged", []))
+            steps = _steps(s["assignment"])
+            first = next(
+                (n for n, x in enumerate(steps) if x["event_id"] not in logged), len(steps)
+            )
+            s.update({"plan": plan_id.strip(), "code": code.strip(), "i": first})
+            # A returning participant (study 2 sessions) skips consent and practice.
+            s["stage"] = "consent" if first == 0 else "trial"
             st.rerun()
         return
 
@@ -98,8 +112,32 @@ def study_page(api: ApiClient, thumbnail: Any) -> None:
                     "difficulty": rating,
                 },
             )
-            s["stage"] = "trial" if s["i"] < len(steps) else "done"
+            sessions = max(x["block"] for x in steps)
+            if s["i"] >= len(steps):
+                s["stage"] = "done"
+            elif sessions > 2:  # study 2: one timed session per sitting
+                s["stage"] = "break"
+            else:
+                s["stage"] = "trial"
             st.rerun()
+        return
+
+    if s["stage"] == "break":
+        st.success(
+            f"Session {s['rating_block']} done. Take a break of at least an hour, then "
+            "continue here, or join again later with the same study and participant codes."
+        )
+        waited = time.time() - s.setdefault("break_started", time.time())
+        if st.button(
+            "Continue with the next session",
+            disabled=waited < BREAK_SECONDS,
+            key=f"study-continue-{s['rating_block']}",
+        ):
+            s.pop("break_started")
+            s["stage"] = "trial"
+            st.rerun()
+        if waited < BREAK_SECONDS:
+            st.caption(f"Available in {int((BREAK_SECONDS - waited) // 60) + 1} min.")
         return
 
     if s["stage"] == "done" or s["i"] >= len(steps):
@@ -112,7 +150,9 @@ def study_page(api: ApiClient, thumbnail: Any) -> None:
     else:
         before = [x for x in steps[: s["i"]] if x["block"] == step["block"]]
         total = sum(1 for x in steps if x["block"] == step["block"])
-        st.caption(f"Block {step['block']} of 2 · event {len(before) + 1} of {total}")
+        sessions = max(x["block"] for x in steps)
+        word = "Session" if sessions > 2 else "Block"
+        st.caption(f"{word} {step['block']} of {sessions} · event {len(before) + 1} of {total}")
     _trial(api, thumbnail, s, step, steps)
 
 
@@ -187,18 +227,27 @@ def _trial(
         ):
             _decide(api, s, step, steps, d["suggested_label"])
             st.rerun()
+    highlight = None
+    if step["condition"] == ASSISTED:
+        highlight = _assisted(api, thumbnail, s, eid, frames)
     classes = label_choices(s["assignment"]["classes"])
-    options = [*classes, "other species", CANT_TELL]
+    options = [*classes, OTHER_SPECIES, CANT_TELL]
     # Two rows of five equal-width buttons, so no label is truncated.
     cells = [c for _ in range(0, len(options), 5) for c in st.columns(5)]
     for cell, label in zip(cells, classes, strict=False):
-        if cell.button(label, key=f"study-{eid}-{label}", use_container_width=True):
+        if cell.button(
+            label,
+            key=f"study-{eid}-{label}",
+            type="primary" if label == highlight else "secondary",
+            use_container_width=True,
+        ):
             _decide(api, s, step, steps, label)
             st.rerun()
     other_cell, cant_cell = cells[len(classes)], cells[len(classes) + 1]
     if other_cell.button(
-        "other species",
+        OTHER_SPECIES,
         key=f"study-{eid}-other",
+        type="primary" if highlight == OTHER_SPECIES else "secondary",
         on_click=_bump,
         args=(s, eid),
         use_container_width=True,
@@ -214,3 +263,22 @@ def _trial(
             st.rerun()
     # The clock starts once this event's frames are on screen.
     s.setdefault("shown", {}).setdefault(eid, time.time())
+
+
+def _assisted(
+    api: ApiClient, thumbnail: Any, s: dict[str, Any], eid: str, frames: list[str]
+) -> str | None:
+    """Study 2's assisted view. Returns the label button to highlight."""
+    with st.expander("Full-size frames"):
+        for image_id in frames:
+            data = thumbnail(api, image_id, 1024)
+            if data:
+                st.image(data, use_container_width=True)
+    sug = s["assignment"].get("suggestions", {}).get(eid)
+    if not sug or not sug.get("shown"):
+        st.caption("No suggestion for this event: decide from the frames.")
+        return None
+    label = sug["label"]
+    shown = OTHER_SPECIES if label == "other_animal" else label
+    st.markdown(f"Suggestion: **{shown}** ({sug['confidence']:.0%} confident). Check the frames.")
+    return shown

@@ -7,7 +7,8 @@ import hashlib
 from collections import defaultdict
 from typing import Any
 
-CONDITIONS = ("grouped", "suggested")
+CONDITIONS = ("grouped", "suggested")  # study 1
+TRIAL_CONDITIONS = (*CONDITIONS, "assisted")  # any study; assisted: study 2
 # arm -> ((condition, set), (condition, set)); participant n gets arm n % 4.
 ARMS: tuple[tuple[tuple[str, str], tuple[str, str]], ...] = (
     (("grouped", "A"), ("suggested", "B")),
@@ -78,6 +79,53 @@ def assignment(sets: dict[str, list[str]], arm: int) -> dict[str, Any]:
             {"block": i + 1, "condition": c, "set": s, "events": sets[s]}
             for i, (c, s) in enumerate(blocks)
         ],
+    }
+
+
+# Study 2 (configs/study/review_study_2.yaml): one reviewer, many sessions.
+ASSISTED = "assisted"
+SINGLE_REVIEWER = "single_reviewer"
+
+
+def single_reviewer_design(
+    sets: dict[str, list[str]],
+    schedule: list[str],
+    events_per_session: int,
+) -> list[dict[str, Any]]:
+    """Timed sessions in the protocol's order. Grouped sessions take set A in
+    order, assisted sessions set B, so every event is seen once."""
+    if set(schedule) != {"grouped", ASSISTED}:
+        raise ValueError("the schedule must use both conditions, grouped and assisted")
+    source = {"grouped": "A", ASSISTED: "B"}
+    used = {"A": 0, "B": 0}
+    blocks = []
+    for i, condition in enumerate(schedule, start=1):
+        s = source[condition]
+        events = sets[s][used[s] : used[s] + events_per_session]
+        if len(events) < events_per_session:
+            raise ValueError(f"set {s} has too few events for session {i}")
+        used[s] += events_per_session
+        blocks.append({"block": i, "condition": condition, "set": s, "events": events})
+    return blocks
+
+
+def plan_assignment(
+    sets: dict[str, list[str]], design: dict[str, Any] | None, arm: int
+) -> dict[str, Any]:
+    """Study 1 plans (no design) keep their crossover arms; study 2 plans
+    follow their fixed session schedule."""
+    if design is None:
+        return assignment(sets, arm)
+    half = len(sets["practice"]) // 2
+    first = design["schedule"][0]
+    second = ASSISTED if first == "grouped" else "grouped"
+    return {
+        "arm": 0,
+        "practice": [
+            {"condition": first, "events": sets["practice"][:half]},
+            {"condition": second, "events": sets["practice"][half:]},
+        ],
+        "blocks": single_reviewer_design(sets, design["schedule"], design["events_per_session"]),
     }
 
 
