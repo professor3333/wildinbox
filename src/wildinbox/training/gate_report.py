@@ -95,8 +95,8 @@ def _decision(out: dict[str, Any]) -> list[str]:
         "promote": f"**Promote** {head}",
         "reject": f"**Reject** {head} A check failed on enough evidence.",
         "inconclusive": f"**Inconclusive: do not promote** {head} Nothing failed, but "
-        "some check had too little evidence to judge. Gate again on more reviewed "
-        "events or a fresh holdout.",
+        "some check had too little evidence to judge, or this holdout's comparison "
+        "budget is spent. Gate again on more reviewed events or a fresh holdout.",
     }[decision]
     if out.get("promotion_policy") == "legacy":
         line += (
