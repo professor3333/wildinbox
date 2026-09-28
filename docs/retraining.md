@@ -253,7 +253,20 @@ The gate refuses a protocol without the `species` and `min_evidence` blocks.
 To rerun a recorded cycle under its original rules, pass `--legacy-policy`. The
 report and the command then say the decision is not sufficient for release,
 and `scripts/release_rollback.py` releases it only when also given
-`--legacy-policy`. Under the policy above, the
+`--legacy-policy`.
+
+Before contacting the deployment, the release script checks the gate record
+(`promotion.release_authorization`). It releases only a record that:
+
+- was gated under the per-species policy;
+- decided promote;
+- is consistent: `promote`, the decision, and the recorded checks agree.
+
+It stops, whatever the flags, on reject, inconclusive, an unrecognized
+policy, or an inconsistent record. A record with no `promotion_policy` marker
+counts as legacy: cycle 1's and the rehearsal's gate records predate the
+marker, and they are released only with `--legacy-policy`. Under the policy
+above, the
 rehearsal candidate is **rejected** for bobcat
 (`tests/test_promotion.py` applies it to the recorded results).
 

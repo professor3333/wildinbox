@@ -128,3 +128,29 @@ def test_report_without_provenance_is_neutral(tmp_path: Path) -> None:
     md = _render(tmp_path, out)
     assert UNCONDITIONAL not in md and "## Protocol provenance" not in md
     assert "was not recorded" in md
+
+
+def test_the_same_protocol_gets_the_same_provenance_however_it_is_named(
+    repo: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    commit = _commit_protocol("gate: 1\n", "2026-09-25T06:00:00+00:00")
+    snap = _snapshot(repo, ["2026-09-25T10:19:19+00:00"])
+    training = {"commit": commit, "dirty": False}
+    relative = protocol_provenance(PROTOCOL, snap, training)
+    assert relative["first_committed"]["commit"] == commit
+    assert relative["committed_before_training"] is True
+    assert protocol_provenance(repo / PROTOCOL, snap, training) == relative
+    assert protocol_provenance((repo / PROTOCOL).resolve(), snap, training) == relative
+    # From a subdirectory: `git log` reads paths from there, `git show` from the root.
+    monkeypatch.chdir(repo / "configs")
+    assert protocol_provenance(Path("experiments/cycle.yaml"), snap, training) == relative
+
+
+def test_a_protocol_outside_any_repository_has_no_provenance(tmp_path: Path) -> None:
+    outside = tmp_path / "protocol.yaml"
+    outside.write_text("gate: 1\n")
+    snap = _snapshot(tmp_path, ["2026-09-25T10:19:19+00:00"])
+    prov = protocol_provenance(outside, snap, {"commit": "abc", "dirty": False})
+    assert prov["first_committed"] is None
+    assert prov["committed_before_reviews"] is None
+    assert prov["committed_before_training"] is None

@@ -145,3 +145,42 @@ def decide(checks: dict[str, dict[str, Any]]) -> str:
     if any(r is None for r in results):
         return INCONCLUSIVE
     return PROMOTE
+
+
+def release_authorization(record: dict[str, Any], *, allow_legacy: bool) -> str:
+    """Whether a gate record (`metrics.json`) authorizes a release; returns its
+    policy, raises PolicyError otherwise. For anything that consumes gate
+    records to release a candidate.
+
+    - No `promotion_policy` marker means the record predates this policy: it is
+      legacy, like one gated with `--legacy-policy`, and needs `allow_legacy`.
+    - An unrecognized policy is refused, never guessed at.
+    - The recorded decision must be promote and agree with `promote` and with
+      the recorded checks, so an edited or inconsistent record cannot release.
+    """
+    policy = record.get("promotion_policy", LEGACY)
+    if policy not in (LEGACY, SPECIES):
+        raise PolicyError(f"unrecognized promotion policy {policy!r}")
+    if policy == LEGACY and not allow_legacy:
+        where = "records no promotion policy" if "promotion_policy" not in record else "is legacy"
+        raise PolicyError(
+            f"the gate record {where}: aggregate checks only, no per-species limits or "
+            "minimum evidence. Release it only to reproduce a recorded cycle, with the "
+            "legacy opt-in"
+        )
+    checks = record.get("checks")
+    if not isinstance(checks, dict) or not checks:
+        raise PolicyError("the gate record has no checks")
+    if policy == SPECIES and not any(k.startswith("species_recall_") for k in checks):
+        raise PolicyError("the gate record claims the species policy but has no species checks")
+    decision = record.get("decision", PROMOTE if record.get("promote") is True else REJECT)
+    if decision not in (PROMOTE, REJECT, INCONCLUSIVE):
+        raise PolicyError(f"unrecognized decision {decision!r}")
+    if decide(checks) != decision or record.get("promote") is not (decision == PROMOTE):
+        raise PolicyError(
+            f"the gate record is inconsistent: decision {decision!r}, promote "
+            f"{record.get('promote')!r}, checks give {decide(checks)!r}"
+        )
+    if decision != PROMOTE:
+        raise PolicyError(f"the gate decided {decision}, not promote")
+    return str(policy)
