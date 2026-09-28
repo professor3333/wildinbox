@@ -10,17 +10,24 @@ from typing import Any
 
 import numpy as np
 
-from wildinbox.adaptation.data import FrameOutputs, load_camera_events, score_frames
+from wildinbox.adaptation.data import (
+    CameraEvent,
+    FrameOutputs,
+    load_camera_events,
+    score_frames,
+)
 from wildinbox.adaptation.evaluate import (
     AUDIT_RATE,
     FALSE_EMPTY_LIMIT,
     PRECISION_TARGET,
+    Scored,
     in_sample,
     leave_one_camera_out,
     nested_leave_one_camera_out,
     score_camera,
 )
 from wildinbox.adaptation.methods import (
+    LABELLED_ROLES,
     CameraHead,
     Method,
     PriorShift,
@@ -28,6 +35,7 @@ from wildinbox.adaptation.methods import (
     reviewed_frames,
 )
 from wildinbox.datasets.spec import Partition
+from wildinbox.evaluation.data import ImageRow
 
 SPLIT = "cct-fresh-dev-v1"
 IMAGES = "cct_fresh_dev"
@@ -79,6 +87,92 @@ def training_sample(
         rows += list(pick)
         y += [cls[c]] * len(pick)
     return ref["features"][np.array(rows)], np.array(y)
+
+
+FINETUNED_N = 50
+
+
+def finetuned_dir(models_dir: Path, camera: str, n: int = FINETUNED_N) -> Path:
+    """configs/experiments/adaptation/finetune-e3-cam<camera>-n<n>.yaml"""
+    return models_dir / f"finetune-e3-adapt-cam{camera}-n{n}"
+
+
+def refit_temperature(config: Path, model_dir: Path, data_dir: Path, device: str) -> float:
+    """The candidate's temperature on the CCT20 calibration cameras, as the
+    update gate refits it."""
+    from wildinbox.evaluation.calibration import fit_temperature
+    from wildinbox.evaluation.data import load_rows
+
+    split = data_dir / "splits" / "cct20-splits-v1"
+    rows, _ = load_rows(split, [Partition.CALIBRATION])
+    out = score_frames(
+        config, model_dir, split, data_dir / "raw" / "cct20" / "images", rows, "calibration", device
+    )
+    keep = [
+        i
+        for i, r in enumerate(rows)
+        if r.image_label in out.classes and r.event_role in LABELLED_ROLES
+    ]
+    labels = np.array([out.classes.index(rows[i].image_label or "") for i in keep])
+    return fit_temperature(np.exp(out.log_probs[keep]), labels)
+
+
+def finetuned_results(
+    config: Path,
+    models_dir: Path,
+    data_dir: Path,
+    device: str,
+    cams: dict[str, list[CameraEvent]],
+    rows: list[ImageRow],
+) -> dict[str, Any]:
+    """Per-camera fine-tuned models (each trained with its camera's first
+    FINETUNED_N reviewed events), alone and with the other-animal head on
+    their features. Each camera is scored only by its own model."""
+    split = data_dir / "splits" / SPLIT
+    per_camera: dict[str, tuple[list[Scored], int]] = {}
+    per_config: dict[str, dict[str, tuple[list[Scored], int]]] = {}
+    temperatures: dict[str, float] = {}
+    for cam, events in cams.items():
+        mdir = finetuned_dir(models_dir, cam)
+        cam_rows = [r for r in rows if r.camera_id == cam]
+        out = score_frames(
+            config,
+            mdir,
+            split,
+            data_dir / "raw" / IMAGES / "images",
+            cam_rows,
+            f"fresh-dev-v1-cam{cam}",
+            device,
+        )
+        temperatures[cam] = refit_temperature(config, mdir, data_dir, device)
+        per_camera[cam] = score_camera(
+            Release(temperatures[cam], name="finetuned"), events, FINETUNED_N, out
+        )
+        x_base, y_base = unseen_base(config, mdir, data_dir, device)
+        for c in HEAD_C:
+            for share in HEAD_SHARE:
+                head = CameraHead(x_base, y_base, with_other=True, camera_share=share, c=c)
+                per_config.setdefault(f"C={c},share={share}", {})[cam] = score_camera(
+                    head, events, FINETUNED_N, out
+                )
+    results = {
+        f"finetuned@{FINETUNED_N}": {
+            "method": "finetuned",
+            "n": FINETUNED_N,
+            "temperatures": temperatures,
+            "leave_one_camera_out": leave_one_camera_out(per_camera),
+            "in_sample": in_sample(per_camera),
+        },
+        f"finetuned_head_other@{FINETUNED_N}": {
+            "method": "finetuned_head_other",
+            "n": FINETUNED_N,
+            "leave_one_camera_out": nested_leave_one_camera_out(per_config),
+            "per_config_in_sample": {cfg: in_sample(pc) for cfg, pc in per_config.items()},
+        },
+    }
+    for key, r in results.items():
+        print(f"{key}: {_line(r)}", flush=True)
+    return results
 
 
 def run(
@@ -137,6 +231,11 @@ def run(
                 "per_config_in_sample": {cfg: in_sample(pc) for cfg, pc in per_config.items()},
             }
             print(f"{key}: {_line(results[key])}", flush=True)
+    models_dir = model_dir.parent
+    if all((finetuned_dir(models_dir, cam) / "model.pt").exists() for cam in cams):
+        results |= finetuned_results(config, models_dir, data_dir, device, cams, rows)
+    else:
+        print("per-camera fine-tuned models not all trained; skipped", flush=True)
     payload = {
         "split": SPLIT,
         "release": {"model": model_dir.name, "temperature": t},
