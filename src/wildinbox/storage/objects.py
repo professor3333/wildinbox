@@ -7,6 +7,7 @@ file twice is harmless and never duplicates data.
 from __future__ import annotations
 
 import os
+import uuid
 from pathlib import Path
 from typing import Any, Protocol
 
@@ -45,9 +46,14 @@ class LocalStore:
     def put(self, key: str, data: bytes, content_type: str) -> None:
         path = self._path(key)
         path.parent.mkdir(parents=True, exist_ok=True)
-        tmp = path.with_name(path.name + ".tmp")
-        tmp.write_bytes(data)
-        os.replace(tmp, path)
+        # A temporary name per write: two uploads storing the same content
+        # (the same key) at once must not rename each other's file away.
+        tmp = path.with_name(f"{path.name}.{uuid.uuid4().hex}.tmp")
+        try:
+            tmp.write_bytes(data)
+            os.replace(tmp, path)
+        finally:
+            tmp.unlink(missing_ok=True)
 
     def get(self, key: str) -> bytes:
         try:

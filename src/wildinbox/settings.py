@@ -88,6 +88,9 @@ class Settings(BaseSettings):
     max_batch_bytes: int = Field(default=1024 * 1024 * 1024, gt=0)
     # Originals written to object storage in parallel per upload.
     store_concurrency: int = Field(default=16, gt=0, le=64)
+    # Processes that write originals, off the API's interpreter lock so other
+    # requests are not stalled by an upload (0: threads in the API process).
+    store_processes: int = Field(default=1, ge=0, le=8)
 
     # GET /monitoring and /metrics: one summary is shared by simultaneous callers
     # and fresh for this many seconds; after that callers get it while the next

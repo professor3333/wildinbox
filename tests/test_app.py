@@ -83,6 +83,9 @@ def settings(database_url: str, tmp_path: Path) -> Settings:
         # A fresh summary per request, so tests see each change;
         # tests/test_monitoring_runner.py covers the reuse.
         monitoring_max_age_seconds=0,
+        # Originals written by threads in this process: spawning a store process
+        # per test app doubles the suite's time; tests/test_originals.py covers it.
+        store_processes=0,
     )
 
 
@@ -214,6 +217,31 @@ def test_resubmitting_the_same_request_creates_no_duplicates(
     )
     assert conflict.status_code == 409 and conflict.json()["error"] == "idempotency_conflict"
     assert _count(settings, Job) == 2
+
+
+def test_simultaneous_identical_uploads_create_one_batch(
+    client: TestClient, settings: Settings
+) -> None:
+    """Both requests pass the duplicate check before either inserts; the loser
+    hits the unique request key and answers with the winner's batch."""
+    import threading
+    from concurrent.futures import ThreadPoolExecutor
+
+    barrier = threading.Barrier(2, timeout=30)
+    put = client.app.state.put_originals  # type: ignore[attr-defined]
+
+    def put_after_both_checked(originals: Any) -> None:
+        barrier.wait()
+        put(originals)
+
+    client.app.state.put_originals = put_after_both_checked  # type: ignore[attr-defined]
+    files = _files(("a.jpg", jpeg(20)), ("b.jpg", jpeg(21)), ("a-again.jpg", jpeg(20)))
+    with ThreadPoolExecutor(2) as pool:
+        results = list(pool.map(lambda _: client.post("/batches", files=files), range(2)))
+    assert sorted(r.status_code for r in results) == [200, 202]
+    assert len({r.json()["id"] for r in results}) == 1
+    assert _count(settings, Batch) == 1 and _count(settings, Job) == 1
+    assert _count(settings, Image) == 3  # the loser's rows were rolled back
 
 
 def test_rerunning_a_job_does_not_duplicate_results(client: TestClient, settings: Settings) -> None:

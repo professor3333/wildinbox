@@ -15,7 +15,7 @@ from fastapi import FastAPI, Header, Request
 from fastapi.concurrency import run_in_threadpool
 from fastapi.responses import HTMLResponse, JSONResponse, PlainTextResponse, Response
 from pydantic import BaseModel, Field, ValidationError
-from sqlalchemy import and_, exists, func, or_, select
+from sqlalchemy import and_, exists, func, insert, or_, select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session, aliased, selectinload, sessionmaker
 from starlette.datastructures import UploadFile
@@ -23,6 +23,7 @@ from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from wildinbox.api import views
 from wildinbox.api.auth import PUBLIC_PATHS, principal
+from wildinbox.api.originals import writer as originals_writer
 from wildinbox.api.uploads import (
     UploadedFile,
     UploadError,
@@ -412,6 +413,9 @@ def create_app(
     @asynccontextmanager
     async def lifespan(app: FastAPI) -> AsyncIterator[None]:
         app.state.store = store or store_from_settings(settings)
+        app.state.put_originals, close_originals = originals_writer(
+            settings, app.state.store, injected=store is not None
+        )
         app.state.dispatcher = dispatcher or dispatcher_from_settings(settings, app.state.store)
         app.state.sessions = session_factory(settings.database_url)
         with app.state.sessions() as s:
@@ -423,7 +427,10 @@ def create_app(
             settings.monitoring_config,
             settings.monitoring_max_age_seconds,
         )
-        yield
+        try:
+            yield
+        finally:
+            close_originals()
 
     app = FastAPI(title="WildInbox", version="0.1.0", lifespan=lifespan)
     latency: dict[str, deque[float]] = defaultdict(lambda: deque(maxlen=2000))
@@ -655,25 +662,15 @@ def create_app(
         return response
 
     def _put_originals(files: list[UploadedFile]) -> None:
-        """Write accepted originals to object storage, several at a time: they
-        are independent, content-addressed objects, and one at a time a
-        1,000-file batch spends most of its upload waiting on S3 round trips."""
-        from concurrent.futures import ThreadPoolExecutor
-
+        """Write accepted originals to object storage, several at a time and off
+        the API's interpreter lock (`api.originals`): they are independent,
+        content-addressed objects."""
         todo = {
-            f.sha256: f
+            f.sha256: (original_key(f.sha256), f.data, f.content_type)
             for f in files
             if f.accepted and f.data is not None and f.sha256 and f.content_type
         }
-
-        def put(f: UploadedFile) -> None:
-            assert f.sha256 and f.data is not None and f.content_type
-            key = original_key(f.sha256)
-            if not app.state.store.exists(key):
-                app.state.store.put(key, f.data, f.content_type)
-
-        with ThreadPoolExecutor(settings.store_concurrency) as pool:
-            list(pool.map(put, todo.values()))  # re-raises the first failure
+        app.state.put_originals(list(todo.values()))
 
     def _store_batch(
         files: list[UploadedFile],
@@ -690,55 +687,69 @@ def create_app(
             _put_originals(files)
             marks.append(("store", time.perf_counter()))
 
-            batch = Batch(
-                id=uuid.uuid4(),
-                workspace=settings.workspace,
-                request_key=request_key,
-                status="queued",
-                manifest=manifest(files, metadata, fingerprint, settings),
-            )
-            s.add(batch)
-            prior = _workspace_images(s, {f.sha256 for f in files if f.sha256})
-            seen: dict[str, uuid.UUID] = {}
-            for f in files:
-                img = Image(
+            # A concurrent identical request may win the race on the batch's
+            # request key: at the batch flush or at commit.
+            try:
+                batch = Batch(
+                    id=uuid.uuid4(),
+                    workspace=settings.workspace,
+                    request_key=request_key,
+                    status="queued",
+                    manifest=manifest(files, metadata, fingerprint, settings),
+                )
+                s.add(batch)
+                s.flush()  # the images reference it
+                prior = _workspace_images(s, {f.sha256 for f in files if f.sha256})
+                seen: dict[str, uuid.UUID] = {}
+                rows: list[dict[str, Any]] = []
+                for f in files:
+                    image_id = uuid.uuid4()
+                    status, error, duplicate_of = "pending", None, None
+                    storage_key = original_key(f.sha256 or "") if f.accepted else None
+                    if not f.accepted:
+                        status, error = "invalid", f"{f.error_code}: {f.error}"
+                    elif f.sha256 in seen or f.sha256 in prior:
+                        status = "duplicate"
+                        duplicate_of = seen.get(f.sha256 or "") or prior[f.sha256 or ""]
+                    else:
+                        seen[f.sha256 or ""] = image_id
+                    rows.append(
+                        {
+                            "id": image_id,
+                            "batch_id": batch.id,
+                            "position": f.position,
+                            "original_filename": f.filename,
+                            "size_bytes": f.size,
+                            "sha256": f.sha256,
+                            "content_type": f.content_type,
+                            "camera_id": f.metadata.camera_id,
+                            "captured_at": _naive(f.metadata.captured_at),
+                            "sequence_id": f.metadata.sequence_id,
+                            "user_metadata": f.metadata.model_dump(mode="json", exclude_none=True),
+                            "validation_status": status,
+                            "validation_error": error,
+                            "duplicate_of": duplicate_of,
+                            "storage_key": storage_key,
+                        }
+                    )
+                # One multi-row INSERT, not an ORM object per image: building and
+                # flushing 1,000 objects held the interpreter lock for seconds, and
+                # every other request waited. (A duplicate may point at an earlier
+                # row of the same statement: Postgres checks the reference at its end.)
+                if rows:
+                    s.execute(insert(Image), rows)
+                job = Job(
                     id=uuid.uuid4(),
                     batch_id=batch.id,
-                    position=f.position,
-                    original_filename=f.filename,
-                    size_bytes=f.size,
-                    sha256=f.sha256,
-                    content_type=f.content_type,
-                    camera_id=f.metadata.camera_id,
-                    captured_at=_naive(f.metadata.captured_at),
-                    sequence_id=f.metadata.sequence_id,
-                    user_metadata=f.metadata.model_dump(mode="json", exclude_none=True),
+                    # Queued now, not when the transaction began (before the S3 writes).
+                    created_at=_utcnow(),
+                    kind="process_batch",
+                    status="queued",
+                    attempts=0,
+                    max_attempts=3,
+                    model_release_id=active_release_id(s, settings),  # pinned for all retries
                 )
-                if not f.accepted:
-                    img.validation_status = "invalid"
-                    img.validation_error = f"{f.error_code}: {f.error}"
-                elif f.sha256 in seen or f.sha256 in prior:
-                    img.validation_status = "duplicate"
-                    img.duplicate_of = seen.get(f.sha256) or prior[f.sha256 or ""]
-                    img.storage_key = original_key(f.sha256 or "")
-                else:
-                    img.validation_status = "pending"
-                    img.storage_key = original_key(f.sha256 or "")
-                    seen[f.sha256 or ""] = img.id
-                s.add(img)
-            job = Job(
-                id=uuid.uuid4(),
-                batch_id=batch.id,
-                # Queued now, not when the transaction began (before the S3 writes).
-                created_at=_utcnow(),
-                kind="process_batch",
-                status="queued",
-                attempts=0,
-                max_attempts=3,
-                model_release_id=active_release_id(s, settings),  # pinned for all retries
-            )
-            s.add(job)
-            try:
+                s.add(job)
                 s.commit()
             except IntegrityError:
                 s.rollback()  # a concurrent identical request won the race
