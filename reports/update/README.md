@@ -145,11 +145,15 @@ uv run python scripts/make_sample_batch.py --partition policy_validation --image
 uv run python scripts/simulate_deployment.py --batch-dir data/samples/deploy-cams-90-125
 uv run wildinbox snapshot build
 uv run wildinbox finetune train --config configs/experiments/finetune-e3-update1.yaml
-uv run wildinbox update gate
+uv run wildinbox update gate --legacy-policy
 uv run python scripts/make_sample_batch.py --partition calibration --images 60 \
   --seed release-demo --out data/samples/release-demo
-uv run python scripts/release_rollback.py
+uv run python scripts/release_rollback.py --legacy-policy
 ```
+
+Cycle 1's protocol predates the per-species promotion policy, so reproducing it
+needs `--legacy-policy` for both the gate and the release
+([policy](../../docs/retraining.md#promotion-policy-critical-species-and-minimum-evidence)).
 
 The snapshot version depends on the reviews; a fresh run gets a new version,
 and `configs/experiments/finetune-e3-update1.yaml` must point at it.

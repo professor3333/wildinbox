@@ -20,7 +20,7 @@ was for cycle 1. It fixes:
 - the training recipe (unchanged);
 - the cameras;
 - the split of reviewed events into training and holdout;
-- the gate thresholds.
+- the gate thresholds, including the promotion policy (below).
 
 Optional fields for later cycles:
 
@@ -200,6 +200,63 @@ and candidate models are then compared on **development data only**:
 | No regression | seen-camera diagnostic | macro-F1 drop ≤ 0.02 |
 | No lost animals | holdout animal events suggested as empty | ≤ 110% of the deployed model's |
 
+### Promotion policy: critical species and minimum evidence
+
+Cycle 1 and the rehearsal were gated on the aggregate checks above alone. The
+rehearsal candidate passed them (holdout macro-F1 +0.087) while bobcat recall
+on the holdout fell from 0.593 to 0.333 over 81 events: macro-F1 averages over
+species, so one species can collapse while others improve. Every protocol from
+now on also sets per-species limits and the evidence each check needs:
+
+```yaml
+gate:
+  min_holdout_gain: 0.02
+  max_regression: 0.02
+  max_false_empty_suggestion_increase: 0.10
+  species:
+    critical: [bobcat, cat, coyote, dog, opossum, rabbit, raccoon]
+    max_recall_drop: 0.10     # absolute holdout recall drop allowed per critical species
+    min_events: 30            # holdout events of a species needed to judge it
+  min_evidence:
+    holdout_events: 200       # supported-label holdout events, for the macro-F1 gain
+    animal_events: 100        # holdout animal events, for the false-empty check
+```
+
+| Choice | Value | Why |
+|---|---|---|
+| Critical species | all seven | every supported species is a sighting a reserve wants kept; drop one only by writing it out of this list in the protocol, before the reviews |
+| Recall drop | ≤ 0.10 absolute | at 30 events one event moves recall by 0.033, so 0.10 is three net events: large enough not to trip on a single frame, small enough to catch a collapse like bobcat's (−0.259) |
+| Species evidence | ≥ 30 holdout events | below that, a recall change is mostly noise; the check is left unjudged rather than passed |
+| Holdout evidence | ≥ 200 events, ≥ 100 animal events | the macro-F1 gain and the false-empty count are unjudged on smaller holdouts |
+
+Recall is judged, not precision: this check guards against losing a species.
+Precision matters when labels are accepted automatically, which the released
+policy keeps off.
+
+The gate's decision has three outcomes:
+
+- **Promote**: every check passed on enough evidence.
+- **Reject**: some check failed on enough evidence. A failure outweighs
+  sparse evidence elsewhere.
+- **Inconclusive**: nothing failed, but some check had too little evidence to
+  judge, or the holdout's comparison budget is spent. The candidate is not
+  released. Gate again on more reviewed events, or on a fresh holdout (the
+  next cycle's later reviews). Do not lower `min_events` after seeing the
+  result: that turns the protocol into a choice made after the fact.
+
+On cameras 90 and 125, coyote (16 holdout events) and rabbit (4) are below 30,
+so a candidate that fails nothing is inconclusive there until more of those
+species are reviewed. That is the intended outcome: the gate says it cannot
+tell rather than passing a species it never saw enough of.
+
+The gate refuses a protocol without the `species` and `min_evidence` blocks.
+To rerun a recorded cycle under its original rules, pass `--legacy-policy`. The
+report and the command then say the decision is not sufficient for release,
+and `scripts/release_rollback.py` releases it only when also given
+`--legacy-policy`. Under the policy above, the
+rehearsal candidate is **rejected** for bobcat
+(`tests/test_promotion.py` applies it to the recorded results).
+
 - **The final test is never read.** It was opened once, for the release
   decision, and is spent. Repeated candidate comparisons use the development
   checks above.
@@ -216,9 +273,11 @@ and candidate models are then compared on **development data only**:
   - the candidate's recorded lineage is not the snapshot being gated.
 - **Comparisons are counted.** Every gate run is appended to
   [`reports/update/comparisons.jsonl`](../reports/update/comparisons.jsonl),
-  with the candidate, weights, holdout version, gain, and verdict. Trying many
-  candidates against one holdout slowly fits it. The count is reported, and a
-  protocol's `max_comparisons_per_holdout` fails the gate once it is exceeded.
+  with the candidate, weights, holdout version, gain, and verdict on the
+  evidence. Trying many candidates against one holdout slowly fits it. The
+  count is reported, and once a protocol's `max_comparisons_per_holdout` is
+  exceeded the gate is inconclusive: the holdout can no longer vouch for a
+  candidate either way.
   After that, collect a fresh holdout (the next cycle's later reviews).
 
 The gate writes `reports/update/<candidate>/README.md` and the candidate's

@@ -260,7 +260,15 @@ applies to cameras that were reviewed; it is not a new-camera result.
    jobs keep their release). Reverting restores the previous release's
    predictions exactly: the same photos get identical probabilities and
    decisions ([check](../reports/update/rollback-restore.json)).
-3. Retraining data comes only from approved reviews, never includes protected
+3. The update gate's decision is promote, reject, or inconclusive. Besides
+   aggregate macro-F1, no regression on cameras outside the update, and no
+   rise in animals suggested as empty, each supported species' holdout recall
+   may drop by at most 0.10. Each check needs a minimum number of events
+   (30 per species); with fewer, it is inconclusive and the candidate is not
+   released. The rehearsal candidate passed the earlier aggregate-only gate
+   while bobcat recall fell 0.593 -> 0.333; this policy rejects it
+   ([policy](retraining.md#promotion-policy-critical-species-and-minimum-evidence)).
+4. Retraining data comes only from approved reviews, never includes protected
    evaluation records (final test, calibration, seen-camera diagnostic, or
    earlier holdouts, including any corrections made to them), and keeps
    per-label provenance. Candidate comparisons use development data only,

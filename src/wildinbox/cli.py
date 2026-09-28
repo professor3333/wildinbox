@@ -360,6 +360,12 @@ def main(argv: Sequence[str] | None = None) -> int:
     p_gate.add_argument(
         "--report-dir", type=Path, default=Path("reports/update/finetune-e3-update1")
     )
+    p_gate.add_argument(
+        "--legacy-policy",
+        action="store_true",
+        help="Accept a protocol without per-species limits or minimum evidence, to "
+        "reproduce a recorded cycle. Its decision is not sufficient for release.",
+    )
 
     p_prov = upd_sub.add_parser(
         "provenance",
@@ -592,14 +598,18 @@ def main(argv: Sequence[str] | None = None) -> int:
                 args.config,
                 args.report_dir,
                 device=resolve_device(args.device),
+                allow_legacy_policy=args.legacy_policy,
             )
         except GateError as e:
             print(f"error: {e}", file=sys.stderr)
             return 1
         for name, check in verdict["checks"].items():
-            print(f"{'pass' if check['pass'] else 'FAIL'}  {name}: {check['value']}")
-        decision = "PROMOTE" if verdict["promote"] else "DO NOT PROMOTE"
-        print(f"{decision} {verdict['candidate_release']}")
+            status = {True: "pass", False: "FAIL", None: "N/A "}[check["pass"]]
+            support = f" (n={check['support']})" if "support" in check else ""
+            print(f"{status}  {name}: {check['value']}{support}")
+        print(f"{verdict['decision'].upper()} {verdict['candidate_release']}")
+        if verdict["promotion_policy"] == "legacy":
+            print("legacy promotion policy: not sufficient for release")
         print(f"report -> {args.report_dir / 'README.md'}")
         return 0
     if args.command == "monitoring":
