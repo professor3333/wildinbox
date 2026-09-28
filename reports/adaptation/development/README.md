@@ -1,4 +1,55 @@
-# Adaptation development, iteration 1 (development cameras only)
+# Adaptation development (development cameras only)
+
+Iterations are kept in order; [`metrics.json`](metrics.json) holds the latest
+run, which recomputes every method below.
+
+## Iteration 2: a head with an other-animal class
+
+**Method.** A linear head on the released model's frozen features with 9
+outputs: the 8 classes plus `other_animal`. Its base frames come from the CCT20
+calibration and policy-validation cameras, which the network never trained on
+(5,305 frames; 976 unsupported-animal frames become `other_animal`). The
+camera's reviewed frames are added with weight `share`, reviewed unsupported
+animals as `other_animal`. An `other_animal` suggestion is never accepted.
+Regularisation `C` and `share` are chosen by **nested** leave-one-camera-out:
+for each held-out camera, configuration and thresholds come from the other 7.
+
+**Result (N = 50 reviewed events per camera):**
+
+| Method | Review reduction | Accepted labels correct | Animal retention, pooled | Worst camera |
+|---|---|---|---|---|
+| Release | 3.7% | none accepted | 97.8% | 93.1% |
+| Prior shift | 7.0% | none accepted | 94.8% | 36.6% |
+| Head, training-frame base (iteration 1) | 0.0% | none accepted | 100% | 100% |
+| **Head with other-animal class** | **9.4%** | **158 / 168 (94.0%, CI 89.4-96.7)** | 98.3% | 82.8% |
+| Same head without the camera's reviews (ablation) | 3.6% | none accepted | 97.7% | 86.0% |
+
+- **Adaptation is what enables species labels**: the same head without the
+  camera's reviews accepts none. The `other_animal` class sends 399 of 595
+  unsupported-animal events to review.
+- **Still short of the rule on unseen cameras**: 94.0% accepted precision,
+  below 95%, and far from a 50% reduction. The gain is concentrated on
+  cameras 112 and 58.
+- **Empty filtering fails per camera for every method**: pooled retention
+  near 98% hides one camera losing 17% of its animal events (camera 18,
+  23 of 134, mostly to a low empty threshold chosen on the other cameras).
+- **Unstable in N**: at N = 25 the head reaches 7.6% (43 of 47 correct), at
+  N = 100 4.6% (3 of 6); with fewer later events per camera the rule rarely
+  finds a threshold.
+- **Grid**: the first grid (C 0.01-1, share 0.25-0.75) accepted no labels
+  under nested selection (5.4%, 3.9%, 3.5% reduction at N = 25, 50, 100, all
+  from empty filtering); in-sample curves showed precision rising as C fell,
+  so the grid was extended to C 0.001-0.03, share 0.1-0.5. The chosen
+  configurations sit at C = 0.001-0.003 and share 0.1.
+
+**Reading:** frozen-feature adaptation buys roughly 5-10% of reviews at about
+94% precision on development cameras, with empty filtering unsafe per camera.
+The remaining candidate is per-camera fine-tuning; if it does not change the
+picture, the v2 target has to be set prospectively from this evidence.
+
+---
+
+## Iteration 1
 
 `uv run wildinbox adaptation develop` on the 8 adaptation-development cameras
 (3,107 events; [`metrics.json`](metrics.json)). Each camera's first N events,

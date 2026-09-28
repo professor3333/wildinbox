@@ -29,7 +29,7 @@ from typing import Any
 import numpy as np
 
 from wildinbox.adaptation.data import CameraEvent, FrameOutputs
-from wildinbox.adaptation.methods import Method
+from wildinbox.adaptation.methods import OTHER, Method
 from wildinbox.class_map import EMPTY_CLASS
 from wildinbox.evaluation.metrics import wilson
 from wildinbox.policy.conservative import Thresholds, decide_event
@@ -63,7 +63,7 @@ class Scored:
     def accepted(self, t_empty: float, t_species: float) -> bool:
         return (
             not self.filtered(t_empty)
-            and self.suggestion not in (None, EMPTY_CLASS)
+            and self.suggestion not in (None, EMPTY_CLASS, OTHER)
             and self.confidence >= t_species
         )
 
@@ -78,11 +78,11 @@ def score_camera(
     """Adapt from the first `n` events; score the rest. Returns them and the
     camera's total number of events."""
     reviewed, later = events[:n], events[n:]
-    scorer = method.adapt(reviewed, out)
+    adapted = method.adapt(reviewed, out)
     scored = []
     for e in later:
-        probs = scorer(out.rows(e.image_ids))
-        frames = [dict(zip(out.classes, map(float, p), strict=True)) for p in probs]
+        probs = adapted.score(out.rows(e.image_ids))
+        frames = [dict(zip(adapted.classes, map(float, p), strict=True)) for p in probs]
         o = decide_event(frames, Thresholds(empty=math.inf, species=0.0))
         agree = ReviewReason.CONFLICTING_FRAMES not in o.reasons
         scored.append(
@@ -168,6 +168,36 @@ def leave_one_camera_out(per_camera: dict[str, tuple[list[Scored], int]]) -> dic
         t_empty, t_species = choose(others)
         o = outcome(scored, total, t_empty, t_species)
         cams[cam] = {"t_empty": t_empty, "t_species": t_species, **summarize(o)}
+        pooled = add(pooled, o)
+    return {"pooled": summarize(pooled), "cameras": cams}
+
+
+def nested_leave_one_camera_out(
+    per_config: dict[str, dict[str, tuple[list[Scored], int]]],
+) -> dict[str, Any]:
+    """Choose a configuration AND its thresholds without the held-out camera:
+    for each camera, every configuration is judged on the other cameras
+    (thresholds by the rule, then pooled review reduction there); the best is
+    applied, with those thresholds, to the held-out camera."""
+    cameras = next(iter(per_config.values())).keys()
+    cams: dict[str, Any] = {}
+    pooled: dict[str, Any] = {}
+    for cam in cameras:
+        best: tuple[float, str, float | None, float | None] | None = None
+        for cfg, per_camera in per_config.items():
+            others = {c: v for c, v in per_camera.items() if c != cam}
+            t_empty, t_species = choose([s for ss, _ in others.values() for s in ss])
+            inner: dict[str, Any] = {}
+            for ss, total in others.values():
+                inner = add(inner, outcome(ss, total, t_empty, t_species))
+            reduction = summarize(inner)["review_reduction"]
+            if best is None or reduction > best[0]:
+                best = (reduction, cfg, t_empty, t_species)
+        assert best is not None
+        _, cfg, t_empty, t_species = best
+        scored, total = per_config[cfg][cam]
+        o = outcome(scored, total, t_empty, t_species)
+        cams[cam] = {"config": cfg, "t_empty": t_empty, "t_species": t_species, **summarize(o)}
         pooled = add(pooled, o)
     return {"pooled": summarize(pooled), "cameras": cams}
 

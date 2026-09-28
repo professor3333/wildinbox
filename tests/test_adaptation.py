@@ -11,11 +11,12 @@ from wildinbox.adaptation.evaluate import (
     Scored,
     choose,
     leave_one_camera_out,
+    nested_leave_one_camera_out,
     outcome,
     score_camera,
     summarize,
 )
-from wildinbox.adaptation.methods import PriorShift, Release, Scorer
+from wildinbox.adaptation.methods import OTHER, Adapted, PriorShift, Release, reviewed_frames
 
 CLASSES = ("empty", "bobcat", "opossum")
 
@@ -48,7 +49,7 @@ class Spy:
     def __init__(self) -> None:
         self.seen: list[str] = []
 
-    def adapt(self, reviewed: list[CameraEvent], out: FrameOutputs) -> Scorer:
+    def adapt(self, reviewed: list[CameraEvent], out: FrameOutputs) -> Adapted:
         self.seen = [e.event_id for e in reviewed]
         return Release(1.0).adapt(reviewed, out)
 
@@ -65,7 +66,7 @@ def test_a_method_sees_only_the_first_n_events_and_is_judged_on_the_rest() -> No
 def test_prior_shift_moves_probability_toward_the_cameras_classes() -> None:
     out = _outputs(3, [0.2, 0.4, 0.4])
     reviewed = [_event(i, "opossum") for i in range(3)]
-    p = PriorShift(temperature=1.0).adapt(reviewed, out)(np.array([0]))[0]
+    p = PriorShift(temperature=1.0).adapt(reviewed, out).score(np.array([0]))[0]
     assert p[2] > 0.4 > p[1] and p.sum() == pytest.approx(1.0)
 
 
@@ -103,3 +104,31 @@ def test_leave_one_camera_out_never_uses_the_camera_itself() -> None:
     assert loco["cameras"]["a"]["t_species"] is None  # b alone cannot pass the rule
     assert loco["cameras"]["b"]["t_species"] is not None  # chosen on a, applied to b
     assert loco["cameras"]["b"]["precision"] == 0.0
+
+
+def test_an_other_animal_suggestion_is_never_accepted() -> None:
+    s = Scored("c", "unsupported_animal", "bird", 0.0, OTHER, 0.999)
+    assert not s.accepted(t_empty=1.1, t_species=0.5)
+
+
+def test_reviews_of_unsupported_animals_teach_other_only_when_asked() -> None:
+    bird = _event(1, "bird", role="unsupported_animal")
+    assert reviewed_frames([bird, _event(2, "bobcat")], with_other=True) == (
+        ["f1", "f2"],
+        [OTHER, "bobcat"],
+    )
+    assert reviewed_frames([bird], with_other=False) == ([], [])
+
+
+def test_nested_selection_ignores_the_held_out_camera() -> None:
+    """Config x is best on camera a alone; y is better on the others. For
+    camera a, the choice must come from b and c, so y is used."""
+    good = [_scored(0.99, True) for _ in range(200)]
+    none = [_scored(0.1, True) for _ in range(200)]
+    per_config = {
+        "x": {"a": (good, 200), "b": (none, 200), "c": (none, 200)},
+        "y": {"a": (none, 200), "b": (good, 200), "c": (good, 200)},
+    }
+    loco = nested_leave_one_camera_out(per_config)
+    assert loco["cameras"]["a"]["config"] == "y"
+    assert loco["cameras"]["a"]["accepted"] == 0
