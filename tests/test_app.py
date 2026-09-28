@@ -80,6 +80,9 @@ def settings(database_url: str, tmp_path: Path) -> Settings:
         max_batch_bytes=500_000,
         retry_backoff_seconds=0,
         auth="disabled",
+        # A fresh summary per request, so tests see each change;
+        # tests/test_monitoring_runner.py covers the reuse.
+        monitoring_max_age_seconds=0,
     )
 
 

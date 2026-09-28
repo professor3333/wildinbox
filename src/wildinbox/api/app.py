@@ -35,6 +35,7 @@ from wildinbox.api.uploads import (
 from wildinbox.class_map import EMPTY_CLASS
 from wildinbox.config import load_config
 from wildinbox.inference.releases import active_release_id, ensure_test_release, release_notice
+from wildinbox.monitoring.runner import MonitoringRunner
 from wildinbox.schemas import Review as ReviewContract
 from wildinbox.schemas import ReviewOutcome
 from wildinbox.settings import Settings
@@ -416,6 +417,12 @@ def create_app(
         with app.state.sessions() as s:
             ensure_test_release(s, cfg)
             s.commit()
+        app.state.monitoring = MonitoringRunner(
+            settings.database_url,
+            settings.lease_seconds,
+            settings.monitoring_config,
+            settings.monitoring_max_age_seconds,
+        )
         yield
 
     app = FastAPI(title="WildInbox", version="0.1.0", lifespan=lifespan)
@@ -527,33 +534,19 @@ def create_app(
 
     @app.get("/monitoring")
     def monitoring() -> dict[str, Any]:
-        """Operations, label-free signals per camera, and review-based accuracy."""
-        from wildinbox.monitoring.metrics import load_config, summary
-
-        with sessions()() as s:
-            out = summary(
-                s,
-                settings.lease_seconds,
-                load_config(settings.monitoring_config),
-                api=latency_summary(),
-            )
-        out["operations"]["api_latency"] = latency_summary()
+        """Operations, label-free signals per camera, and review-based accuracy.
+        Refreshed in the background once `monitoring_max_age_seconds` old, so it
+        can be older by one computation (see `generated_at`)."""
+        out = dict(app.state.monitoring.summary(latency_summary()))
+        out["operations"] = {**out["operations"], "api_latency": latency_summary()}
         return out
 
     @app.get("/metrics", response_class=PlainTextResponse)
     def metrics() -> str:
         """Prometheus text format for scraping and alerting."""
-        from wildinbox.monitoring.metrics import load_config, summary
         from wildinbox.monitoring.prometheus import render
 
-        with sessions()() as s:
-            data = summary(
-                s,
-                settings.lease_seconds,
-                load_config(settings.monitoring_config),
-                api=latency_summary(),
-            )
-        return render(data, latency_summary())
+        return render(app.state.monitoring.summary(latency_summary()), latency_summary())
 
     @app.get("/releases")
     def list_releases() -> dict[str, Any]:

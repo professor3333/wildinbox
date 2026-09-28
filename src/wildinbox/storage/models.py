@@ -162,6 +162,9 @@ class Event(Base):
     __table_args__ = (
         UniqueConstraint("batch_id", "group_key"),
         Index("ix_events_created_at", "created_at"),  # monitoring's history window
+        # Every event list's order: a page reads events in order and stops,
+        # instead of sorting all matches.
+        Index("ix_events_start_at_id", "start_at", "id"),
     )
     id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
     batch_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("batches.id", ondelete="CASCADE"))
