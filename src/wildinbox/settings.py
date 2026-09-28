@@ -64,8 +64,9 @@ class Settings(BaseSettings):
     # the job is recovered. Failed attempts retry with exponential backoff until
     # the job's `max_attempts`, then fail terminally.
     inference_device: str = "cpu"
-    # CPU threads PyTorch may use per worker process (unset: one per core).
-    # With several workers on one machine, cores / workers avoids oversubscription.
+    # CPU threads PyTorch may use per worker process (unset: half the CPUs it
+    # may run on, see `inference_threads`). With several workers on one
+    # machine, divide further so they do not oversubscribe it.
     torch_threads: int | None = Field(default=None, gt=0)
     inference_chunk: int = Field(default=16, gt=0)
     lease_seconds: int = Field(default=120, gt=0)

@@ -548,7 +548,11 @@ class Probe:
         self.stopping.set()
         times, errors = self.out.get(timeout=300)
         self.process.join()
+        metadata = [t for k, v in times.items() if k != "GET /monitoring" for t in v]
         return {
+            # Every metadata request pooled: per route there are only 30-70
+            # requests per scenario, so a route's p95 is about its second-worst.
+            "all_metadata": percentiles(metadata) if metadata else None,
             "routes": {k: percentiles(v) for k, v in sorted(times.items())},
             "errors": errors,
         }

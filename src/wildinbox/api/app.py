@@ -741,8 +741,10 @@ def create_app(
                 job = Job(
                     id=uuid.uuid4(),
                     batch_id=batch.id,
-                    # Queued now, not when the transaction began (before the S3 writes).
-                    created_at=_utcnow(),
+                    # Queued when inserted, not when the transaction began (before
+                    # the originals were stored), and by the database's clock like
+                    # the batch's created_at, so the two compare across hosts.
+                    created_at=func.clock_timestamp(),
                     kind="process_batch",
                     status="queued",
                     attempts=0,

@@ -109,7 +109,7 @@ grant access.
 | `WILDINBOX_REVIEW_DELEGATES` | optional JSON list of principals allowed to record reviews on someone else's behalf (e.g. `'["importer"]'`); everyone else reviews as themselves, and each review stores both names |
 | `WILDINBOX_EXPECTED_RELEASE` | the release this deployment must serve; readiness fails otherwise |
 | `WILDINBOX_WORKERS` | worker processes (default 1) |
-| `WILDINBOX_TORCH_THREADS` | PyTorch threads per worker (unset: one per vCPU) |
+| `WILDINBOX_TORCH_THREADS` | PyTorch threads per worker (unset: half the vCPUs, leaving the rest to the API and PostgreSQL) |
 
 `/etc/wildinbox/stack.env` (bucket, region, Git ref) is written by the
 template and holds nothing secret. Compose refuses to start if any required

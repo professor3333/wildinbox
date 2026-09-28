@@ -246,3 +246,14 @@ def test_without_authentication_the_claimed_reviewer_is_kept_and_required(
         assert c.post(url, json={"outcome": "unresolved"}).status_code == 422
         res = c.post(url, json={"outcome": "unresolved", "reviewer": "alice"}).json()
         assert (res["reviewer"], res["recorded_by"]) == ("alice", None)
+
+
+def test_inference_leaves_half_the_cpus_to_the_api_and_database() -> None:
+    from wildinbox.workers.dispatch import inference_threads
+
+    unset = Settings(torch_threads=None)
+    assert inference_threads(unset, cpus=8) == 4
+    assert inference_threads(unset, cpus=2) == 1
+    assert inference_threads(unset, cpus=1) == 1  # never zero
+    assert inference_threads(Settings(torch_threads=6), cpus=8) == 6  # an explicit setting wins
+    assert inference_threads(unset) >= 1  # this machine's CPUs
