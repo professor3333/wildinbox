@@ -170,3 +170,25 @@ def test_locked_partitions_are_refused_in_development(tmp_path: Path) -> None:
     assert assert_development(["adaptation_development"]) == [Partition.ADAPTATION_DEVELOPMENT]
     with pytest.raises(ValidationError):
         _spec(tmp_path, "v", partition="final_test")
+
+
+def test_adaptation_rows_are_the_cameras_first_reviewed_frames(
+    data: tuple[Path, str], tmp_path: Path
+) -> None:
+    from wildinbox.training.finetune import AdaptationSpec, adaptation_rows
+
+    root, version = data
+    spec = _spec(tmp_path, version)
+    build_fresh(spec, load_taxonomy(spec.taxonomy), root)
+    rows, sources, record = adaptation_rows(
+        AdaptationSpec(split="toy-fresh", images="fresh", camera="N1", reviewed_events=1), root
+    )
+    assert [r.source_id for r in rows] == ["n1-a-1", "n1-a-2"]  # the first event only
+    assert {r.image_label for r in rows} == {"raccoon"}
+    assert all(p.is_file() for p in sources.values())
+    assert record["events"] == ["fresh:n1-a"] and record["frames"] == 2
+    # the camera's unsupported event (lizard) is never a fitting row
+    rows2, _, _ = adaptation_rows(
+        AdaptationSpec(split="toy-fresh", images="fresh", camera="N1", reviewed_events=2), root
+    )
+    assert len(rows2) == 2
