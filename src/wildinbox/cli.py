@@ -410,6 +410,17 @@ def main(argv: Sequence[str] | None = None) -> int:
     p_prov.add_argument("--candidate", type=Path, required=True)
     p_prov.add_argument("--report-dir", type=Path, required=True)
 
+    p_adapt = sub.add_parser("adaptation", help="v2 experiment: adapt the model per camera.")
+    adapt_sub = p_adapt.add_subparsers(dest="adaptation_command", required=True)
+    p_dev = adapt_sub.add_parser(
+        "develop", help="Compare adaptation methods on the adaptation-development cameras."
+    )
+    device_arg(p_dev)
+    p_dev.add_argument("--config", type=Path, default=Path("configs/experiments/baseline.yaml"))
+    p_dev.add_argument("--model", type=Path, default=Path("models/finetune-e3-deep-balanced"))
+    p_dev.add_argument("--n", type=int, nargs="+", default=[25, 50, 100])
+    p_dev.add_argument("--report-dir", type=Path, default=Path("reports/adaptation/development"))
+
     p_mon = sub.add_parser("monitoring", help="Monitoring maintenance.")
     mon_sub = p_mon.add_subparsers(dest="monitoring_command", required=True)
     mon_sub.add_parser("backfill-quality", help="Record image quality for older images.")
@@ -643,6 +654,19 @@ def main(argv: Sequence[str] | None = None) -> int:
         decision = "PROMOTE" if verdict["promote"] else "DO NOT PROMOTE"
         print(f"{decision} {verdict['candidate_release']}")
         print(f"report -> {args.report_dir / 'README.md'}")
+        return 0
+    if args.command == "adaptation":
+        from wildinbox.adaptation.run import run as run_adaptation
+
+        run_adaptation(
+            args.config,
+            args.model,
+            Settings().data_dir,
+            args.report_dir,
+            resolve_device(args.device),
+            args.n,
+        )
+        print(f"metrics -> {args.report_dir / 'metrics.json'}")
         return 0
     if args.command == "monitoring":
         from wildinbox.monitoring.metrics import backfill_quality, load_config, summary
