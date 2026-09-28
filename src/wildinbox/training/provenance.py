@@ -8,8 +8,10 @@ The gate report states this only as far as recorded evidence shows it:
   `configs`) at a commit holding the protocol's exact content.
 
 Each answer is True, False, or None when the evidence is missing (git history
-unavailable, a snapshot built before review times were recorded, or training
-from uncommitted changes, which may have included the protocol).
+unavailable, the training commit absent from this clone, a shallow clone that
+cannot show the first commit, a snapshot built before review times were
+recorded, or training from uncommitted changes, which may have included the
+protocol). False is only claimed from history that is actually present.
 
 The protocol is looked up by its path inside its repository, however it was
 named (absolute, relative, from any directory), so the same file always gets
@@ -69,6 +71,14 @@ def first_commit_with(path: Path, sha256: str) -> dict[str, str] | None:
     return None
 
 
+def _has_commit(root: Path, commit: str) -> bool:
+    return _git(root, "cat-file", "-e", f"{commit}^{{commit}}") is not None
+
+
+def _shallow(root: Path) -> bool:
+    return (_git(root, "rev-parse", "--is-shallow-repository") or b"").strip() == b"true"
+
+
 def earliest_review(snapshot_dir: Path) -> str | None:
     """The earliest `reviewed_at` among the snapshot's labels; None unless every
     label records one (snapshots before snapshot/v2 did not)."""
@@ -96,11 +106,20 @@ def protocol_provenance(
     first = first_commit_with(protocol_path, sha)
     review = earliest_review(snapshot_dir)
     before_reviews = _parse(first["committed_at"]) < _parse(review) if first and review else None
-    commit, dirty = training_code.get("commit"), training_code.get("dirty")
     located = in_repository(protocol_path)
+    # In a shallow clone the oldest visible commit may be where the clone was
+    # cut, not where the protocol was first committed: a commit found before
+    # the reviews still proves "before", but "after" is not established.
+    if before_reviews is False and located is not None and _shallow(located[0]):
+        before_reviews = None
+    commit, dirty = training_code.get("commit"), training_code.get("dirty")
     if commit is None or dirty is None or dirty or located is None:
         before_training = None
+    elif not _has_commit(located[0], commit):
+        before_training = None  # that history is not here: unknown, not "different"
     else:
+        # The commit is here: the protocol absent from it, or with other
+        # content, is evidence the candidate was trained under another version.
         before_training = _content_at(located[0], commit, located[1]) == sha
     return {
         "protocol_sha256": sha,
