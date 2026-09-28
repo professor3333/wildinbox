@@ -32,13 +32,20 @@ def focus_batch(batch_id: str) -> None:
     st.session_state["page"] = "Review queue"
 
 
-def pager(key: str, offset: int, size: int, total: int, next_offset: int | None) -> None:
+def count(total: int, exact: bool = True) -> str:
+    """A list's total as the API reports it: past its counting limit, a floor."""
+    return f"{total:,}" if exact else f"{total:,}+"
+
+
+def pager(
+    key: str, offset: int, size: int, total: int, next_offset: int | None, exact: bool = True
+) -> None:
     """Previous/next controls over a server-paginated list kept at `offset-<key>`."""
     prev, info, nxt = st.columns([1, 2, 1])
     if prev.button("Previous", disabled=offset == 0, key=f"prev-{key}"):
         st.session_state[f"offset-{key}"] = max(0, offset - size)
         st.rerun()
-    info.caption(f"{offset + 1}-{min(offset + size, total)} of {total}")
+    info.caption(f"{offset + 1}-{min(offset + size, total)} of {count(total, exact)}")
     if nxt.button("Next", disabled=next_offset is None, key=f"next-{key}"):
         st.session_state[f"offset-{key}"] = next_offset
         st.rerun()
@@ -200,7 +207,8 @@ def _paged(
 ) -> None:
     offset = st.session_state.get(f"offset-{key}", 0)
     try:
-        page = api.events(limit=PAGE_SIZE, offset=offset, **params)
+        # The total is only shown: past the API's counting limit, a floor will do.
+        page = api.events(limit=PAGE_SIZE, offset=offset, exact_total=False, **params)
     except ApiError as e:
         st.error(e.detail)
         return
@@ -208,10 +216,13 @@ def _paged(
     if not total:
         (st.success if empty_is_good else st.info)(empty_message)
         return
-    st.caption(f"{total} capture event(s). Capture events are not individual animals.")
+    exact = page.get("total_exact", True)
+    st.caption(
+        f"{count(total, exact)} capture event(s). Capture events are not individual animals."
+    )
     for event in page["events"]:
         event_card(api, thumbnail, event, reviewer, classes)
-    pager(key, offset, PAGE_SIZE, total, page["next_offset"])
+    pager(key, offset, PAGE_SIZE, total, page["next_offset"], exact)
 
 
 def review_page(
@@ -303,7 +314,13 @@ def timeline_page(api: ApiClient, thumbnail: Any, batch_id: str | None) -> None:
     key = f"timeline-{choice}"
     offset = st.session_state.get(f"offset-{key}", 0)
     try:
-        page = api.events(batch_id=batch_id, camera_id=camera, limit=TIMELINE_PAGE, offset=offset)
+        page = api.events(
+            batch_id=batch_id,
+            camera_id=camera,
+            limit=TIMELINE_PAGE,
+            offset=offset,
+            exact_total=False,
+        )
     except ApiError as err:
         st.error(err.detail)
         return
@@ -331,7 +348,14 @@ def timeline_page(api: ApiClient, thumbnail: Any, batch_id: str | None) -> None:
                 )
                 c3.markdown(badge(e))
     if page["total"]:
-        pager(key, offset, TIMELINE_PAGE, page["total"], page["next_offset"])
+        pager(
+            key,
+            offset,
+            TIMELINE_PAGE,
+            page["total"],
+            page["next_offset"],
+            page.get("total_exact", True),
+        )
 
 
 def batches_page(api: ApiClient) -> None:

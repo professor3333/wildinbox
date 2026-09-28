@@ -659,6 +659,34 @@ def test_batch_history_pages_reach_every_batch(client: TestClient) -> None:
     assert all(b["images"] == 1 and b["events"] == 1 for b in first["batches"])
 
 
+def test_a_displayed_total_may_stop_counting_but_every_event_stays_reachable(
+    client: TestClient, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    from wildinbox.api import app as api_app
+
+    for n in range(5):  # one event per batch
+        client.post("/batches", files=_files((f"{n}.jpg", jpeg(80 + n))))
+    exact = client.get("/events", params={"limit": 1}).json()
+    assert exact["total"] == 5 and exact["total_exact"] is True
+
+    monkeypatch.setattr(api_app, "COUNT_AHEAD", 2)
+    shown = client.get("/events", params={"limit": 1, "exact_total": "false"}).json()
+    assert shown["total"] == 3 and shown["total_exact"] is False  # a floor: 3 of 5 counted
+    assert shown["events"] == exact["events"] and shown["next_offset"] == 1
+    # Still exact by default, and exact once the rest fits within the limit.
+    assert client.get("/events", params={"limit": 1}).json()["total"] == 5
+    last = client.get("/events", params={"limit": 2, "offset": 3, "exact_total": "false"}).json()
+    assert last["total"] == 5 and last["total_exact"] is True and last["next_offset"] is None
+    seen, offset = [], 0
+    while offset is not None:
+        page = client.get(
+            "/events", params={"limit": 2, "offset": offset, "exact_total": "false"}
+        ).json()
+        seen += [e["id"] for e in page["events"]]
+        offset = page["next_offset"]
+    assert len(seen) == len(set(seen)) == 5
+
+
 def test_camera_catalog_covers_every_event(client: TestClient) -> None:
     meta = {"files": {"a.jpg": {"camera_id": "north"}, "b.jpg": {"camera_id": "south"}}}
     batch = client.post(

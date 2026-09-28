@@ -397,6 +397,10 @@ class ReviewIn(BaseModel):
 # ------------------------------------------------------------------------ app
 
 
+# GET /events counts matches at most this far past the page it returns.
+COUNT_AHEAD = 10_000
+
+
 def create_app(
     settings: Settings | None = None,
     store: ObjectStore | None = None,
@@ -957,11 +961,18 @@ def create_app(
         start_before: datetime | None = None,
         limit: int = 100,
         offset: int = 0,
+        exact_total: bool = True,
     ) -> dict[str, Any]:
         """Events in time order. `label` matches the suggested label; `reason`
         a review reason; `reviewed` whether any human review exists; `animal`
         whether the current label (reviewed, else suggested) is an animal;
-        `start_after`/`start_before` bound the event's start (camera local time)."""
+        `start_after`/`start_before` bound the event's start (camera local time).
+
+        With `exact_total=false`, `total` counts matches only up to COUNT_AHEAD
+        past this page; beyond that it is a floor and `total_exact` is false.
+        For lists that only display the number: counting a year of history
+        (about 80,000 unreviewed events) on every review-queue page took up to
+        a second under load."""
         limit, offset = max(1, min(limit, 500)), max(0, offset)
         with sessions()() as s:
             q = select(Event).join(Batch).where(Batch.workspace == settings.workspace)
@@ -985,7 +996,9 @@ def create_app(
                 q = q.where(Event.start_at >= _naive(start_after))
             if start_before is not None:
                 q = q.where(Event.start_at < _naive(start_before))
-            total = s.scalar(select(func.count()).select_from(q.subquery())) or 0
+            cap = None if exact_total else offset + limit + COUNT_AHEAD
+            counted = q if cap is None else q.limit(cap)
+            total = s.scalar(select(func.count()).select_from(counted.subquery())) or 0
             events = list(
                 s.scalars(
                     q.order_by(Event.start_at, Event.id)
@@ -999,6 +1012,7 @@ def create_app(
             return {
                 "events": [event_row(s, e, releases=releases) for e in events],
                 "total": total,
+                "total_exact": cap is None or total < cap,
                 "limit": limit,
                 "offset": offset,
                 "next_offset": nxt,

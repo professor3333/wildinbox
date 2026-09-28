@@ -456,24 +456,27 @@ def history_targets(client: httpx.Client) -> dict[str, tuple[str, dict[str, Any]
         "start_after": night_start.isoformat(),
         "start_before": (night_start + timedelta(hours=12)).isoformat(),
     }
+    # The interface's queues and timeline only display their totals, so they
+    # accept a floor past the API's counting limit (`exact_total=false`).
+    shown = {"exact_total": "false"}
     return {
         "GET /batches (sidebar)": ("/batches", {"limit": 50}),
         "GET /events (review queue)": (
             "/events",
-            {"disposition": "needs_review", "reviewed": "false", "limit": 8},
+            {"disposition": "needs_review", "reviewed": "false", "limit": 8, **shown},
         ),
         "GET /events (automatically filtered)": (
             "/events",
-            {"disposition": "likely_empty", "limit": 8},
+            {"disposition": "likely_empty", "limit": 8, **shown},
         ),
         "GET /events (audit queue)": (
             "/events",
-            {"audit": "true", "reviewed": "false", "limit": 8},
+            {"audit": "true", "reviewed": "false", "limit": 8, **shown},
         ),
-        "GET /events (timeline, first page)": ("/events", {"limit": 100}),
+        "GET /events (timeline, first page)": ("/events", {"limit": 100, **shown}),
         "GET /events (timeline, last page)": (
             "/events",
-            {"limit": 100, "offset": max(0, total - 100)},
+            {"limit": 100, "offset": max(0, total - 100), **shown},
         ),
         "GET /cameras (timeline)": ("/cameras", None),
         "GET /events (one night's visitors)": ("/events", {**night, "animal": "true", "limit": 12}),
