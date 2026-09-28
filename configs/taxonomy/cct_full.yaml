@@ -1,0 +1,28 @@
+# Full Caltech Camera Traps: the CCT20 categories plus six that occur only
+# outside CCT20. None of the six is supported; each is an unsupported animal,
+# never empty. Insects count as animals so that retention treats them
+# conservatively.
+name: cct_full
+categories:
+  opossum:  {kind: animal}
+  raccoon:  {kind: animal}
+  rabbit:   {kind: animal}
+  coyote:   {kind: animal}
+  bobcat:   {kind: animal}
+  cat:      {kind: animal}   # domestic/feral cat
+  squirrel: {kind: animal}
+  dog:      {kind: animal}   # domestic dog
+  bird:     {kind: animal}
+  skunk:    {kind: animal}
+  rodent:   {kind: animal}
+  deer:     {kind: animal}
+  badger:   {kind: animal}
+  fox:      {kind: animal}
+  bat:      {kind: animal}
+  cow:      {kind: animal}
+  insect:   {kind: animal}
+  lizard:   {kind: animal}
+  mountain_lion: {kind: animal}
+  pig:      {kind: animal}
+  empty:    {kind: empty}
+  car:      {kind: non_animal}  # vehicles on roads/tracks in view

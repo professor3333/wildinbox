@@ -14,7 +14,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
-from wildinbox.datasets.spec import Partition
+from wildinbox.datasets.spec import LOCKED, Partition
 
 
 class FinalTestAccessError(RuntimeError):
@@ -23,10 +23,11 @@ class FinalTestAccessError(RuntimeError):
 
 def assert_development(partitions: Iterable[Partition | str]) -> list[Partition]:
     parts = [Partition(p) for p in partitions]
-    if Partition.FINAL_TEST in parts:
+    locked = sorted(p.value for p in parts if p in LOCKED)
+    if locked:
         raise FinalTestAccessError(
-            "the locked final test is not available during development; it is opened once, "
-            "after models, calibration, and thresholds are frozen"
+            f"locked test partitions {locked} are not available during development; each is "
+            "opened once, after models, calibration, and thresholds are frozen"
         )
     return parts
 

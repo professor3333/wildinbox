@@ -84,6 +84,37 @@ def _data(args: argparse.Namespace) -> int:
     return 0
 
 
+def _dataset_fresh(args: argparse.Namespace) -> int:
+    from wildinbox.datasets.build import BuildError
+    from wildinbox.datasets.fresh import build_fresh, load_fresh_spec, lock_payload
+    from wildinbox.datasets.spec import load_taxonomy
+    from wildinbox.ingestion.pipeline import LockMismatchError, check_or_write_lock
+
+    spec = load_fresh_spec(args.spec)
+    try:
+        result = build_fresh(spec, load_taxonomy(spec.taxonomy), Settings().data_dir)
+    except BuildError as e:
+        print(f"error: {e}", file=sys.stderr)
+        return 1
+    for c in result.checks:
+        print(f"{'PASS' if c.passed else 'FAIL'}  {c.name}: {c.detail}")
+    print(f"{len(result.events)} events, {result.version} -> {result.events_path.parent}")
+    if not result.passed:
+        print("error: leakage checks failed; lock not updated", file=sys.stderr)
+        return 1
+    try:
+        state = check_or_write_lock(
+            Path("manifests") / f"{spec.name}.lock.json",
+            lock_payload(spec, result),
+            update=args.update_lock,
+        )
+    except LockMismatchError as e:
+        print(f"error: {e}", file=sys.stderr)
+        return 1
+    print(f"lock {state}")
+    return 0
+
+
 def _dataset(args: argparse.Namespace) -> int:
     from wildinbox.datasets.build import BuildError, build, lock_payload
     from wildinbox.datasets.report import write_split_report
@@ -91,6 +122,8 @@ def _dataset(args: argparse.Namespace) -> int:
     from wildinbox.ingestion.inventory import Paths
     from wildinbox.ingestion.pipeline import LockMismatchError, check_or_write_lock
 
+    if args.dataset_command == "fresh":
+        return _dataset_fresh(args)
     spec = load_split_spec(args.spec)
     taxonomy = load_taxonomy(spec.taxonomy)
     data_dir = Settings().data_dir
@@ -209,6 +242,15 @@ def main(argv: Sequence[str] | None = None) -> int:
         help="Accept splits that differ from manifests/<name>.lock.json.",
     )
     p_build.add_argument("--report-dir", default="reports/splits")
+    p_fresh = ds_sub.add_parser(
+        "fresh", help="Build capture events for fresh cameras outside CCT20 (v2 experiment)."
+    )
+    p_fresh.add_argument("--spec", type=Path, required=True)
+    p_fresh.add_argument(
+        "--update-lock",
+        action="store_true",
+        help="Accept events that differ from manifests/<name>.lock.json.",
+    )
 
     p_base = sub.add_parser("baseline", help="Frozen-embedding baseline.")
     base_sub = p_base.add_subparsers(dest="baseline_command", required=True)

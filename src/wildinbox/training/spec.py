@@ -9,7 +9,7 @@ import yaml
 from pydantic import BaseModel, ConfigDict, Field, ValidationError, field_validator
 
 from wildinbox.config import ConfigError
-from wildinbox.datasets.spec import Partition
+from wildinbox.datasets.spec import LOCKED, Partition
 
 
 class _Strict(BaseModel):
@@ -48,8 +48,8 @@ class EvaluationSpec(_Strict):
     @field_validator("partitions", "unseen_camera_partitions")
     @classmethod
     def _no_final_test(cls, v: list[Partition]) -> list[Partition]:
-        if Partition.FINAL_TEST in v:
-            raise ValueError("the locked final test may not be used for development evaluation")
+        if any(p in LOCKED for p in v):
+            raise ValueError("a locked test partition may not be used for development evaluation")
         return v
 
 

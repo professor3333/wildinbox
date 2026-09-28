@@ -57,6 +57,13 @@ class Partition(StrEnum):
     POLICY_VALIDATION = "policy_validation"
     FINAL_TEST = "final_test"
     SEEN_CAMERA_DIAGNOSTIC = "seen_camera_diagnostic"
+    # v2 experiment, cameras outside CCT20 (configs/experiments/fresh_cameras_v2.yaml)
+    ADAPTATION_DEVELOPMENT = "adaptation_development"
+    FRESH_TEST = "fresh_test"
+
+
+# Opened once each, under a committed protocol; never read during development.
+LOCKED = (Partition.FINAL_TEST, Partition.FRESH_TEST)
 
 
 class CameraAssignment(_Strict):
