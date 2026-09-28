@@ -70,11 +70,18 @@ def main() -> None:
     parser.add_argument("--model-dir", type=Path, default=Path("models/finetune-e3-update1"))
     parser.add_argument("--batch-dir", type=Path, default=Path("data/samples/release-demo"))
     parser.add_argument("--log", type=Path, default=Path("reports/update/release-log.json"))
+    parser.add_argument(
+        "--legacy-policy",
+        action="store_true",
+        help="Release a candidate gated with --legacy-policy (reproducing a recorded cycle).",
+    )
     args = parser.parse_args()
     api = httpx.Client(base_url=args.url, timeout=60, headers=auth_headers())
 
     gate = json.loads((args.gate / "metrics.json").read_text())
     check(gate["promote"], f"gate passed for {gate['candidate_release']}")
+    if gate.get("promotion_policy") == "legacy":
+        check(args.legacy_policy, "legacy-policy gate released only with --legacy-policy")
     previous = api.get("/version").json()["active_release"]["id"]
     check(previous == gate["deployed_release"], f"deployed release is {previous}")
 

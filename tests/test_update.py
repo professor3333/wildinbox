@@ -815,8 +815,21 @@ def test_a_v3_cycle_against_deployed_v2_loads_v2_and_refuses_mismatches_first(
         gate.run(protocol(wrong), cand, tmp_path / "cfg.yaml", tmp_path / "report", device="cpu")
     assert contexts == [] and loaded == []  # refused before reading any data
 
-    with pytest.raises(Loaded):
+    # A protocol without per-species limits or minimum evidence is refused, before
+    # any data is read, unless the legacy policy is asked for.
+    with pytest.raises(GateError, match="no per-species limits"):
         gate.run(protocol(v2), cand, tmp_path / "cfg.yaml", tmp_path / "report", device="cpu")
+    assert contexts == [] and loaded == []
+
+    with pytest.raises(Loaded):
+        gate.run(
+            protocol(v2),
+            cand,
+            tmp_path / "cfg.yaml",
+            tmp_path / "report",
+            device="cpu",
+            allow_legacy_policy=True,
+        )
     assert loaded == [root / "model-v2", cand]  # the baseline is V2, not the current policy's model
     assert devices == ["cpu", "cpu"]  # both models on the one requested device
 
@@ -977,7 +990,14 @@ def test_the_gate_refuses_holdouts_either_model_was_fit_on(
     )
     monkeypatch.setattr(predictors, "FinetunedPredictor", lambda ctx, d, dev: loaded.append(d))
     with pytest.raises(GateError, match=message):
-        gate.run(p, cand, tmp_path / "cfg.yaml", tmp_path / "report", device="cpu")
+        gate.run(
+            p,
+            cand,
+            tmp_path / "cfg.yaml",
+            tmp_path / "report",
+            device="cpu",
+            allow_legacy_policy=True,
+        )
     assert loaded == []  # refused before any model was loaded or scored
 
 

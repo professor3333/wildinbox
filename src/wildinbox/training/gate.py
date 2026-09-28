@@ -9,6 +9,9 @@ configs/experiments/update_cycle.yaml and decide whether it may be released.
   label against the reviewed label.
 - Regressions: image-level macro-F1 on the calibration cameras and on the
   seen-camera diagnostic partition, where neither model trained.
+- Promotion policy (`training.promotion`): per-species recall limits on the
+  holdout and minimum evidence; the outcome is promote, reject, or
+  inconclusive.
 
 Development data only. The gate never reads the final test, and refuses to run
 if the snapshot's training or holdout frames overlap the final test or the
@@ -242,12 +245,19 @@ def event_block(
 
 
 def run(
-    protocol_path: Path, candidate_dir: Path, config_path: Path, report_dir: Path, *, device: str
+    protocol_path: Path,
+    candidate_dir: Path,
+    config_path: Path,
+    report_dir: Path,
+    *,
+    device: str,
+    allow_legacy_policy: bool = False,
 ) -> dict[str, Any]:
     from wildinbox.evaluation.calibration import fit_temperature
     from wildinbox.evaluation.predictors import FinetunedPredictor
     from wildinbox.evaluation.run import _round, _score
     from wildinbox.settings import Settings
+    from wildinbox.training import promotion
     from wildinbox.training.provenance import protocol_provenance
     from wildinbox.training.run import git_state, load_context
 
@@ -264,6 +274,12 @@ def run(
     cand_meta = json.loads((candidate_dir / "meta.json").read_text())
     if list(cand_meta["classes"]) != list(deployed_policy["classes"]):
         raise GateError("candidate and deployed release disagree on the class order")
+    try:
+        policy_level = promotion.policy_level(
+            gate, list(deployed_policy["classes"]), allow_legacy=allow_legacy_policy
+        )
+    except promotion.PolicyError as e:
+        raise GateError(str(e)) from e
     ctx = load_context(config_path, Settings().data_dir)
     snap = cand_meta["trained_on"]["snapshot"]
     if snap is None:
@@ -349,35 +365,8 @@ def run(
             "regression_macro_f1": regress,
         }
 
-    d, c = results["deployed"], results["candidate"]
-    gain = c["holdout"]["macro_f1"] - d["holdout"]["macro_f1"]
-    regressions = {
-        part: d["regression_macro_f1"][part] - c["regression_macro_f1"][part]
-        for part in d["regression_macro_f1"]
-    }
-    lost_d = d["holdout"]["animal_events_suggested_empty"]
-    lost_c = c["holdout"]["animal_events_suggested_empty"]
-    lost_limit = lost_d * (1 + gate["max_false_empty_suggestion_increase"])
-    checks = {
-        "holdout_gain": {
-            "value": gain,
-            "required": gate["min_holdout_gain"],
-            "pass": gain >= gate["min_holdout_gain"],
-        },
-        **{
-            f"no_regression_{part}": {
-                "value": -drop,
-                "allowed": -gate["max_regression"],
-                "pass": drop <= gate["max_regression"],
-            }
-            for part, drop in regressions.items()
-        },
-        "false_empty_suggestions": {
-            "value": lost_c,
-            "limit": lost_limit,
-            "pass": lost_c <= lost_limit,
-        },
-    }
+    checks = promotion.evidence_checks(results["deployed"], results["candidate"], gate)
+    gain = checks["holdout_gain"]["value"]
     budget = gate.get("max_comparisons_per_holdout")
     number = log_comparison(
         report_dir.parent / "comparisons.jsonl",
@@ -391,15 +380,15 @@ def run(
             "protocol_sha256": hashlib.sha256(protocol_path.read_bytes()).hexdigest(),
             "holdout_gain": gain,
             "checks_passed": all(v["pass"] for v in checks.values()),
+            # the verdict on the evidence, before the comparison budget
+            "decision": promotion.decide(checks),
+            "promotion_policy": policy_level,
         },
     )
     if budget is not None:
-        checks["comparison_budget"] = {
-            "value": number,
-            "limit": budget,
-            "pass": number <= budget,
-        }
-    promote = all(v["pass"] for v in checks.values())
+        checks["comparison_budget"] = promotion.budget_check(number, budget)
+    decision = promotion.decide(checks)
+    promote = decision == promotion.PROMOTE
 
     # The candidate's policy artifact: deployed policy settings, its own calibration.
     calibration = {
@@ -440,6 +429,8 @@ def run(
         "device": device,
         "results": results,
         "checks": checks,
+        "promotion_policy": policy_level,
+        "decision": decision,
         "promote": promote,
         "development_data_only": {
             "evaluated_on": ["snapshot holdout", "calibration", "seen_camera_diagnostic"],

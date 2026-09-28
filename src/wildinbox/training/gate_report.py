@@ -77,6 +77,54 @@ def _provenance_section(prov: dict[str, Any]) -> list[str]:
     ]
 
 
+def _pass(check: dict[str, Any]) -> str:
+    if check["pass"] is None:
+        if "min_support" in check and check["support"] < check["min_support"]:
+            return f"insufficient evidence ({check['support']} < {check['min_support']})"
+        return "inconclusive"
+    return "yes" if check["pass"] else "**no**"
+
+
+def _decision(out: dict[str, Any]) -> list[str]:
+    """Recorded gates before the promotion policy had only promote / do not promote."""
+    head = f"`{out['candidate_release']}` over `{out['deployed_release']}`."
+    decision = out.get("decision")
+    if decision is None:
+        return [f"**{'Promote' if out['promote'] else 'Do not promote'}** {head}"]
+    line = {
+        "promote": f"**Promote** {head}",
+        "reject": f"**Reject** {head} A check failed on enough evidence.",
+        "inconclusive": f"**Inconclusive: do not promote** {head} Nothing failed, but "
+        "some check had too little evidence to judge, or this holdout's comparison "
+        "budget is spent. Gate again on more reviewed events or a fresh holdout.",
+    }[decision]
+    if out.get("promotion_policy") == "legacy":
+        line += (
+            "\n\nGated under the **legacy policy** (aggregate checks only: no per-species "
+            "limits, no minimum evidence), to reproduce a recorded cycle. A decision "
+            "under this policy is not sufficient for operational release."
+        )
+    return [line]
+
+
+def _species_rows(checks: dict[str, Any]) -> list[list[Any]]:
+    return [
+        [
+            f"Recall change, {k.removeprefix('species_recall_')} "
+            f"({v['deployed']:.3f} -> {v['candidate']:.3f}, {v['support']} events)",
+            f"{v['value']:+.3f}",
+            f">= {v['allowed']:+.2f}, on >= {v['min_support']} events",
+            _pass(v),
+        ]
+        for k, v in checks.items()
+        if k.startswith("species_recall_")
+    ]
+
+
+def _requirement(v: dict[str, Any], rule: str) -> str:
+    return rule + (f", on >= {v['min_support']} events" if "min_support" in v else "")
+
+
 def write_report(report_dir: Path, out: dict[str, Any]) -> Path:
     d, c = out["results"]["deployed"], out["results"]["candidate"]
     snap = out["snapshot"]
@@ -101,8 +149,7 @@ def write_report(report_dir: Path, out: dict[str, Any]) -> Path:
         "",
         "## Decision",
         "",
-        f"**{'Promote' if out['promote'] else 'Do not promote'}** "
-        f"`{out['candidate_release']}` over `{out['deployed_release']}`.",
+        *_decision(out),
         "",
         _t(
             ["Check", "Result", "Requirement", "Pass"],
@@ -110,15 +157,17 @@ def write_report(report_dir: Path, out: dict[str, Any]) -> Path:
                 [
                     "Holdout event macro-F1 gain",
                     f"{checks['holdout_gain']['value']:+.3f}",
-                    f">= {checks['holdout_gain']['required']:+.2f}",
-                    "yes" if checks["holdout_gain"]["pass"] else "**no**",
+                    _requirement(
+                        checks["holdout_gain"], f">= {checks['holdout_gain']['required']:+.2f}"
+                    ),
+                    _pass(checks["holdout_gain"]),
                 ],
                 *[
                     [
                         f"Macro-F1 change, {k.removeprefix('no_regression_').replace('_', ' ')}",
                         f"{v['value']:+.3f}",
                         f">= {v['allowed']:+.2f}",
-                        "yes" if v["pass"] else "**no**",
+                        _pass(v),
                     ]
                     for k, v in checks.items()
                     if k.startswith("no_regression_")
@@ -126,9 +175,25 @@ def write_report(report_dir: Path, out: dict[str, Any]) -> Path:
                 [
                     "Holdout animal events suggested as empty",
                     f"{checks['false_empty_suggestions']['value']}",
-                    f"<= {checks['false_empty_suggestions']['limit']:.1f}",
-                    "yes" if checks["false_empty_suggestions"]["pass"] else "**no**",
+                    _requirement(
+                        checks["false_empty_suggestions"],
+                        f"<= {checks['false_empty_suggestions']['limit']:.1f}",
+                    ),
+                    _pass(checks["false_empty_suggestions"]),
                 ],
+                *_species_rows(checks),
+                *(
+                    [
+                        [
+                            "Comparisons on this holdout",
+                            checks["comparison_budget"]["value"],
+                            f"<= {checks['comparison_budget']['limit']}",
+                            _pass(checks["comparison_budget"]),
+                        ]
+                    ]
+                    if "comparison_budget" in checks
+                    else []
+                ),
             ],
         ),
         "",

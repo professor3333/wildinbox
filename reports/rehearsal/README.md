@@ -40,6 +40,15 @@ from 0.438 to 0.750. The pre-registered checks are macro-F1 and false empties, s
 trade between two species passes them. The candidate was not left in service: as
 in cycle 1, the rehearsal ends with the rollback.
 
+Since then, the gate also applies per-species recall limits and minimum
+evidence, with a third outcome, inconclusive
+([policy](../../docs/retraining.md#promotion-policy-critical-species-and-minimum-evidence)).
+Applied to these recorded results, it **rejects** this candidate: bobcat's drop of
+0.259 over 81 events exceeds the 0.10 limit. Coyote and rabbit, with 16 and 4
+events, are too sparse to judge. This was applied after the fact, to a result
+already seen, so it shows what the policy catches, not an independent test of it.
+The recorded gate report above is unchanged.
+
 ## What differs from cycle 1, and why
 
 - **Protocol.** [`update_rehearsal.yaml`](../../configs/experiments/update_rehearsal.yaml)
