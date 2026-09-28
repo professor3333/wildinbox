@@ -25,7 +25,8 @@ Afterwards it measures metadata API latency (client side, over whatever link
 event pages, animal events, batches, cameras), times GET /monitoring, and
 records the server-side latency the API reports. With --probe, the same
 requests also run at a steady pace during every scenario, as reviewers
-browsing while batches process would. Machine specifications, the served
+browsing while batches process would, from a separate process so that the
+uploader's own work is not timed as latency. Machine specifications, the served
 release, and the database's size before and after (see
 scripts/seed_history.py for synthetic history) are recorded with the results.
 """
@@ -34,6 +35,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import multiprocessing
 import os
 import random
 import shlex
@@ -454,34 +456,78 @@ def history_targets(client: httpx.Client) -> dict[str, tuple[str, dict[str, Any]
         "start_after": night_start.isoformat(),
         "start_before": (night_start + timedelta(hours=12)).isoformat(),
     }
+    # The interface's queues and timeline only display their totals, so they
+    # accept a floor past the API's counting limit (`exact_total=false`).
+    shown = {"exact_total": "false"}
     return {
         "GET /batches (sidebar)": ("/batches", {"limit": 50}),
         "GET /events (review queue)": (
             "/events",
-            {"disposition": "needs_review", "reviewed": "false", "limit": 8},
+            {"disposition": "needs_review", "reviewed": "false", "limit": 8, **shown},
         ),
         "GET /events (automatically filtered)": (
             "/events",
-            {"disposition": "likely_empty", "limit": 8},
+            {"disposition": "likely_empty", "limit": 8, **shown},
         ),
         "GET /events (audit queue)": (
             "/events",
-            {"audit": "true", "reviewed": "false", "limit": 8},
+            {"audit": "true", "reviewed": "false", "limit": 8, **shown},
         ),
-        "GET /events (timeline, first page)": ("/events", {"limit": 100}),
+        "GET /events (timeline, first page)": ("/events", {"limit": 100, **shown}),
         "GET /events (timeline, last page)": (
             "/events",
-            {"limit": 100, "offset": max(0, total - 100)},
+            {"limit": 100, "offset": max(0, total - 100), **shown},
         ),
         "GET /cameras (timeline)": ("/cameras", None),
         "GET /events (one night's visitors)": ("/events", {**night, "animal": "true", "limit": 12}),
     }
 
 
+def _probe_loop(
+    api: str,
+    headers: dict[str, str],
+    targets: dict[str, tuple[str, dict[str, Any] | None]],
+    interval: float,
+    monitoring_every: float,
+    stopping: Any,
+    out: Any,
+) -> None:
+    client = httpx.Client(base_url=api, headers=headers, timeout=120)
+    times: dict[str, list[float]] = {}
+    errors: dict[str, int] = {}
+
+    def timed(label: str, path: str, params: dict[str, Any] | None) -> None:
+        t = time.perf_counter()
+        try:
+            client.get(path, params=params).raise_for_status()
+        except httpx.HTTPError:
+            errors[label] = errors.get(label, 0) + 1
+            return
+        times.setdefault(label, []).append(time.perf_counter() - t)
+
+    labels = list(targets)
+    n, last_monitoring = 0, 0.0
+    while not stopping.is_set():
+        if time.monotonic() - last_monitoring >= monitoring_every:
+            last_monitoring = time.monotonic()
+            timed("GET /monitoring", "/monitoring", None)
+        label = labels[n % len(labels)]
+        timed(label, *targets[label])
+        n += 1
+        stopping.wait(interval)
+    client.close()
+    out.put((times, errors))
+
+
 class Probe:
     """Reviewers browsing while batches process: metadata requests at a steady
     pace (one every `interval` seconds, cycling through `targets`) and
-    GET /monitoring every `monitoring_every` seconds, each timed per route."""
+    GET /monitoring every `monitoring_every` seconds, each timed per route.
+
+    It runs in its own process. In the uploading process, building a
+    1,000-file multipart body holds this process's interpreter lock for
+    seconds, and a probe thread there timed its own wait for the lock as
+    server latency."""
 
     def __init__(
         self,
@@ -491,42 +537,27 @@ class Probe:
         interval: float = 0.25,
         monitoring_every: float = 30,
     ) -> None:
-        self.client = httpx.Client(base_url=api, headers=headers, timeout=120)
-        self.targets, self.interval, self.monitoring_every = targets, interval, monitoring_every
-        self.times: dict[str, list[float]] = {}
-        self.errors: dict[str, int] = {}
-        self.stopping = threading.Event()
-        self.thread = threading.Thread(target=self._run, daemon=True)
-        self.thread.start()
-
-    def _time(self, label: str, path: str, params: dict[str, Any] | None) -> None:
-        t = time.perf_counter()
-        try:
-            self.client.get(path, params=params).raise_for_status()
-        except httpx.HTTPError:
-            self.errors[label] = self.errors.get(label, 0) + 1
-            return
-        self.times.setdefault(label, []).append(time.perf_counter() - t)
-
-    def _run(self) -> None:
-        labels = list(self.targets)
-        n, last_monitoring = 0, 0.0
-        while not self.stopping.is_set():
-            if time.monotonic() - last_monitoring >= self.monitoring_every:
-                last_monitoring = time.monotonic()
-                self._time("GET /monitoring", "/monitoring", None)
-            label = labels[n % len(labels)]
-            self._time(label, *self.targets[label])
-            n += 1
-            self.stopping.wait(self.interval)
+        ctx = multiprocessing.get_context("spawn")
+        self.stopping = ctx.Event()
+        self.out: Any = ctx.Queue()
+        self.process = ctx.Process(
+            target=_probe_loop,
+            args=(api, headers, targets, interval, monitoring_every, self.stopping, self.out),
+            daemon=True,
+        )
+        self.process.start()
 
     def stop(self) -> dict[str, Any]:
         self.stopping.set()
-        self.thread.join()
-        self.client.close()
+        times, errors = self.out.get(timeout=300)
+        self.process.join()
+        metadata = [t for k, v in times.items() if k != "GET /monitoring" for t in v]
         return {
-            "routes": {k: percentiles(v) for k, v in sorted(self.times.items())},
-            "errors": self.errors,
+            # Every metadata request pooled: per route there are only 30-70
+            # requests per scenario, so a route's p95 is about its second-worst.
+            "all_metadata": percentiles(metadata) if metadata else None,
+            "routes": {k: percentiles(v) for k, v in sorted(times.items())},
+            "errors": errors,
         }
 
 

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import argparse
+import gc
 import json
 import os
 import sys
@@ -698,8 +699,14 @@ def main(argv: Sequence[str] | None = None) -> int:
 
         from wildinbox.api.app import create_app
 
+        api_app = create_app()
+        # The imports (PyTorch among them) leave about 380,000 long-lived objects.
+        # Frozen, full collections no longer walk them: under load a full
+        # collection had paused every request for up to 2 s.
+        gc.collect()
+        gc.freeze()
         # Logging is already configured; uvicorn's own config would replace it.
-        uvicorn.run(create_app(), host=args.host, port=args.port, log_config=None, access_log=False)
+        uvicorn.run(api_app, host=args.host, port=args.port, log_config=None, access_log=False)
         return 0
     if args.command == "ui":
         import subprocess

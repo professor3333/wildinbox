@@ -10,6 +10,7 @@ queue message is harmless.
 from __future__ import annotations
 
 import logging
+import os
 import threading
 import uuid
 from typing import Protocol
@@ -107,18 +108,30 @@ def _recovery_loop(settings: Settings, stop: threading.Event) -> None:
         stop.wait(settings.recovery_interval_seconds)
 
 
+def inference_threads(settings: Settings, cpus: int | None = None) -> int:
+    """PyTorch threads for this worker: `torch_threads` if set, else half the
+    CPUs it may run on. The API and PostgreSQL share the machine; with every
+    CPU given to inference, reviewers' requests during processing had a p95
+    of 752 ms and processing itself slowed (two 1,000-image batches: 298 s
+    with 8 threads on 8 vCPUs, 210 s with 4; reports/history)."""
+    if settings.torch_threads:
+        return settings.torch_threads
+    if cpus is None:
+        cpus = len(os.sched_getaffinity(0)) if hasattr(os, "sched_getaffinity") else os.cpu_count()
+    return max(1, (cpus or 1) // 2)
+
+
 def preload(settings: Settings, factory: sessionmaker[Session], store: ObjectStore) -> None:
     """Load the release this deployment serves before taking jobs, so the first
     batch does not pay for it and a broken artifact stops the worker at start
     (it exits and restarts, visibly) instead of failing every job."""
+    import torch
+
     from wildinbox.inference.releases import active_release_id
     from wildinbox.inference.serving import scorer_for
     from wildinbox.storage.models import ModelRelease
 
-    if settings.torch_threads:
-        import torch
-
-        torch.set_num_threads(settings.torch_threads)
+    torch.set_num_threads(inference_threads(settings))
     with factory() as s:
         release_id = settings.expected_release or active_release_id(s, settings)
         release = s.get(ModelRelease, release_id)

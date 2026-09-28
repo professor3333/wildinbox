@@ -64,8 +64,9 @@ class Settings(BaseSettings):
     # the job is recovered. Failed attempts retry with exponential backoff until
     # the job's `max_attempts`, then fail terminally.
     inference_device: str = "cpu"
-    # CPU threads PyTorch may use per worker process (unset: one per core).
-    # With several workers on one machine, cores / workers avoids oversubscription.
+    # CPU threads PyTorch may use per worker process (unset: half the CPUs it
+    # may run on, see `inference_threads`). With several workers on one
+    # machine, divide further so they do not oversubscribe it.
     torch_threads: int | None = Field(default=None, gt=0)
     inference_chunk: int = Field(default=16, gt=0)
     lease_seconds: int = Field(default=120, gt=0)
@@ -88,6 +89,14 @@ class Settings(BaseSettings):
     max_batch_bytes: int = Field(default=1024 * 1024 * 1024, gt=0)
     # Originals written to object storage in parallel per upload.
     store_concurrency: int = Field(default=16, gt=0, le=64)
+    # Processes that write originals, off the API's interpreter lock so other
+    # requests are not stalled by an upload (0: threads in the API process).
+    store_processes: int = Field(default=1, ge=0, le=8)
+
+    # GET /monitoring and /metrics: one summary is shared by simultaneous callers
+    # and fresh for this many seconds; after that callers get it while the next
+    # one is computed in the background (0: computed per request).
+    monitoring_max_age_seconds: float = Field(default=15, ge=0)
 
     @field_validator(
         "object_store_url", "object_store_access_key", "object_store_secret_key", "expected_release"

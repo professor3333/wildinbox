@@ -115,10 +115,10 @@ Postgres 207 MiB, object store 532 MiB.
 
 ## Not yet done
 
-- Meet the target during concurrent processing. Candidates, none tested
-  yet:
-  - a cheaper review-queue count (a partial index, or an estimated count
-    for "all batches");
-  - Postgres memory settings sized to the database;
-  - running monitoring away from the API process that serves reviewers.
+- Meet the target during concurrent processing. Followed up in
+  [concurrency/](concurrency/README.md): the causes found were fixed and
+  monitoring under load fell from about 20 s to 0.1-2.2 s. Its "during"
+  numbers above were also inflated around uploads, because the probe shared
+  the uploading process. The target while batches process is still not met
+  reliably on this laptop.
 - Measure on declared server hardware, not the laptop.

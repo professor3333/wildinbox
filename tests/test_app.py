@@ -80,6 +80,12 @@ def settings(database_url: str, tmp_path: Path) -> Settings:
         max_batch_bytes=500_000,
         retry_backoff_seconds=0,
         auth="disabled",
+        # A fresh summary per request, so tests see each change;
+        # tests/test_monitoring_runner.py covers the reuse.
+        monitoring_max_age_seconds=0,
+        # Originals written by threads in this process: spawning a store process
+        # per test app doubles the suite's time; tests/test_originals.py covers it.
+        store_processes=0,
     )
 
 
@@ -211,6 +217,31 @@ def test_resubmitting_the_same_request_creates_no_duplicates(
     )
     assert conflict.status_code == 409 and conflict.json()["error"] == "idempotency_conflict"
     assert _count(settings, Job) == 2
+
+
+def test_simultaneous_identical_uploads_create_one_batch(
+    client: TestClient, settings: Settings
+) -> None:
+    """Both requests pass the duplicate check before either inserts; the loser
+    hits the unique request key and answers with the winner's batch."""
+    import threading
+    from concurrent.futures import ThreadPoolExecutor
+
+    barrier = threading.Barrier(2, timeout=30)
+    put = client.app.state.put_originals  # type: ignore[attr-defined]
+
+    def put_after_both_checked(originals: Any) -> None:
+        barrier.wait()
+        put(originals)
+
+    client.app.state.put_originals = put_after_both_checked  # type: ignore[attr-defined]
+    files = _files(("a.jpg", jpeg(20)), ("b.jpg", jpeg(21)), ("a-again.jpg", jpeg(20)))
+    with ThreadPoolExecutor(2) as pool:
+        results = list(pool.map(lambda _: client.post("/batches", files=files), range(2)))
+    assert sorted(r.status_code for r in results) == [200, 202]
+    assert len({r.json()["id"] for r in results}) == 1
+    assert _count(settings, Batch) == 1 and _count(settings, Job) == 1
+    assert _count(settings, Image) == 3  # the loser's rows were rolled back
 
 
 def test_rerunning_a_job_does_not_duplicate_results(client: TestClient, settings: Settings) -> None:
@@ -626,6 +657,34 @@ def test_batch_history_pages_reach_every_batch(client: TestClient) -> None:
         offset = page["next_offset"]
     assert seen == [b["id"] for b in reversed(made)]  # the oldest is reachable
     assert all(b["images"] == 1 and b["events"] == 1 for b in first["batches"])
+
+
+def test_a_displayed_total_may_stop_counting_but_every_event_stays_reachable(
+    client: TestClient, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    from wildinbox.api import app as api_app
+
+    for n in range(5):  # one event per batch
+        client.post("/batches", files=_files((f"{n}.jpg", jpeg(80 + n))))
+    exact = client.get("/events", params={"limit": 1}).json()
+    assert exact["total"] == 5 and exact["total_exact"] is True
+
+    monkeypatch.setattr(api_app, "COUNT_AHEAD", 2)
+    shown = client.get("/events", params={"limit": 1, "exact_total": "false"}).json()
+    assert shown["total"] == 3 and shown["total_exact"] is False  # a floor: 3 of 5 counted
+    assert shown["events"] == exact["events"] and shown["next_offset"] == 1
+    # Still exact by default, and exact once the rest fits within the limit.
+    assert client.get("/events", params={"limit": 1}).json()["total"] == 5
+    last = client.get("/events", params={"limit": 2, "offset": 3, "exact_total": "false"}).json()
+    assert last["total"] == 5 and last["total_exact"] is True and last["next_offset"] is None
+    seen, offset = [], 0
+    while offset is not None:
+        page = client.get(
+            "/events", params={"limit": 2, "offset": offset, "exact_total": "false"}
+        ).json()
+        seen += [e["id"] for e in page["events"]]
+        offset = page["next_offset"]
+    assert len(seen) == len(set(seen)) == 5
 
 
 def test_camera_catalog_covers_every_event(client: TestClient) -> None:

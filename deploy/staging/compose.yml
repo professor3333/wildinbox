@@ -52,6 +52,17 @@ services:
       POSTGRES_USER: wildinbox
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD}
       POSTGRES_DB: wildinbox
+    # Sized for a database of a few hundred MB (about a year of uploads): the
+    # 128 MB default kept evicting pages that event lists and counts reread.
+    command:
+      - postgres
+      - -c
+      - shared_buffers=${POSTGRES_SHARED_BUFFERS:-512MB}
+      - -c
+      - effective_cache_size=${POSTGRES_EFFECTIVE_CACHE_SIZE:-1536MB}
+      - -c
+      - work_mem=${POSTGRES_WORK_MEM:-16MB}
+    shm_size: 256mb                    # parallel hash joins use shared memory
     volumes: [postgres:/var/lib/postgresql/data]
     logging: *logging
     healthcheck:

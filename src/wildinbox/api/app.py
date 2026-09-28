@@ -15,7 +15,7 @@ from fastapi import FastAPI, Header, Request
 from fastapi.concurrency import run_in_threadpool
 from fastapi.responses import HTMLResponse, JSONResponse, PlainTextResponse, Response
 from pydantic import BaseModel, Field, ValidationError
-from sqlalchemy import and_, exists, func, or_, select
+from sqlalchemy import and_, exists, func, insert, or_, select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session, aliased, selectinload, sessionmaker
 from starlette.datastructures import UploadFile
@@ -23,6 +23,7 @@ from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from wildinbox.api import views
 from wildinbox.api.auth import PUBLIC_PATHS, principal
+from wildinbox.api.originals import writer as originals_writer
 from wildinbox.api.uploads import (
     UploadedFile,
     UploadError,
@@ -35,6 +36,7 @@ from wildinbox.api.uploads import (
 from wildinbox.class_map import EMPTY_CLASS
 from wildinbox.config import load_config
 from wildinbox.inference.releases import active_release_id, ensure_test_release, release_notice
+from wildinbox.monitoring.runner import MonitoringRunner
 from wildinbox.schemas import Review as ReviewContract
 from wildinbox.schemas import ReviewOutcome
 from wildinbox.settings import Settings
@@ -395,6 +397,10 @@ class ReviewIn(BaseModel):
 # ------------------------------------------------------------------------ app
 
 
+# GET /events counts matches at most this far past the page it returns.
+COUNT_AHEAD = 10_000
+
+
 def create_app(
     settings: Settings | None = None,
     store: ObjectStore | None = None,
@@ -411,12 +417,24 @@ def create_app(
     @asynccontextmanager
     async def lifespan(app: FastAPI) -> AsyncIterator[None]:
         app.state.store = store or store_from_settings(settings)
+        app.state.put_originals, close_originals = originals_writer(
+            settings, app.state.store, injected=store is not None
+        )
         app.state.dispatcher = dispatcher or dispatcher_from_settings(settings, app.state.store)
         app.state.sessions = session_factory(settings.database_url)
         with app.state.sessions() as s:
             ensure_test_release(s, cfg)
             s.commit()
-        yield
+        app.state.monitoring = MonitoringRunner(
+            settings.database_url,
+            settings.lease_seconds,
+            settings.monitoring_config,
+            settings.monitoring_max_age_seconds,
+        )
+        try:
+            yield
+        finally:
+            close_originals()
 
     app = FastAPI(title="WildInbox", version="0.1.0", lifespan=lifespan)
     latency: dict[str, deque[float]] = defaultdict(lambda: deque(maxlen=2000))
@@ -527,33 +545,19 @@ def create_app(
 
     @app.get("/monitoring")
     def monitoring() -> dict[str, Any]:
-        """Operations, label-free signals per camera, and review-based accuracy."""
-        from wildinbox.monitoring.metrics import load_config, summary
-
-        with sessions()() as s:
-            out = summary(
-                s,
-                settings.lease_seconds,
-                load_config(settings.monitoring_config),
-                api=latency_summary(),
-            )
-        out["operations"]["api_latency"] = latency_summary()
+        """Operations, label-free signals per camera, and review-based accuracy.
+        Refreshed in the background once `monitoring_max_age_seconds` old, so it
+        can be older by one computation (see `generated_at`)."""
+        out = dict(app.state.monitoring.summary(latency_summary()))
+        out["operations"] = {**out["operations"], "api_latency": latency_summary()}
         return out
 
     @app.get("/metrics", response_class=PlainTextResponse)
     def metrics() -> str:
         """Prometheus text format for scraping and alerting."""
-        from wildinbox.monitoring.metrics import load_config, summary
         from wildinbox.monitoring.prometheus import render
 
-        with sessions()() as s:
-            data = summary(
-                s,
-                settings.lease_seconds,
-                load_config(settings.monitoring_config),
-                api=latency_summary(),
-            )
-        return render(data, latency_summary())
+        return render(app.state.monitoring.summary(latency_summary()), latency_summary())
 
     @app.get("/releases")
     def list_releases() -> dict[str, Any]:
@@ -662,25 +666,15 @@ def create_app(
         return response
 
     def _put_originals(files: list[UploadedFile]) -> None:
-        """Write accepted originals to object storage, several at a time: they
-        are independent, content-addressed objects, and one at a time a
-        1,000-file batch spends most of its upload waiting on S3 round trips."""
-        from concurrent.futures import ThreadPoolExecutor
-
+        """Write accepted originals to object storage, several at a time and off
+        the API's interpreter lock (`api.originals`): they are independent,
+        content-addressed objects."""
         todo = {
-            f.sha256: f
+            f.sha256: (original_key(f.sha256), f.data, f.content_type)
             for f in files
             if f.accepted and f.data is not None and f.sha256 and f.content_type
         }
-
-        def put(f: UploadedFile) -> None:
-            assert f.sha256 and f.data is not None and f.content_type
-            key = original_key(f.sha256)
-            if not app.state.store.exists(key):
-                app.state.store.put(key, f.data, f.content_type)
-
-        with ThreadPoolExecutor(settings.store_concurrency) as pool:
-            list(pool.map(put, todo.values()))  # re-raises the first failure
+        app.state.put_originals(list(todo.values()))
 
     def _store_batch(
         files: list[UploadedFile],
@@ -697,55 +691,71 @@ def create_app(
             _put_originals(files)
             marks.append(("store", time.perf_counter()))
 
-            batch = Batch(
-                id=uuid.uuid4(),
-                workspace=settings.workspace,
-                request_key=request_key,
-                status="queued",
-                manifest=manifest(files, metadata, fingerprint, settings),
-            )
-            s.add(batch)
-            prior = _workspace_images(s, {f.sha256 for f in files if f.sha256})
-            seen: dict[str, uuid.UUID] = {}
-            for f in files:
-                img = Image(
+            # A concurrent identical request may win the race on the batch's
+            # request key: at the batch flush or at commit.
+            try:
+                batch = Batch(
+                    id=uuid.uuid4(),
+                    workspace=settings.workspace,
+                    request_key=request_key,
+                    status="queued",
+                    manifest=manifest(files, metadata, fingerprint, settings),
+                )
+                s.add(batch)
+                s.flush()  # the images reference it
+                prior = _workspace_images(s, {f.sha256 for f in files if f.sha256})
+                seen: dict[str, uuid.UUID] = {}
+                rows: list[dict[str, Any]] = []
+                for f in files:
+                    image_id = uuid.uuid4()
+                    status, error, duplicate_of = "pending", None, None
+                    storage_key = original_key(f.sha256 or "") if f.accepted else None
+                    if not f.accepted:
+                        status, error = "invalid", f"{f.error_code}: {f.error}"
+                    elif f.sha256 in seen or f.sha256 in prior:
+                        status = "duplicate"
+                        duplicate_of = seen.get(f.sha256 or "") or prior[f.sha256 or ""]
+                    else:
+                        seen[f.sha256 or ""] = image_id
+                    rows.append(
+                        {
+                            "id": image_id,
+                            "batch_id": batch.id,
+                            "position": f.position,
+                            "original_filename": f.filename,
+                            "size_bytes": f.size,
+                            "sha256": f.sha256,
+                            "content_type": f.content_type,
+                            "camera_id": f.metadata.camera_id,
+                            "captured_at": _naive(f.metadata.captured_at),
+                            "sequence_id": f.metadata.sequence_id,
+                            "user_metadata": f.metadata.model_dump(mode="json", exclude_none=True),
+                            "validation_status": status,
+                            "validation_error": error,
+                            "duplicate_of": duplicate_of,
+                            "storage_key": storage_key,
+                        }
+                    )
+                # One multi-row INSERT, not an ORM object per image: building and
+                # flushing 1,000 objects held the interpreter lock for seconds, and
+                # every other request waited. (A duplicate may point at an earlier
+                # row of the same statement: Postgres checks the reference at its end.)
+                if rows:
+                    s.execute(insert(Image), rows)
+                job = Job(
                     id=uuid.uuid4(),
                     batch_id=batch.id,
-                    position=f.position,
-                    original_filename=f.filename,
-                    size_bytes=f.size,
-                    sha256=f.sha256,
-                    content_type=f.content_type,
-                    camera_id=f.metadata.camera_id,
-                    captured_at=_naive(f.metadata.captured_at),
-                    sequence_id=f.metadata.sequence_id,
-                    user_metadata=f.metadata.model_dump(mode="json", exclude_none=True),
+                    # Queued when inserted, not when the transaction began (before
+                    # the originals were stored), and by the database's clock like
+                    # the batch's created_at, so the two compare across hosts.
+                    created_at=func.clock_timestamp(),
+                    kind="process_batch",
+                    status="queued",
+                    attempts=0,
+                    max_attempts=3,
+                    model_release_id=active_release_id(s, settings),  # pinned for all retries
                 )
-                if not f.accepted:
-                    img.validation_status = "invalid"
-                    img.validation_error = f"{f.error_code}: {f.error}"
-                elif f.sha256 in seen or f.sha256 in prior:
-                    img.validation_status = "duplicate"
-                    img.duplicate_of = seen.get(f.sha256) or prior[f.sha256 or ""]
-                    img.storage_key = original_key(f.sha256 or "")
-                else:
-                    img.validation_status = "pending"
-                    img.storage_key = original_key(f.sha256 or "")
-                    seen[f.sha256 or ""] = img.id
-                s.add(img)
-            job = Job(
-                id=uuid.uuid4(),
-                batch_id=batch.id,
-                # Queued now, not when the transaction began (before the S3 writes).
-                created_at=_utcnow(),
-                kind="process_batch",
-                status="queued",
-                attempts=0,
-                max_attempts=3,
-                model_release_id=active_release_id(s, settings),  # pinned for all retries
-            )
-            s.add(job)
-            try:
+                s.add(job)
                 s.commit()
             except IntegrityError:
                 s.rollback()  # a concurrent identical request won the race
@@ -951,11 +961,18 @@ def create_app(
         start_before: datetime | None = None,
         limit: int = 100,
         offset: int = 0,
+        exact_total: bool = True,
     ) -> dict[str, Any]:
         """Events in time order. `label` matches the suggested label; `reason`
         a review reason; `reviewed` whether any human review exists; `animal`
         whether the current label (reviewed, else suggested) is an animal;
-        `start_after`/`start_before` bound the event's start (camera local time)."""
+        `start_after`/`start_before` bound the event's start (camera local time).
+
+        With `exact_total=false`, `total` counts matches only up to COUNT_AHEAD
+        past this page; beyond that it is a floor and `total_exact` is false.
+        For lists that only display the number: counting a year of history
+        (about 80,000 unreviewed events) on every review-queue page took up to
+        a second under load."""
         limit, offset = max(1, min(limit, 500)), max(0, offset)
         with sessions()() as s:
             q = select(Event).join(Batch).where(Batch.workspace == settings.workspace)
@@ -979,7 +996,9 @@ def create_app(
                 q = q.where(Event.start_at >= _naive(start_after))
             if start_before is not None:
                 q = q.where(Event.start_at < _naive(start_before))
-            total = s.scalar(select(func.count()).select_from(q.subquery())) or 0
+            cap = None if exact_total else offset + limit + COUNT_AHEAD
+            counted = q if cap is None else q.limit(cap)
+            total = s.scalar(select(func.count()).select_from(counted.subquery())) or 0
             events = list(
                 s.scalars(
                     q.order_by(Event.start_at, Event.id)
@@ -993,6 +1012,7 @@ def create_app(
             return {
                 "events": [event_row(s, e, releases=releases) for e in events],
                 "total": total,
+                "total_exact": cap is None or total < cap,
                 "limit": limit,
                 "offset": offset,
                 "next_offset": nxt,
