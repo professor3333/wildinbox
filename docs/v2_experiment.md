@@ -38,7 +38,15 @@ it is not read again, and v1's result against the 50% target stays on record.
 2. **Camera-selection rule, committed before reading any metadata:**
    [`configs/experiments/fresh_cameras.yaml`](../configs/experiments/fresh_cameras.yaml).
    Unused Caltech Camera Traps locations (outside CCT20), split by hash into
-   6 adaptation-development cameras and 12 locked fresh-test cameras.
+   adaptation-development cameras and locked fresh-test cameras.
+   **Amended once, before any image was downloaded:** v1 selected 8 test and
+   0 development cameras, 4 of them with one image per sequence id, so
+   [v2](../configs/experiments/fresh_cameras_v2.yaml) requires multi-frame
+   sequences and smaller cameras (the reasons, and what was looked at, are in
+   the file). Result: 12 fresh-test and 8 adaptation-development cameras,
+   20,793 images ([`manifests/fresh-cameras-v2.json`](../manifests/fresh-cameras-v2.json);
+   v1's output is kept beside it). Cameras whose sequence ids are per image
+   are left out, a limitation of the experiment.
 3. **Development**, on the adaptation-development cameras (plus the four CCT20
    development cameras): choose the adaptation method, N, the per-camera
    threshold rule, and the v2 target.
