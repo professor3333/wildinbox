@@ -2,7 +2,13 @@
 
 One complete model-update cycle on the running deployment, under the protocol
 [`configs/experiments/update_cycle.yaml`](../../configs/experiments/update_cycle.yaml),
-committed before any review was collected or candidate trained.
+committed (`0877050`, 2026-09-25 06:00 UTC) before the candidate was trained
+(from a clean tree at `5c65fe4`) and before the first review. This cycle's
+snapshot predates recorded review times; the
+[rehearsal](finetune-e3-rehearsal/README.md#protocol-provenance) rebuilt a
+snapshot from the same reviews, and its earliest is 10:19 UTC that day. The
+[candidate report](finetune-e3-update1/README.md#protocol-provenance) states
+only what this cycle's own records show.
 
 **Reviews were simulated** from Caltech Camera Traps ground truth (reviewer
 `simulated-ground-truth`, with a note on every review): no person labeled

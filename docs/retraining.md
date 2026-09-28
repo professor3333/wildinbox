@@ -224,6 +224,19 @@ and candidate models are then compared on **development data only**:
 The gate writes `reports/update/<candidate>/README.md` and the candidate's
 policy artifact.
 
+The report says the protocol came first only where the record shows it: the
+first commit with the protocol's exact content must be older than the
+snapshot's earliest `reviewed_at`, and the candidate must have been trained
+from a clean tree at a commit holding that content. Otherwise it says which
+of the two is not shown. Commit the protocol before collecting reviews, and
+commit everything before training, or the report cannot claim either. For a
+gate run before this was recorded:
+
+```bash
+uv run wildinbox update provenance --candidate models/<candidate> \
+    --report-dir reports/update/<candidate>
+```
+
 ## 5. Release
 
 ```bash

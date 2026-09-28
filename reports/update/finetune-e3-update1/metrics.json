@@ -208,5 +208,19 @@
     "protected_frames_in_snapshot": 0,
     "comparison_number_on_this_holdout": 2,
     "comparison_budget": null
+  },
+  "protocol_provenance": {
+    "protocol_sha256": "508deb5534f052ba008e2e192fdfc3919d6ee95e6e3fedefe4d3b355343e1024",
+    "first_committed": {
+      "commit": "0877050e489c05fb937d7c6606da791f5c5e9e06",
+      "committed_at": "2026-09-25T11:44:54+05:45"
+    },
+    "earliest_review_at": null,
+    "training_code": {
+      "commit": "5c65fe4c5be575db458f7c5ccf15352374c72246",
+      "dirty": false
+    },
+    "committed_before_reviews": null,
+    "committed_before_training": true
   }
 }

@@ -27,7 +27,7 @@ reviewer left unresolved.
 | `disposition` | What the system decided: `needs_review`, `likely_empty` (filtered automatically), or `species_identified` (labeled automatically). |
 | `suggested_label` | The model's suggestion, never overwritten by reviews. |
 | `confidence` | The calibrated confidence of that suggestion (0-1). |
-| `reasons` | Why the event needed review, separated by `;`: `low_confidence`, `conflicting_frames`, `possible_unknown`, `processing_failure`, `species_not_validated`, `automation_disabled`. |
+| `reasons` | Why the event needed review, separated by `;`: `low_confidence`, `conflicting_frames`, `possible_unknown` (not raised in v1: no unfamiliar-input score is used), `processing_failure`, `species_not_validated`, `automation_disabled`. |
 | `audit_selected` | `True` if this automatically handled event was sampled for a human audit. |
 | `audit_rule` | For automatic decisions, how audit samples were chosen, e.g. `sha256-uniform(rate=0.05, seed=wildinbox-audit-v1)`; recomputable from the event id. |
 | `model_release_id` | The immutable release that made the suggestion, e.g. `finetune-e3-deep-balanced@7a25aea97c76`. |

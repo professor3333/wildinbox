@@ -361,6 +361,13 @@ def main(argv: Sequence[str] | None = None) -> int:
         "--report-dir", type=Path, default=Path("reports/update/finetune-e3-update1")
     )
 
+    p_prov = upd_sub.add_parser(
+        "provenance",
+        help="Record when an earlier gate's protocol was committed and re-render its report.",
+    )
+    p_prov.add_argument("--candidate", type=Path, required=True)
+    p_prov.add_argument("--report-dir", type=Path, required=True)
+
     p_mon = sub.add_parser("monitoring", help="Monitoring maintenance.")
     mon_sub = p_mon.add_subparsers(dest="monitoring_command", required=True)
     mon_sub.add_parser("backfill-quality", help="Record image quality for older images.")
@@ -565,9 +572,19 @@ def main(argv: Sequence[str] | None = None) -> int:
         print(f"  provenance: {summary['provenance']['events']} events in labels.jsonl")
         return 0
     if args.command == "update":
-        from wildinbox.training.gate import GateError
+        from wildinbox.training.gate import GateError, record_provenance
         from wildinbox.training.gate import run as run_gate
 
+        if args.update_command == "provenance":
+            try:
+                prov = record_provenance(args.report_dir, args.candidate)
+            except GateError as e:
+                print(f"error: {e}", file=sys.stderr)
+                return 1
+            print(f"committed before the reviews: {prov['committed_before_reviews']}")
+            print(f"committed before training: {prov['committed_before_training']}")
+            print(f"report -> {args.report_dir / 'README.md'}")
+            return 0
         try:
             verdict = run_gate(
                 args.protocol,
