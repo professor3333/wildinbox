@@ -119,6 +119,36 @@ one camera on one night are not independent.
   label quality on later photos of the reviewed cameras from 0.486 to 0.548
   ([update cycle](reports/update/README.md), reviews simulated from ground truth).
 
+### Camera adaptation (v2): pre-registered, failed
+
+Can automatic species labels become safe once a person has reviewed a new
+camera's first events? A second experiment tested this on Caltech Camera
+Traps cameras outside CCT20: 8 for development, then 12 locked cameras
+opened once under a protocol committed before their images were downloaded
+([plan](docs/v2_experiment.md),
+[protocol](configs/experiments/fresh_test.yaml)).
+
+- **Development** (8 cameras, leave-one-camera-out): prior shift, a camera
+  head, a head with an other-animal class, and per-camera fine-tuning. None
+  reached 95% precision; empty filtering lost animals on single cameras under
+  every method ([development](reports/adaptation/development/README.md)).
+- **Frozen operating point:** the other-animal head adapted from each
+  camera's first 50 events, species labels only (empty filtering off),
+  threshold 0.82.
+- **Fresh test** (4,233 events, 11,837 photos):
+
+| | Target | Fresh test |
+|---|---|---|
+| Accepted species labels correct | ≥ 95%, lower bound ≥ 90% | **88.6%** (505 / 570) [85.7, 91.0]: **fail** |
+| Review reduction, with the 50 reviews and audits counted | reported | 12.8% |
+| Animal-event retention | | 100% |
+
+Adaptation helps: at the same threshold the unadapted model is right on 80%
+of the labels it would accept and saves 3.7%. It is not reliable enough to
+switch on: one camera gave 39 of the 65 wrong labels, and development gave
+no sign of which. **Automatic species acceptance stays off**
+([fresh-test report](reports/adaptation/fresh_test/README.md)).
+
 Supported classes: **empty, bobcat, cat, coyote, dog, opossum, rabbit,
 raccoon**, chosen from training-set counts. Other species (squirrel, skunk,
 bird, rodent, badger, fox, deer) are kept as unsupported-input cases, never
@@ -152,6 +182,7 @@ Every headline claim and where it comes from:
 | Deployment to retraining, gate, release, and rollback rehearsed end to end on current code (local stack, simulated reviews) | `reports/rehearsal/` | [reports/rehearsal/README.md](reports/rehearsal/README.md) |
 | Backup and restore | `reports/staging/backup-restore.log` | `deploy/staging/restore_drill.sh` |
 | A stranger can deploy the pinned release | `reports/staging/rehearsal/` | [docs/deployment.md](docs/deployment.md) |
+| v2 camera adaptation fails its pre-registered target: 88.6% of accepted labels correct vs 95% on 12 fresh cameras | `reports/adaptation/fresh_test/metrics.json` (protocol `configs/experiments/fresh_test.yaml`, committed before download) | `uv run wildinbox adaptation fresh-test` (refuses unless it reproduces the record); `--dev-check` on development cameras |
 | Pilot review study: no demonstrated time saving (5 participants, protocol needs 8) | `reports/study/study-1/` (export, pre-registered analysis, post-hoc checks) | `wildinbox study posthoc --dir reports/study/study-1 --without author` |
 
 ## Tech stack
@@ -260,6 +291,7 @@ Limits (see `.env.example`): 2,000 files and 1 GiB per batch, 20 MiB per file.
 | Update cycle | `snapshot build`, `update gate` |
 | Operations | `api`, `worker`, `ui`, `jobs recover`, `token new`, `monitoring summary`, `monitoring backfill-quality` |
 | Review study | `study plan`, `study analyze`, `study posthoc` |
+| Camera adaptation (v2) | `adaptation develop`, `adaptation fresh-test` |
 
 ## Reproduce the data and models
 
@@ -430,8 +462,9 @@ Training the released model: 70 minutes on the M1's GPU (Metal).
   cameras against a 50% target, so review reduction comes only from grouping
   ([final evaluation](reports/final_evaluation/README.md)).
 - **The final test has been used:** it was measured twice without any choice
-  made from it. A genuinely fresh assessment, or any automation restricted to
-  particular cameras or hours, needs new held-out cameras.
+  made from it. So has the v2 fresh test, once. A genuinely fresh assessment,
+  or any automation restricted to particular cameras or hours, needs new
+  held-out cameras.
 - **Unfamiliar species are not flagged:** the distance-based score was not
   adopted (it mostly measures "new camera", not "new species"), so serving
   computes none. Their ground-truth labels are preserved for evaluation, and
