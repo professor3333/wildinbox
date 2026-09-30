@@ -15,6 +15,9 @@ lower bound >= 95%; animal events filtered as empty, upper bound <= 2%).
 Leave-one-camera-out applies thresholds chosen on the other cameras to each
 camera in turn: the estimate for a camera the rule has never seen.
 
+With `filter_empty=False` no event is filtered as empty and only species
+labels are automated.
+
 Review reduction counts every event of the camera, the N reviewed ones
 included, and charges a 5% audit on automated events.
 """
@@ -98,14 +101,18 @@ def score_camera(
     return scored, len(events)
 
 
-def choose(scored: Sequence[Scored]) -> tuple[float | None, float | None]:
-    """The release rule's thresholds on these events (None: nothing passes)."""
+def choose(
+    scored: Sequence[Scored], filter_empty: bool = True
+) -> tuple[float | None, float | None]:
+    """The release rule's thresholds on these events (None: nothing passes,
+    or empty filtering is off)."""
     animals = [s for s in scored if s.animal]
     t_empty = next(
         (
             t
             for t in GRID
-            if animals
+            if filter_empty
+            and animals
             and wilson(sum(s.filtered(t) for s in animals), len(animals))[1] <= FALSE_EMPTY_LIMIT
         ),
         None,
@@ -160,12 +167,14 @@ def add(a: dict[str, Any], b: dict[str, Any]) -> dict[str, Any]:
     return {k: a.get(k, 0) + v for k, v in b.items()}
 
 
-def leave_one_camera_out(per_camera: dict[str, tuple[list[Scored], int]]) -> dict[str, Any]:
+def leave_one_camera_out(
+    per_camera: dict[str, tuple[list[Scored], int]], filter_empty: bool = True
+) -> dict[str, Any]:
     cams: dict[str, Any] = {}
     pooled: dict[str, Any] = {}
     for cam, (scored, total) in per_camera.items():
         others = [s for c, (ss, _) in per_camera.items() if c != cam for s in ss]
-        t_empty, t_species = choose(others)
+        t_empty, t_species = choose(others, filter_empty)
         o = outcome(scored, total, t_empty, t_species)
         cams[cam] = {"t_empty": t_empty, "t_species": t_species, **summarize(o)}
         pooled = add(pooled, o)
@@ -174,6 +183,7 @@ def leave_one_camera_out(per_camera: dict[str, tuple[list[Scored], int]]) -> dic
 
 def nested_leave_one_camera_out(
     per_config: dict[str, dict[str, tuple[list[Scored], int]]],
+    filter_empty: bool = True,
 ) -> dict[str, Any]:
     """Choose a configuration AND its thresholds without the held-out camera:
     for each camera, every configuration is judged on the other cameras
@@ -186,7 +196,7 @@ def nested_leave_one_camera_out(
         best: tuple[float, str, float | None, float | None] | None = None
         for cfg, per_camera in per_config.items():
             others = {c: v for c, v in per_camera.items() if c != cam}
-            t_empty, t_species = choose([s for ss, _ in others.values() for s in ss])
+            t_empty, t_species = choose([s for ss, _ in others.values() for s in ss], filter_empty)
             inner: dict[str, Any] = {}
             for ss, total in others.values():
                 inner = add(inner, outcome(ss, total, t_empty, t_species))
@@ -202,10 +212,12 @@ def nested_leave_one_camera_out(
     return {"pooled": summarize(pooled), "cameras": cams}
 
 
-def in_sample(per_camera: dict[str, tuple[list[Scored], int]]) -> dict[str, Any]:
+def in_sample(
+    per_camera: dict[str, tuple[list[Scored], int]], filter_empty: bool = True
+) -> dict[str, Any]:
     """Thresholds chosen on all cameras' later events at once (optimistic)."""
     everything = [s for ss, _ in per_camera.values() for s in ss]
-    t_empty, t_species = choose(everything)
+    t_empty, t_species = choose(everything, filter_empty)
     pooled: dict[str, Any] = {}
     for scored, total in per_camera.values():
         pooled = add(pooled, outcome(scored, total, t_empty, t_species))

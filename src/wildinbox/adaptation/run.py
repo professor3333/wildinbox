@@ -231,6 +231,20 @@ def run(
                 "per_config_in_sample": {cfg: in_sample(pc) for cfg, pc in per_config.items()},
             }
             print(f"{key}: {_line(results[key])}", flush=True)
+            if family == "camera_head_other":
+                # the same heads with empty filtering off: species labels only
+                key = f"camera_head_other_species_only@{n}"
+                results[key] = {
+                    "method": "camera_head_other_species_only",
+                    "n": n,
+                    "leave_one_camera_out": nested_leave_one_camera_out(
+                        per_config, filter_empty=False
+                    ),
+                    "per_config_in_sample": {
+                        cfg: in_sample(pc, filter_empty=False) for cfg, pc in per_config.items()
+                    },
+                }
+                print(f"{key}: {_line(results[key])}", flush=True)
     models_dir = model_dir.parent
     if all((finetuned_dir(models_dir, cam) / "model.pt").exists() for cam in cams):
         results |= finetuned_results(config, models_dir, data_dir, device, cams, rows)

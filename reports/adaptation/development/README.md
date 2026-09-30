@@ -3,6 +3,29 @@
 Iterations are kept in order; [`metrics.json`](metrics.json) holds the latest
 run, which recomputes every method below.
 
+## Operating point for the fresh-test protocol: species labels only
+
+Empty filtering loses animals on individual cameras under every method, so the
+other-animal head was also judged with it off
+(`camera_head_other_species_only`, same heads and scores, the release rule
+choosing only the species threshold):
+
+| N | Review reduction | Accepted labels correct | Animal retention |
+|---|---|---|---|
+| 25 | 1.4% | 43 / 47 (91.5%) | 100% |
+| **50** | **5.3%** | **161 / 172 (93.6%, CI 88.9-96.4)** | **100%** |
+| 100 | 0.2% | 3 / 6 (50.0%) | 100% |
+
+- At N = 25 and 100 the accepted labels are the same as with empty filtering;
+  the difference in review reduction was all empty filtering.
+- At N = 50 the gain is on cameras 112 (97 / 106 correct, 14.2%) and 58
+  (54 / 54, 19.0%); cameras 107 and 14 get no automation, the rest under 3%.
+- The rule on all 8 cameras at once chooses C = 0.001, share = 0.1, species
+  threshold 0.82: 216 / 220 correct, 6.7% (in-sample, optimistic). That is the
+  frozen operating point in
+  [`configs/experiments/fresh_test.yaml`](../../../configs/experiments/fresh_test.yaml);
+  the leave-one-camera-out row above is its estimate for a new camera.
+
 ## Iteration 3: per-camera fine-tuning
 
 **Method.** For each development camera, the deployed E3 recipe retrained with

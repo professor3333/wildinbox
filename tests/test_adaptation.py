@@ -10,6 +10,7 @@ from wildinbox.adaptation.evaluate import (
     AUDIT_RATE,
     Scored,
     choose,
+    in_sample,
     leave_one_camera_out,
     nested_leave_one_camera_out,
     outcome,
@@ -132,3 +133,15 @@ def test_nested_selection_ignores_the_held_out_camera() -> None:
     loco = nested_leave_one_camera_out(per_config)
     assert loco["cameras"]["a"]["config"] == "y"
     assert loco["cameras"]["a"]["accepted"] == 0
+
+
+def test_species_only_never_filters_empty() -> None:
+    """Empty events the rule would filter stay in review; species thresholds
+    are still chosen."""
+    empties = [Scored("c", "empty", "empty", 0.99, "empty", 0.99) for _ in range(200)]
+    species = [_scored(0.99, True) for _ in range(300)]
+    assert choose(empties + species)[0] is not None
+    t_empty, t_species = choose(empties + species, filter_empty=False)
+    assert t_empty is None and t_species is not None
+    o = in_sample({"a": (empties + species, 500)}, filter_empty=False)
+    assert o["filtered"] == 0 and o["accepted"] == 300
