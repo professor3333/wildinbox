@@ -81,6 +81,13 @@ it is not read again, and v1's result against the 50% target stays on record.
    development result (216 / 220 correct, 6.7%) and the rule's choice of 0.82;
    it passes, and never opens the test.
 
+   **Result (opened 2026-09-30): fail.** 505 of 570 automatically accepted
+   species labels correct (88.6%, Wilson 85.7-91.0) against 95%; 12.8% review
+   reduction; one camera (75) gave 39 of the 65 wrong labels. Automatic
+   species acceptance stays off
+   ([report](../reports/adaptation/fresh_test/README.md)). The fresh test is
+   now opened; a further method needs new, untouched cameras.
+
 ## What will not count as success
 
 - Coverage measured on the adaptation events themselves.

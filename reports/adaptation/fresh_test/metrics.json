@@ -1,0 +1,1240 @@
+{
+  "protocol": "configs/experiments/fresh_test.yaml",
+  "protocol_sha256": "8930c03eab734bd4757a10f5334ca12425fdbde1124374b89dd5ffcc34d2a565",
+  "artifacts": {
+    "camera rule": "1f5519a2a64b0643beaba3f2d2d5c23e048be4df1fd9e56dfa9e95b12efe7dfa",
+    "camera manifest": "e4bd36fa579f6ad78d785bd305d5971bdd51363d6b835a26ed26742abb23ade3",
+    "model weights": "3ab6fec236ce4b418acdda78f94078ec3bd6331983e2186bd52aa11a1fd9b360",
+    "policy artifact": "7ce10d8631f8c37e4944932083f209d345709ec90f2addc5d95fa96d09489df6"
+  },
+  "code": {
+    "commit": "30387d517eb47d0032bb18ebf4509dfc1766c800",
+    "dirty": false
+  },
+  "device": "mps",
+  "dev_check": {
+    "threshold_chosen_by_rule": 0.82,
+    "in_sample": {
+      "later_events": 2707,
+      "total_events": 3107,
+      "filtered": 0,
+      "animals_filtered": 0,
+      "animal_events": 2173,
+      "accepted": 220,
+      "accepted_correct": 216,
+      "automated": 220,
+      "review_reduction": 0.06726746057289991,
+      "precision": 0.9818181818181818,
+      "precision_ci": [
+        0.9541908921456921,
+        0.9929074130844349
+      ],
+      "retention": 1.0,
+      "coverage_later": 0.08127077946065756
+    }
+  },
+  "results": {
+    "data": {
+      "cameras": {
+        "103": 677,
+        "117": 374,
+        "126": 193,
+        "13": 179,
+        "135": 208,
+        "24": 229,
+        "41": 508,
+        "75": 478,
+        "81": 185,
+        "93": 271,
+        "95": 581,
+        "98": 350
+      },
+      "events": 4233,
+      "images": 11837,
+      "expected": {
+        "sequences": 4233,
+        "images": 11837
+      },
+      "roles": {
+        "empty": 323,
+        "non_animal": 3,
+        "supported_species": 2636,
+        "unsupported_animal": 1271
+      }
+    },
+    "adapted": {
+      "t_species": 0.82,
+      "pooled": {
+        "later_events": 3633,
+        "total_events": 4233,
+        "filtered": 0,
+        "animals_filtered": 0,
+        "animal_events": 3372,
+        "accepted": 570,
+        "accepted_correct": 505,
+        "automated": 570,
+        "review_reduction": 0.12792345854004253,
+        "precision": 0.8859649122807017,
+        "precision_ci": [
+          0.8572461780564306,
+          0.9095159388761863
+        ],
+        "retention": 1.0,
+        "coverage_later": 0.1568951279933939
+      },
+      "cameras": {
+        "103": {
+          "later_events": 627,
+          "total_events": 677,
+          "filtered": 0,
+          "animals_filtered": 0,
+          "animal_events": 557,
+          "accepted": 161,
+          "accepted_correct": 153,
+          "automated": 161,
+          "review_reduction": 0.2259231905465288,
+          "precision": 0.9503105590062112,
+          "precision_ci": [
+            0.905022568831836,
+            0.9746097569888307
+          ],
+          "retention": 1.0,
+          "coverage_later": 0.2567783094098884
+        },
+        "117": {
+          "later_events": 324,
+          "total_events": 374,
+          "filtered": 0,
+          "animals_filtered": 0,
+          "animal_events": 311,
+          "accepted": 40,
+          "accepted_correct": 33,
+          "automated": 40,
+          "review_reduction": 0.10160427807486631,
+          "precision": 0.825,
+          "precision_ci": [
+            0.6804970794560755,
+            0.9125469700311694
+          ],
+          "retention": 1.0,
+          "coverage_later": 0.12345679012345678
+        },
+        "126": {
+          "later_events": 143,
+          "total_events": 193,
+          "filtered": 0,
+          "animals_filtered": 0,
+          "animal_events": 137,
+          "accepted": 27,
+          "accepted_correct": 24,
+          "automated": 27,
+          "review_reduction": 0.13290155440414508,
+          "precision": 0.8888888888888888,
+          "precision_ci": [
+            0.7194181745602705,
+            0.9614803521050127
+          ],
+          "retention": 1.0,
+          "coverage_later": 0.1888111888111888
+        },
+        "13": {
+          "later_events": 129,
+          "total_events": 179,
+          "filtered": 0,
+          "animals_filtered": 0,
+          "animal_events": 125,
+          "accepted": 2,
+          "accepted_correct": 1,
+          "automated": 2,
+          "review_reduction": 0.010614525139664804,
+          "precision": 0.5,
+          "precision_ci": [
+            0.09452865480086614,
+            0.9054713451991339
+          ],
+          "retention": 1.0,
+          "coverage_later": 0.015503875968992248
+        },
+        "135": {
+          "later_events": 158,
+          "total_events": 208,
+          "filtered": 0,
+          "animals_filtered": 0,
+          "animal_events": 156,
+          "accepted": 3,
+          "accepted_correct": 2,
+          "automated": 3,
+          "review_reduction": 0.013701923076923075,
+          "precision": 0.6666666666666666,
+          "precision_ci": [
+            0.2076549551264879,
+            0.9385096847238394
+          ],
+          "retention": 1.0,
+          "coverage_later": 0.0189873417721519
+        },
+        "24": {
+          "later_events": 179,
+          "total_events": 229,
+          "filtered": 0,
+          "animals_filtered": 0,
+          "animal_events": 154,
+          "accepted": 20,
+          "accepted_correct": 20,
+          "automated": 20,
+          "review_reduction": 0.08296943231441048,
+          "precision": 1.0,
+          "precision_ci": [
+            0.8388698745050667,
+            1.0
+          ],
+          "retention": 1.0,
+          "coverage_later": 0.11173184357541899
+        },
+        "41": {
+          "later_events": 458,
+          "total_events": 508,
+          "filtered": 0,
+          "animals_filtered": 0,
+          "animal_events": 456,
+          "accepted": 1,
+          "accepted_correct": 1,
+          "automated": 1,
+          "review_reduction": 0.0018700787401574803,
+          "precision": 1.0,
+          "precision_ci": [
+            0.20654329147389294,
+            1.0
+          ],
+          "retention": 1.0,
+          "coverage_later": 0.002183406113537118
+        },
+        "75": {
+          "later_events": 428,
+          "total_events": 478,
+          "filtered": 0,
+          "animals_filtered": 0,
+          "animal_events": 401,
+          "accepted": 95,
+          "accepted_correct": 56,
+          "automated": 95,
+          "review_reduction": 0.18880753138075315,
+          "precision": 0.5894736842105263,
+          "precision_ci": [
+            0.4889523520569727,
+            0.6830400074353867
+          ],
+          "retention": 1.0,
+          "coverage_later": 0.2219626168224299
+        },
+        "81": {
+          "later_events": 135,
+          "total_events": 185,
+          "filtered": 0,
+          "animals_filtered": 0,
+          "animal_events": 109,
+          "accepted": 9,
+          "accepted_correct": 9,
+          "automated": 9,
+          "review_reduction": 0.04621621621621621,
+          "precision": 1.0,
+          "precision_ci": [
+            0.7008472464490407,
+            1.0
+          ],
+          "retention": 1.0,
+          "coverage_later": 0.06666666666666667
+        },
+        "93": {
+          "later_events": 221,
+          "total_events": 271,
+          "filtered": 0,
+          "animals_filtered": 0,
+          "animal_events": 214,
+          "accepted": 93,
+          "accepted_correct": 93,
+          "automated": 93,
+          "review_reduction": 0.32601476014760145,
+          "precision": 1.0,
+          "precision_ci": [
+            0.9603310973796383,
+            0.9999999999999999
+          ],
+          "retention": 1.0,
+          "coverage_later": 0.42081447963800905
+        },
+        "95": {
+          "later_events": 531,
+          "total_events": 581,
+          "filtered": 0,
+          "animals_filtered": 0,
+          "animal_events": 483,
+          "accepted": 2,
+          "accepted_correct": 2,
+          "automated": 2,
+          "review_reduction": 0.0032702237521514627,
+          "precision": 1.0,
+          "precision_ci": [
+            0.34237195288961925,
+            1.0
+          ],
+          "retention": 1.0,
+          "coverage_later": 0.003766478342749529
+        },
+        "98": {
+          "later_events": 300,
+          "total_events": 350,
+          "filtered": 0,
+          "animals_filtered": 0,
+          "animal_events": 269,
+          "accepted": 117,
+          "accepted_correct": 111,
+          "automated": 117,
+          "review_reduction": 0.31757142857142856,
+          "precision": 0.9487179487179487,
+          "precision_ci": [
+            0.8926181273586138,
+            0.9762879447225237
+          ],
+          "retention": 1.0,
+          "coverage_later": 0.39
+        }
+      }
+    },
+    "bootstrap": {
+      "resamples": 1000,
+      "seed": 20260930,
+      "precision": [
+        0.7323575264160748,
+        0.9686402724753891
+      ],
+      "precision_undefined_resamples": 0,
+      "review_reduction": [
+        0.06067068838438907,
+        0.2002561052624563
+      ]
+    },
+    "accepted_errors": {
+      "dog called bobcat": 19,
+      "unsupported_animal called coyote": 8,
+      "bobcat called opossum": 6,
+      "cat called opossum": 5,
+      "unsupported_animal called rabbit": 5,
+      "dog called opossum": 4,
+      "empty called bobcat": 4,
+      "unsupported_animal called bobcat": 3,
+      "coyote called opossum": 2,
+      "raccoon called opossum": 2,
+      "cat called bobcat": 1,
+      "coyote called bobcat": 1,
+      "dog called raccoon": 1,
+      "empty called opossum": 1,
+      "rabbit called coyote": 1,
+      "rabbit called opossum": 1,
+      "unsupported_animal called opossum": 1
+    },
+    "comparisons": {
+      "release": {
+        "threshold_by_rule_on_development": {
+          "t_species": null,
+          "pooled": {
+            "later_events": 3633,
+            "total_events": 4233,
+            "filtered": 0,
+            "animals_filtered": 0,
+            "animal_events": 3372,
+            "accepted": 0,
+            "accepted_correct": 0,
+            "automated": 0,
+            "review_reduction": 0.0,
+            "precision": null,
+            "precision_ci": null,
+            "retention": 1.0,
+            "coverage_later": 0.0
+          },
+          "cameras": {
+            "103": {
+              "later_events": 627,
+              "total_events": 677,
+              "filtered": 0,
+              "animals_filtered": 0,
+              "animal_events": 557,
+              "accepted": 0,
+              "accepted_correct": 0,
+              "automated": 0,
+              "review_reduction": 0.0,
+              "precision": null,
+              "precision_ci": null,
+              "retention": 1.0,
+              "coverage_later": 0.0
+            },
+            "117": {
+              "later_events": 324,
+              "total_events": 374,
+              "filtered": 0,
+              "animals_filtered": 0,
+              "animal_events": 311,
+              "accepted": 0,
+              "accepted_correct": 0,
+              "automated": 0,
+              "review_reduction": 0.0,
+              "precision": null,
+              "precision_ci": null,
+              "retention": 1.0,
+              "coverage_later": 0.0
+            },
+            "126": {
+              "later_events": 143,
+              "total_events": 193,
+              "filtered": 0,
+              "animals_filtered": 0,
+              "animal_events": 137,
+              "accepted": 0,
+              "accepted_correct": 0,
+              "automated": 0,
+              "review_reduction": 0.0,
+              "precision": null,
+              "precision_ci": null,
+              "retention": 1.0,
+              "coverage_later": 0.0
+            },
+            "13": {
+              "later_events": 129,
+              "total_events": 179,
+              "filtered": 0,
+              "animals_filtered": 0,
+              "animal_events": 125,
+              "accepted": 0,
+              "accepted_correct": 0,
+              "automated": 0,
+              "review_reduction": 0.0,
+              "precision": null,
+              "precision_ci": null,
+              "retention": 1.0,
+              "coverage_later": 0.0
+            },
+            "135": {
+              "later_events": 158,
+              "total_events": 208,
+              "filtered": 0,
+              "animals_filtered": 0,
+              "animal_events": 156,
+              "accepted": 0,
+              "accepted_correct": 0,
+              "automated": 0,
+              "review_reduction": 0.0,
+              "precision": null,
+              "precision_ci": null,
+              "retention": 1.0,
+              "coverage_later": 0.0
+            },
+            "24": {
+              "later_events": 179,
+              "total_events": 229,
+              "filtered": 0,
+              "animals_filtered": 0,
+              "animal_events": 154,
+              "accepted": 0,
+              "accepted_correct": 0,
+              "automated": 0,
+              "review_reduction": 0.0,
+              "precision": null,
+              "precision_ci": null,
+              "retention": 1.0,
+              "coverage_later": 0.0
+            },
+            "41": {
+              "later_events": 458,
+              "total_events": 508,
+              "filtered": 0,
+              "animals_filtered": 0,
+              "animal_events": 456,
+              "accepted": 0,
+              "accepted_correct": 0,
+              "automated": 0,
+              "review_reduction": 0.0,
+              "precision": null,
+              "precision_ci": null,
+              "retention": 1.0,
+              "coverage_later": 0.0
+            },
+            "75": {
+              "later_events": 428,
+              "total_events": 478,
+              "filtered": 0,
+              "animals_filtered": 0,
+              "animal_events": 401,
+              "accepted": 0,
+              "accepted_correct": 0,
+              "automated": 0,
+              "review_reduction": 0.0,
+              "precision": null,
+              "precision_ci": null,
+              "retention": 1.0,
+              "coverage_later": 0.0
+            },
+            "81": {
+              "later_events": 135,
+              "total_events": 185,
+              "filtered": 0,
+              "animals_filtered": 0,
+              "animal_events": 109,
+              "accepted": 0,
+              "accepted_correct": 0,
+              "automated": 0,
+              "review_reduction": 0.0,
+              "precision": null,
+              "precision_ci": null,
+              "retention": 1.0,
+              "coverage_later": 0.0
+            },
+            "93": {
+              "later_events": 221,
+              "total_events": 271,
+              "filtered": 0,
+              "animals_filtered": 0,
+              "animal_events": 214,
+              "accepted": 0,
+              "accepted_correct": 0,
+              "automated": 0,
+              "review_reduction": 0.0,
+              "precision": null,
+              "precision_ci": null,
+              "retention": 1.0,
+              "coverage_later": 0.0
+            },
+            "95": {
+              "later_events": 531,
+              "total_events": 581,
+              "filtered": 0,
+              "animals_filtered": 0,
+              "animal_events": 483,
+              "accepted": 0,
+              "accepted_correct": 0,
+              "automated": 0,
+              "review_reduction": 0.0,
+              "precision": null,
+              "precision_ci": null,
+              "retention": 1.0,
+              "coverage_later": 0.0
+            },
+            "98": {
+              "later_events": 300,
+              "total_events": 350,
+              "filtered": 0,
+              "animals_filtered": 0,
+              "animal_events": 269,
+              "accepted": 0,
+              "accepted_correct": 0,
+              "automated": 0,
+              "review_reduction": 0.0,
+              "precision": null,
+              "precision_ci": null,
+              "retention": 1.0,
+              "coverage_later": 0.0
+            }
+          }
+        },
+        "at_frozen_threshold": {
+          "t_species": 0.82,
+          "pooled": {
+            "later_events": 3633,
+            "total_events": 4233,
+            "filtered": 0,
+            "animals_filtered": 0,
+            "animal_events": 3372,
+            "accepted": 163,
+            "accepted_correct": 131,
+            "automated": 163,
+            "review_reduction": 0.03658162060004724,
+            "precision": 0.803680981595092,
+            "precision_ci": [
+              0.7360107828992158,
+              0.8573664084007958
+            ],
+            "retention": 1.0,
+            "coverage_later": 0.044866501513900356
+          },
+          "cameras": {
+            "103": {
+              "later_events": 627,
+              "total_events": 677,
+              "filtered": 0,
+              "animals_filtered": 0,
+              "animal_events": 557,
+              "accepted": 42,
+              "accepted_correct": 39,
+              "automated": 42,
+              "review_reduction": 0.058936484490398816,
+              "precision": 0.9285714285714286,
+              "precision_ci": [
+                0.8099028671147483,
+                0.9754100364488272
+              ],
+              "retention": 1.0,
+              "coverage_later": 0.06698564593301436
+            },
+            "117": {
+              "later_events": 324,
+              "total_events": 374,
+              "filtered": 0,
+              "animals_filtered": 0,
+              "animal_events": 311,
+              "accepted": 9,
+              "accepted_correct": 8,
+              "automated": 9,
+              "review_reduction": 0.022860962566844917,
+              "precision": 0.8888888888888888,
+              "precision_ci": [
+                0.5649937852319399,
+                0.9801096286728695
+              ],
+              "retention": 1.0,
+              "coverage_later": 0.027777777777777776
+            },
+            "126": {
+              "later_events": 143,
+              "total_events": 193,
+              "filtered": 0,
+              "animals_filtered": 0,
+              "animal_events": 137,
+              "accepted": 2,
+              "accepted_correct": 0,
+              "automated": 2,
+              "review_reduction": 0.009844559585492227,
+              "precision": 0.0,
+              "precision_ci": [
+                0.0,
+                0.6576280471103807
+              ],
+              "retention": 1.0,
+              "coverage_later": 0.013986013986013986
+            },
+            "13": {
+              "later_events": 129,
+              "total_events": 179,
+              "filtered": 0,
+              "animals_filtered": 0,
+              "animal_events": 125,
+              "accepted": 9,
+              "accepted_correct": 9,
+              "automated": 9,
+              "review_reduction": 0.04776536312849161,
+              "precision": 1.0,
+              "precision_ci": [
+                0.7008472464490407,
+                1.0
+              ],
+              "retention": 1.0,
+              "coverage_later": 0.06976744186046512
+            },
+            "135": {
+              "later_events": 158,
+              "total_events": 208,
+              "filtered": 0,
+              "animals_filtered": 0,
+              "animal_events": 156,
+              "accepted": 0,
+              "accepted_correct": 0,
+              "automated": 0,
+              "review_reduction": 0.0,
+              "precision": null,
+              "precision_ci": null,
+              "retention": 1.0,
+              "coverage_later": 0.0
+            },
+            "24": {
+              "later_events": 179,
+              "total_events": 229,
+              "filtered": 0,
+              "animals_filtered": 0,
+              "animal_events": 154,
+              "accepted": 19,
+              "accepted_correct": 19,
+              "automated": 19,
+              "review_reduction": 0.07882096069868996,
+              "precision": 1.0,
+              "precision_ci": [
+                0.8318156346315496,
+                1.0
+              ],
+              "retention": 1.0,
+              "coverage_later": 0.10614525139664804
+            },
+            "41": {
+              "later_events": 458,
+              "total_events": 508,
+              "filtered": 0,
+              "animals_filtered": 0,
+              "animal_events": 456,
+              "accepted": 20,
+              "accepted_correct": 9,
+              "automated": 20,
+              "review_reduction": 0.03740157480314961,
+              "precision": 0.45,
+              "precision_ci": [
+                0.25819502085709295,
+                0.6579179916924003
+              ],
+              "retention": 1.0,
+              "coverage_later": 0.043668122270742356
+            },
+            "75": {
+              "later_events": 428,
+              "total_events": 478,
+              "filtered": 0,
+              "animals_filtered": 0,
+              "animal_events": 401,
+              "accepted": 18,
+              "accepted_correct": 6,
+              "automated": 18,
+              "review_reduction": 0.03577405857740586,
+              "precision": 0.3333333333333333,
+              "precision_ci": [
+                0.1627855436366286,
+                0.5625093065574964
+              ],
+              "retention": 1.0,
+              "coverage_later": 0.04205607476635514
+            },
+            "81": {
+              "later_events": 135,
+              "total_events": 185,
+              "filtered": 0,
+              "animals_filtered": 0,
+              "animal_events": 109,
+              "accepted": 7,
+              "accepted_correct": 7,
+              "automated": 7,
+              "review_reduction": 0.03594594594594594,
+              "precision": 1.0,
+              "precision_ci": [
+                0.6456611570247934,
+                1.0
+              ],
+              "retention": 1.0,
+              "coverage_later": 0.05185185185185185
+            },
+            "93": {
+              "later_events": 221,
+              "total_events": 271,
+              "filtered": 0,
+              "animals_filtered": 0,
+              "animal_events": 214,
+              "accepted": 3,
+              "accepted_correct": 1,
+              "automated": 3,
+              "review_reduction": 0.010516605166051659,
+              "precision": 0.3333333333333333,
+              "precision_ci": [
+                0.0614903152761605,
+                0.7923450448735121
+              ],
+              "retention": 1.0,
+              "coverage_later": 0.013574660633484163
+            },
+            "95": {
+              "later_events": 531,
+              "total_events": 581,
+              "filtered": 0,
+              "animals_filtered": 0,
+              "animal_events": 483,
+              "accepted": 0,
+              "accepted_correct": 0,
+              "automated": 0,
+              "review_reduction": 0.0,
+              "precision": null,
+              "precision_ci": null,
+              "retention": 1.0,
+              "coverage_later": 0.0
+            },
+            "98": {
+              "later_events": 300,
+              "total_events": 350,
+              "filtered": 0,
+              "animals_filtered": 0,
+              "animal_events": 269,
+              "accepted": 34,
+              "accepted_correct": 33,
+              "automated": 34,
+              "review_reduction": 0.09228571428571428,
+              "precision": 0.9705882352941176,
+              "precision_ci": [
+                0.8508409778365519,
+                0.9947892280744034
+              ],
+              "retention": 1.0,
+              "coverage_later": 0.11333333333333333
+            }
+          }
+        }
+      },
+      "no_camera_reviews": {
+        "threshold_by_rule_on_development": {
+          "t_species": null,
+          "pooled": {
+            "later_events": 3633,
+            "total_events": 4233,
+            "filtered": 0,
+            "animals_filtered": 0,
+            "animal_events": 3372,
+            "accepted": 0,
+            "accepted_correct": 0,
+            "automated": 0,
+            "review_reduction": 0.0,
+            "precision": null,
+            "precision_ci": null,
+            "retention": 1.0,
+            "coverage_later": 0.0
+          },
+          "cameras": {
+            "103": {
+              "later_events": 627,
+              "total_events": 677,
+              "filtered": 0,
+              "animals_filtered": 0,
+              "animal_events": 557,
+              "accepted": 0,
+              "accepted_correct": 0,
+              "automated": 0,
+              "review_reduction": 0.0,
+              "precision": null,
+              "precision_ci": null,
+              "retention": 1.0,
+              "coverage_later": 0.0
+            },
+            "117": {
+              "later_events": 324,
+              "total_events": 374,
+              "filtered": 0,
+              "animals_filtered": 0,
+              "animal_events": 311,
+              "accepted": 0,
+              "accepted_correct": 0,
+              "automated": 0,
+              "review_reduction": 0.0,
+              "precision": null,
+              "precision_ci": null,
+              "retention": 1.0,
+              "coverage_later": 0.0
+            },
+            "126": {
+              "later_events": 143,
+              "total_events": 193,
+              "filtered": 0,
+              "animals_filtered": 0,
+              "animal_events": 137,
+              "accepted": 0,
+              "accepted_correct": 0,
+              "automated": 0,
+              "review_reduction": 0.0,
+              "precision": null,
+              "precision_ci": null,
+              "retention": 1.0,
+              "coverage_later": 0.0
+            },
+            "13": {
+              "later_events": 129,
+              "total_events": 179,
+              "filtered": 0,
+              "animals_filtered": 0,
+              "animal_events": 125,
+              "accepted": 0,
+              "accepted_correct": 0,
+              "automated": 0,
+              "review_reduction": 0.0,
+              "precision": null,
+              "precision_ci": null,
+              "retention": 1.0,
+              "coverage_later": 0.0
+            },
+            "135": {
+              "later_events": 158,
+              "total_events": 208,
+              "filtered": 0,
+              "animals_filtered": 0,
+              "animal_events": 156,
+              "accepted": 0,
+              "accepted_correct": 0,
+              "automated": 0,
+              "review_reduction": 0.0,
+              "precision": null,
+              "precision_ci": null,
+              "retention": 1.0,
+              "coverage_later": 0.0
+            },
+            "24": {
+              "later_events": 179,
+              "total_events": 229,
+              "filtered": 0,
+              "animals_filtered": 0,
+              "animal_events": 154,
+              "accepted": 0,
+              "accepted_correct": 0,
+              "automated": 0,
+              "review_reduction": 0.0,
+              "precision": null,
+              "precision_ci": null,
+              "retention": 1.0,
+              "coverage_later": 0.0
+            },
+            "41": {
+              "later_events": 458,
+              "total_events": 508,
+              "filtered": 0,
+              "animals_filtered": 0,
+              "animal_events": 456,
+              "accepted": 0,
+              "accepted_correct": 0,
+              "automated": 0,
+              "review_reduction": 0.0,
+              "precision": null,
+              "precision_ci": null,
+              "retention": 1.0,
+              "coverage_later": 0.0
+            },
+            "75": {
+              "later_events": 428,
+              "total_events": 478,
+              "filtered": 0,
+              "animals_filtered": 0,
+              "animal_events": 401,
+              "accepted": 0,
+              "accepted_correct": 0,
+              "automated": 0,
+              "review_reduction": 0.0,
+              "precision": null,
+              "precision_ci": null,
+              "retention": 1.0,
+              "coverage_later": 0.0
+            },
+            "81": {
+              "later_events": 135,
+              "total_events": 185,
+              "filtered": 0,
+              "animals_filtered": 0,
+              "animal_events": 109,
+              "accepted": 0,
+              "accepted_correct": 0,
+              "automated": 0,
+              "review_reduction": 0.0,
+              "precision": null,
+              "precision_ci": null,
+              "retention": 1.0,
+              "coverage_later": 0.0
+            },
+            "93": {
+              "later_events": 221,
+              "total_events": 271,
+              "filtered": 0,
+              "animals_filtered": 0,
+              "animal_events": 214,
+              "accepted": 0,
+              "accepted_correct": 0,
+              "automated": 0,
+              "review_reduction": 0.0,
+              "precision": null,
+              "precision_ci": null,
+              "retention": 1.0,
+              "coverage_later": 0.0
+            },
+            "95": {
+              "later_events": 531,
+              "total_events": 581,
+              "filtered": 0,
+              "animals_filtered": 0,
+              "animal_events": 483,
+              "accepted": 0,
+              "accepted_correct": 0,
+              "automated": 0,
+              "review_reduction": 0.0,
+              "precision": null,
+              "precision_ci": null,
+              "retention": 1.0,
+              "coverage_later": 0.0
+            },
+            "98": {
+              "later_events": 300,
+              "total_events": 350,
+              "filtered": 0,
+              "animals_filtered": 0,
+              "animal_events": 269,
+              "accepted": 0,
+              "accepted_correct": 0,
+              "automated": 0,
+              "review_reduction": 0.0,
+              "precision": null,
+              "precision_ci": null,
+              "retention": 1.0,
+              "coverage_later": 0.0
+            }
+          }
+        },
+        "at_frozen_threshold": {
+          "t_species": 0.82,
+          "pooled": {
+            "later_events": 3633,
+            "total_events": 4233,
+            "filtered": 0,
+            "animals_filtered": 0,
+            "animal_events": 3372,
+            "accepted": 338,
+            "accepted_correct": 269,
+            "automated": 338,
+            "review_reduction": 0.07585636664304275,
+            "precision": 0.7958579881656804,
+            "precision_ci": [
+              0.7496745107287511,
+              0.8353917889843322
+            ],
+            "retention": 1.0,
+            "coverage_later": 0.09303605835397744
+          },
+          "cameras": {
+            "103": {
+              "later_events": 627,
+              "total_events": 677,
+              "filtered": 0,
+              "animals_filtered": 0,
+              "animal_events": 557,
+              "accepted": 103,
+              "accepted_correct": 103,
+              "automated": 103,
+              "review_reduction": 0.14453471196454948,
+              "precision": 1.0,
+              "precision_ci": [
+                0.9640439678926562,
+                1.0
+              ],
+              "retention": 1.0,
+              "coverage_later": 0.16427432216905902
+            },
+            "117": {
+              "later_events": 324,
+              "total_events": 374,
+              "filtered": 0,
+              "animals_filtered": 0,
+              "animal_events": 311,
+              "accepted": 12,
+              "accepted_correct": 11,
+              "automated": 12,
+              "review_reduction": 0.030481283422459888,
+              "precision": 0.9166666666666666,
+              "precision_ci": [
+                0.6461140782014047,
+                0.9851352905492264
+              ],
+              "retention": 1.0,
+              "coverage_later": 0.037037037037037035
+            },
+            "126": {
+              "later_events": 143,
+              "total_events": 193,
+              "filtered": 0,
+              "animals_filtered": 0,
+              "animal_events": 137,
+              "accepted": 1,
+              "accepted_correct": 1,
+              "automated": 1,
+              "review_reduction": 0.0049222797927461134,
+              "precision": 1.0,
+              "precision_ci": [
+                0.20654329147389294,
+                1.0
+              ],
+              "retention": 1.0,
+              "coverage_later": 0.006993006993006993
+            },
+            "13": {
+              "later_events": 129,
+              "total_events": 179,
+              "filtered": 0,
+              "animals_filtered": 0,
+              "animal_events": 125,
+              "accepted": 0,
+              "accepted_correct": 0,
+              "automated": 0,
+              "review_reduction": 0.0,
+              "precision": null,
+              "precision_ci": null,
+              "retention": 1.0,
+              "coverage_later": 0.0
+            },
+            "135": {
+              "later_events": 158,
+              "total_events": 208,
+              "filtered": 0,
+              "animals_filtered": 0,
+              "animal_events": 156,
+              "accepted": 0,
+              "accepted_correct": 0,
+              "automated": 0,
+              "review_reduction": 0.0,
+              "precision": null,
+              "precision_ci": null,
+              "retention": 1.0,
+              "coverage_later": 0.0
+            },
+            "24": {
+              "later_events": 179,
+              "total_events": 229,
+              "filtered": 0,
+              "animals_filtered": 0,
+              "animal_events": 154,
+              "accepted": 20,
+              "accepted_correct": 20,
+              "automated": 20,
+              "review_reduction": 0.08296943231441048,
+              "precision": 1.0,
+              "precision_ci": [
+                0.8388698745050667,
+                1.0
+              ],
+              "retention": 1.0,
+              "coverage_later": 0.11173184357541899
+            },
+            "41": {
+              "later_events": 458,
+              "total_events": 508,
+              "filtered": 0,
+              "animals_filtered": 0,
+              "animal_events": 456,
+              "accepted": 50,
+              "accepted_correct": 12,
+              "automated": 50,
+              "review_reduction": 0.09350393700787402,
+              "precision": 0.24,
+              "precision_ci": [
+                0.14297252401872207,
+                0.3741294937519236
+              ],
+              "retention": 1.0,
+              "coverage_later": 0.1091703056768559
+            },
+            "75": {
+              "later_events": 428,
+              "total_events": 478,
+              "filtered": 0,
+              "animals_filtered": 0,
+              "animal_events": 401,
+              "accepted": 48,
+              "accepted_correct": 20,
+              "automated": 48,
+              "review_reduction": 0.09539748953974894,
+              "precision": 0.4166666666666667,
+              "precision_ci": [
+                0.28849459734577015,
+                0.5571891778463536
+              ],
+              "retention": 1.0,
+              "coverage_later": 0.11214953271028037
+            },
+            "81": {
+              "later_events": 135,
+              "total_events": 185,
+              "filtered": 0,
+              "animals_filtered": 0,
+              "animal_events": 109,
+              "accepted": 11,
+              "accepted_correct": 11,
+              "automated": 11,
+              "review_reduction": 0.056486486486486485,
+              "precision": 1.0,
+              "precision_ci": [
+                0.7411599827511859,
+                1.0
+              ],
+              "retention": 1.0,
+              "coverage_later": 0.08148148148148149
+            },
+            "93": {
+              "later_events": 221,
+              "total_events": 271,
+              "filtered": 0,
+              "animals_filtered": 0,
+              "animal_events": 214,
+              "accepted": 8,
+              "accepted_correct": 7,
+              "automated": 8,
+              "review_reduction": 0.028044280442804426,
+              "precision": 0.875,
+              "precision_ci": [
+                0.5291051942301386,
+                0.9775830911367038
+              ],
+              "retention": 1.0,
+              "coverage_later": 0.03619909502262444
+            },
+            "95": {
+              "later_events": 531,
+              "total_events": 581,
+              "filtered": 0,
+              "animals_filtered": 0,
+              "animal_events": 483,
+              "accepted": 7,
+              "accepted_correct": 7,
+              "automated": 7,
+              "review_reduction": 0.01144578313253012,
+              "precision": 1.0,
+              "precision_ci": [
+                0.6456611570247934,
+                1.0
+              ],
+              "retention": 1.0,
+              "coverage_later": 0.013182674199623353
+            },
+            "98": {
+              "later_events": 300,
+              "total_events": 350,
+              "filtered": 0,
+              "animals_filtered": 0,
+              "animal_events": 269,
+              "accepted": 78,
+              "accepted_correct": 77,
+              "automated": 78,
+              "review_reduction": 0.2117142857142857,
+              "precision": 0.9871794871794872,
+              "precision_ci": [
+                0.9308897697115066,
+                0.9977333266111463
+              ],
+              "retention": 1.0,
+              "coverage_later": 0.26
+            }
+          }
+        }
+      }
+    },
+    "development_estimate": {
+      "later_events": 2707,
+      "total_events": 3107,
+      "filtered": 0,
+      "animals_filtered": 0,
+      "animal_events": 2173,
+      "accepted": 172,
+      "accepted_correct": 161,
+      "automated": 172,
+      "review_reduction": 0.05259092372063084,
+      "precision": 0.936046511627907,
+      "precision_ci": [
+        0.8891226025007675,
+        0.9639178611892807
+      ],
+      "retention": 1.0,
+      "coverage_later": 0.06353897303287773
+    },
+    "target": {
+      "pass_if": {
+        "min_accepted": 30,
+        "precision_point": 0.95,
+        "precision_wilson_lower": 0.9
+      },
+      "outcome": "fail"
+    },
+    "original_target": {
+      "review_reduction": 0.5,
+      "met": false,
+      "note": "not met by v1 and not addressed by this operating point"
+    }
+  }
+}
