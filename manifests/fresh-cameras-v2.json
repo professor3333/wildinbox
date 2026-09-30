@@ -1,0 +1,198 @@
+{
+  "name": "fresh-cameras-v2",
+  "rule": "configs/experiments/fresh_cameras_v2.yaml",
+  "rule_sha256": "1f5519a2a64b0643beaba3f2d2d5c23e048be4df1fd9e56dfa9e95b12efe7dfa",
+  "metadata": {
+    "url": "https://storage.googleapis.com/public-datasets-lila/caltechcameratraps/labels/caltech_camera_traps.json.zip",
+    "zip_sha256": "976bd9bc9380df7a03018ac70b5340bd2ff81d79a99271058f026a539450d1d6",
+    "json": "caltech_images_20210113.json",
+    "version": "20210113"
+  },
+  "locations_total": 140,
+  "locations_outside_cct20": 120,
+  "eligible": 20,
+  "images_selected": 20793,
+  "fresh_test": [
+    {
+      "location": "24",
+      "sequences": 229,
+      "images": 616
+    },
+    {
+      "location": "81",
+      "sequences": 185,
+      "images": 502
+    },
+    {
+      "location": "103",
+      "sequences": 677,
+      "images": 1924
+    },
+    {
+      "location": "41",
+      "sequences": 508,
+      "images": 1375
+    },
+    {
+      "location": "95",
+      "sequences": 581,
+      "images": 1668
+    },
+    {
+      "location": "75",
+      "sequences": 478,
+      "images": 1321
+    },
+    {
+      "location": "98",
+      "sequences": 350,
+      "images": 988
+    },
+    {
+      "location": "126",
+      "sequences": 193,
+      "images": 562
+    },
+    {
+      "location": "135",
+      "sequences": 208,
+      "images": 579
+    },
+    {
+      "location": "93",
+      "sequences": 271,
+      "images": 761
+    },
+    {
+      "location": "13",
+      "sequences": 179,
+      "images": 493
+    },
+    {
+      "location": "117",
+      "sequences": 374,
+      "images": 1048
+    }
+  ],
+  "adaptation_development": [
+    {
+      "location": "107",
+      "sequences": 445,
+      "images": 1273,
+      "sequences_by_class": {
+        "bird": 1,
+        "bobcat": 24,
+        "coyote": 328,
+        "empty": 54,
+        "opossum": 11,
+        "raccoon": 12,
+        "squirrel": 15
+      }
+    },
+    {
+      "location": "18",
+      "sequences": 274,
+      "images": 783,
+      "sequences_by_class": {
+        "bobcat": 7,
+        "coyote": 12,
+        "dog": 42,
+        "empty": 109,
+        "opossum": 11,
+        "raccoon": 92,
+        "squirrel": 1
+      }
+    },
+    {
+      "location": "94",
+      "sequences": 641,
+      "images": 1884,
+      "sequences_by_class": {
+        "bird": 380,
+        "bobcat": 29,
+        "coyote": 1,
+        "empty": 153,
+        "fox": 34,
+        "rabbit": 39,
+        "rodent": 3,
+        "skunk": 2
+      }
+    },
+    {
+      "location": "14",
+      "sequences": 216,
+      "images": 624,
+      "sequences_by_class": {
+        "bird": 14,
+        "bobcat": 15,
+        "empty": 9,
+        "fox": 27,
+        "lizard": 5,
+        "rabbit": 133,
+        "rodent": 13
+      }
+    },
+    {
+      "location": "64",
+      "sequences": 336,
+      "images": 963,
+      "sequences_by_class": {
+        "bird": 7,
+        "bobcat": 20,
+        "cat": 5,
+        "coyote": 104,
+        "empty": 158,
+        "opossum": 10,
+        "raccoon": 32
+      }
+    },
+    {
+      "location": "137",
+      "sequences": 215,
+      "images": 606,
+      "sequences_by_class": {
+        "bird": 130,
+        "coyote": 16,
+        "deer": 2,
+        "empty": 8,
+        "fox": 9,
+        "rabbit": 43,
+        "rodent": 3,
+        "skunk": 4
+      }
+    },
+    {
+      "location": "58",
+      "sequences": 270,
+      "images": 762,
+      "sequences_by_class": {
+        "bobcat": 12,
+        "dog": 8,
+        "empty": 53,
+        "lizard": 6,
+        "opossum": 72,
+        "rabbit": 13,
+        "raccoon": 79,
+        "rodent": 3,
+        "skunk": 1,
+        "squirrel": 23
+      }
+    },
+    {
+      "location": "112",
+      "sequences": 710,
+      "images": 2061,
+      "sequences_by_class": {
+        "bird": 3,
+        "bobcat": 16,
+        "coyote": 8,
+        "empty": 83,
+        "opossum": 181,
+        "rabbit": 149,
+        "raccoon": 229,
+        "skunk": 1,
+        "squirrel": 40
+      }
+    }
+  ]
+}

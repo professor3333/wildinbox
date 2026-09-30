@@ -28,8 +28,10 @@ class Exclusion(_Strict):
 
 class SourceConfig(_Strict):
     name: str = Field(pattern=r"^[a-z0-9_]+$")
-    images_archive: Archive
-    annotations_archive: Archive
+    # None for a source assembled locally from per-file downloads (its fetch
+    # script documents how); `wildinbox data fetch` needs both archives.
+    images_archive: Archive | None = None
+    annotations_archive: Archive | None = None
     annotation_files: list[str] = Field(
         min_length=1, description="Paths inside the extracted annotations archive."
     )

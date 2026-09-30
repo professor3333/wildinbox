@@ -1,0 +1,43 @@
+# Fresh cameras for the v2 camera-adaptation experiment.
+#
+# Committed BEFORE the full Caltech Camera Traps metadata was downloaded or
+# read. The locked final test (configs/splits/cct20.yaml, final_test) has
+# been used twice and stays historical evidence only; it is never read again
+# for development. These cameras come from the part of Caltech Camera Traps
+# that WildInbox has never read: every location outside CCT20.
+#
+# Two disjoint groups, by one hash order:
+# - adaptation_development: choose the adaptation method, the number of
+#   reviewed events, and thresholds;
+# - fresh_test: locked; opened once, under a protocol committed after
+#   development and before any fresh-test image is downloaded or scored.
+name: fresh-cameras-v1
+
+source:
+  metadata_url: https://storage.googleapis.com/public-datasets-lila/caltechcameratraps/labels/caltech_camera_traps.json.zip
+  # Recorded on first download; any later mismatch stops selection.
+  metadata_size: 9013179
+  license: Community Data License Agreement - Permissive 1.0
+
+exclude_locations:
+  # Every CCT20 location, whatever its partition there.
+  cct20: [46, 0, 100, 78, 105, 7, 130, 28, 40, 125, 90, 51, 108, 38, 120, 43, 33, 88, 61, 115]
+
+# A camera is a capture event per sequence id, as in CCT20 (sequence_id/v1).
+eligibility:
+  min_sequences: 400                  # room for adaptation events plus a later remainder
+  # single-species sequences of the supported classes (configs/taxonomy/cct20.yaml)
+  min_supported_species_sequences: 150
+  require_timestamps: 0.95            # share of sequences with a usable start time
+
+selection:
+  order: sha256("wildinbox-fresh-v1:" + location), ascending
+  fresh_test:
+    cameras: 12                       # the first 12 eligible locations in hash order
+  adaptation_development:
+    cameras: 6                        # the next 6
+  max_images_total: 60000             # stop adding cameras (test first) past this budget
+
+# Labels are read only to apply eligibility. For fresh_test cameras the
+# selection output records location ids and sequence and image counts only;
+# no per-class counts, no images, and no model output.

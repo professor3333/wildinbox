@@ -1,0 +1,10 @@
+{
+  "opened_at": "2026-09-30T08:28:56.216499+00:00",
+  "protocol": "configs/experiments/fresh_test.yaml",
+  "protocol_sha256": "8930c03eab734bd4757a10f5334ca12425fdbde1124374b89dd5ffcc34d2a565",
+  "code": {
+    "commit": "30387d517eb47d0032bb18ebf4509dfc1766c800",
+    "dirty": false
+  },
+  "device": "mps"
+}

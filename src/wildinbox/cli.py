@@ -85,6 +85,37 @@ def _data(args: argparse.Namespace) -> int:
     return 0
 
 
+def _dataset_fresh(args: argparse.Namespace) -> int:
+    from wildinbox.datasets.build import BuildError
+    from wildinbox.datasets.fresh import build_fresh, load_fresh_spec, lock_payload
+    from wildinbox.datasets.spec import load_taxonomy
+    from wildinbox.ingestion.pipeline import LockMismatchError, check_or_write_lock
+
+    spec = load_fresh_spec(args.spec)
+    try:
+        result = build_fresh(spec, load_taxonomy(spec.taxonomy), Settings().data_dir)
+    except BuildError as e:
+        print(f"error: {e}", file=sys.stderr)
+        return 1
+    for c in result.checks:
+        print(f"{'PASS' if c.passed else 'FAIL'}  {c.name}: {c.detail}")
+    print(f"{len(result.events)} events, {result.version} -> {result.events_path.parent}")
+    if not result.passed:
+        print("error: leakage checks failed; lock not updated", file=sys.stderr)
+        return 1
+    try:
+        state = check_or_write_lock(
+            Path("manifests") / f"{spec.name}.lock.json",
+            lock_payload(spec, result),
+            update=args.update_lock,
+        )
+    except LockMismatchError as e:
+        print(f"error: {e}", file=sys.stderr)
+        return 1
+    print(f"lock {state}")
+    return 0
+
+
 def _dataset(args: argparse.Namespace) -> int:
     from wildinbox.datasets.build import BuildError, build, lock_payload
     from wildinbox.datasets.report import write_split_report
@@ -92,6 +123,8 @@ def _dataset(args: argparse.Namespace) -> int:
     from wildinbox.ingestion.inventory import Paths
     from wildinbox.ingestion.pipeline import LockMismatchError, check_or_write_lock
 
+    if args.dataset_command == "fresh":
+        return _dataset_fresh(args)
     spec = load_split_spec(args.spec)
     taxonomy = load_taxonomy(spec.taxonomy)
     data_dir = Settings().data_dir
@@ -210,6 +243,15 @@ def main(argv: Sequence[str] | None = None) -> int:
         help="Accept splits that differ from manifests/<name>.lock.json.",
     )
     p_build.add_argument("--report-dir", default="reports/splits")
+    p_fresh = ds_sub.add_parser(
+        "fresh", help="Build capture events for fresh cameras outside CCT20 (v2 experiment)."
+    )
+    p_fresh.add_argument("--spec", type=Path, required=True)
+    p_fresh.add_argument(
+        "--update-lock",
+        action="store_true",
+        help="Accept events that differ from manifests/<name>.lock.json.",
+    )
 
     p_base = sub.add_parser("baseline", help="Frozen-embedding baseline.")
     base_sub = p_base.add_subparsers(dest="baseline_command", required=True)
@@ -374,6 +416,34 @@ def main(argv: Sequence[str] | None = None) -> int:
     )
     p_prov.add_argument("--candidate", type=Path, required=True)
     p_prov.add_argument("--report-dir", type=Path, required=True)
+
+    p_adapt = sub.add_parser("adaptation", help="v2 experiment: adapt the model per camera.")
+    adapt_sub = p_adapt.add_subparsers(dest="adaptation_command", required=True)
+    p_dev = adapt_sub.add_parser(
+        "develop", help="Compare adaptation methods on the adaptation-development cameras."
+    )
+    device_arg(p_dev)
+    p_dev.add_argument("--config", type=Path, default=Path("configs/experiments/baseline.yaml"))
+    p_dev.add_argument("--model", type=Path, default=Path("models/finetune-e3-deep-balanced"))
+    p_dev.add_argument("--n", type=int, nargs="+", default=[25, 50, 100])
+    p_dev.add_argument("--report-dir", type=Path, default=Path("reports/adaptation/development"))
+    p_fresh = adapt_sub.add_parser(
+        "fresh-test",
+        help="Measure the frozen v2 operating point once on the locked fresh-test cameras.",
+    )
+    device_arg(p_fresh)
+    p_fresh.add_argument(
+        "--protocol", type=Path, default=Path("configs/experiments/fresh_test.yaml")
+    )
+    p_fresh.add_argument("--config", type=Path, default=Path("configs/experiments/baseline.yaml"))
+    p_fresh.add_argument("--split", default="cct-fresh-test-v1")
+    p_fresh.add_argument("--images", default="cct_fresh_test")
+    p_fresh.add_argument("--report-dir", type=Path, default=Path("reports/adaptation/fresh_test"))
+    p_fresh.add_argument(
+        "--dev-check",
+        action="store_true",
+        help="Run the frozen procedure on the development cameras only; never opens the test.",
+    )
 
     p_mon = sub.add_parser("monitoring", help="Monitoring maintenance.")
     mon_sub = p_mon.add_subparsers(dest="monitoring_command", required=True)
@@ -612,6 +682,50 @@ def main(argv: Sequence[str] | None = None) -> int:
         if verdict["promotion_policy"] == "legacy":
             print("legacy promotion policy: not sufficient for release")
         print(f"report -> {args.report_dir / 'README.md'}")
+        return 0
+    if args.command == "adaptation" and args.adaptation_command == "fresh-test":
+        from wildinbox.adaptation.fresh_test import run as run_fresh_test
+
+        result = run_fresh_test(
+            args.protocol,
+            args.config,
+            Settings().data_dir,
+            args.split,
+            args.images,
+            args.report_dir,
+            device=resolve_device(args.device),
+            dev_only=args.dev_check,
+        )
+        if args.dev_check:
+            ins = result["dev_check"]["in_sample"]
+            chosen = result["dev_check"]["threshold_chosen_by_rule"]
+            print(
+                f"development check passed: rule chooses {chosen}; "
+                f"{ins['accepted_correct']}/{ins['accepted']} correct, "
+                f"review reduction {100 * ins['review_reduction']:.1f}%"
+            )
+        else:
+            r = result["results"]
+            p = r["adapted"]["pooled"]
+            print(
+                f"fresh test: {p['accepted_correct']}/{p['accepted']} accepted labels correct, "
+                f"review reduction {100 * p['review_reduction']:.1f}%, "
+                f"target {r['target']['outcome']}"
+            )
+            print(f"metrics -> {args.report_dir / 'metrics.json'}")
+        return 0
+    if args.command == "adaptation":
+        from wildinbox.adaptation.run import run as run_adaptation
+
+        run_adaptation(
+            args.config,
+            args.model,
+            Settings().data_dir,
+            args.report_dir,
+            resolve_device(args.device),
+            args.n,
+        )
+        print(f"metrics -> {args.report_dir / 'metrics.json'}")
         return 0
     if args.command == "monitoring":
         from wildinbox.monitoring.metrics import backfill_quality, load_config, summary

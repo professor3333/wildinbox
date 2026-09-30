@@ -254,14 +254,14 @@ def leakage_checks(
 # ------------------------------------------------------------------ outputs
 
 
-def _event_row(e: Event, spec: SplitSpec) -> dict[str, Any]:
+def _event_row(e: Event, grouping_rule: str) -> dict[str, Any]:
     return {
         "event_id": e.event_id,
         "partition": e.partition.value if e.partition and not e.excluded_reason else None,
         "excluded_reason": e.excluded_reason,
         "camera_id": e.camera_id,
         "sequence_id": e.sequence_id,
-        "grouping_rule": spec.grouping_rule,
+        "grouping_rule": grouping_rule,
         "image_ids": [f.source_id for f in e.images],
         "all_frame_ids": [f.source_id for f in e.frames],
         "frame_labels": {f.source_id: list(f.labels) for f in e.frames},
@@ -341,7 +341,7 @@ def build(spec: SplitSpec, taxonomy: Taxonomy, inventory_db: Path, out_root: Pat
     out_dir.mkdir(parents=True, exist_ok=True)
     digest = hashlib.sha256()
     events_path, images_path = out_dir / "events.jsonl.gz", out_dir / "images.jsonl.gz"
-    _write_jsonl_gz(events_path, (_event_row(e, spec) for e in events), digest)
+    _write_jsonl_gz(events_path, (_event_row(e, spec.grouping_rule) for e in events), digest)
     _write_jsonl_gz(images_path, (r for e in events for r in _image_rows(e)), digest)
     return BuildResult(
         version=f"{spec.name}-{digest.hexdigest()[:12]}",

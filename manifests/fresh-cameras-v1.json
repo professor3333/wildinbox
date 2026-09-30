@@ -1,0 +1,58 @@
+{
+  "name": "fresh-cameras-v1",
+  "rule": "configs/experiments/fresh_cameras.yaml",
+  "rule_sha256": "9b325b9a95a73c78bfb686e9692ea6e1c1bdc9f4e67f12dab2cfc22e01a52434",
+  "metadata": {
+    "url": "https://storage.googleapis.com/public-datasets-lila/caltechcameratraps/labels/caltech_camera_traps.json.zip",
+    "zip_sha256": "976bd9bc9380df7a03018ac70b5340bd2ff81d79a99271058f026a539450d1d6",
+    "json": "caltech_images_20210113.json",
+    "version": "20210113"
+  },
+  "locations_total": 140,
+  "locations_outside_cct20": 120,
+  "eligible": 14,
+  "images_selected": 57159,
+  "fresh_test": [
+    {
+      "location": "57",
+      "sequences": 12805,
+      "images": 12805
+    },
+    {
+      "location": "114",
+      "sequences": 13157,
+      "images": 13157
+    },
+    {
+      "location": "103",
+      "sequences": 677,
+      "images": 1924
+    },
+    {
+      "location": "95",
+      "sequences": 581,
+      "images": 1668
+    },
+    {
+      "location": "75",
+      "sequences": 478,
+      "images": 1321
+    },
+    {
+      "location": "36",
+      "sequences": 1216,
+      "images": 1216
+    },
+    {
+      "location": "76",
+      "sequences": 13979,
+      "images": 13979
+    },
+    {
+      "location": "106",
+      "sequences": 11089,
+      "images": 11089
+    }
+  ],
+  "adaptation_development": []
+}

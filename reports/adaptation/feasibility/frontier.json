@@ -1,0 +1,155 @@
+{
+  "seen_camera_diagnostic": {
+    "events": 1746,
+    "empty_share": 0.05784650630011455,
+    "global_point": 0.2520045819014891,
+    "global_wilson": 0.17239404352806414,
+    "per_class_point": 0.42554410080183275,
+    "per_class_wilson": 0.15979381443298968,
+    "ceiling": 0.6443298969072165,
+    "per_class": {
+      "bobcat": {
+        "suggested": 139,
+        "point": 45,
+        "wilson": 0
+      },
+      "cat": {
+        "suggested": 140,
+        "point": 60,
+        "wilson": 0
+      },
+      "coyote": {
+        "suggested": 225,
+        "point": 163,
+        "wilson": 0
+      },
+      "dog": {
+        "suggested": 138,
+        "point": 37,
+        "wilson": 0
+      },
+      "empty": {
+        "suggested": 332,
+        "point": 3,
+        "wilson": 0
+      },
+      "opossum": {
+        "suggested": 338,
+        "point": 305,
+        "wilson": 279
+      },
+      "rabbit": {
+        "suggested": 291,
+        "point": 63,
+        "wilson": 0
+      },
+      "raccoon": {
+        "suggested": 143,
+        "point": 67,
+        "wilson": 0
+      }
+    }
+  },
+  "calibration": {
+    "events": 908,
+    "empty_share": 0.2026431718061674,
+    "global_point": 0.012114537444933921,
+    "global_wilson": 0.0,
+    "per_class_point": 0.16409691629955947,
+    "per_class_wilson": 0.0,
+    "ceiling": 0.41740088105726875,
+    "per_class": {
+      "bobcat": {
+        "suggested": 70,
+        "point": 30,
+        "wilson": 0
+      },
+      "cat": {
+        "suggested": 98,
+        "point": 0,
+        "wilson": 0
+      },
+      "coyote": {
+        "suggested": 53,
+        "point": 13,
+        "wilson": 0
+      },
+      "dog": {
+        "suggested": 124,
+        "point": 2,
+        "wilson": 0
+      },
+      "empty": {
+        "suggested": 217,
+        "point": 5,
+        "wilson": 0
+      },
+      "opossum": {
+        "suggested": 132,
+        "point": 86,
+        "wilson": 0
+      },
+      "rabbit": {
+        "suggested": 163,
+        "point": 8,
+        "wilson": 0
+      },
+      "raccoon": {
+        "suggested": 51,
+        "point": 5,
+        "wilson": 0
+      }
+    }
+  },
+  "policy_validation": {
+    "events": 939,
+    "empty_share": 0.09158679446219382,
+    "global_point": 0.01597444089456869,
+    "global_wilson": 0.0,
+    "per_class_point": 0.09584664536741214,
+    "per_class_wilson": 0.0,
+    "ceiling": 0.4802981895633653,
+    "per_class": {
+      "bobcat": {
+        "suggested": 219,
+        "point": 14,
+        "wilson": 0
+      },
+      "cat": {
+        "suggested": 68,
+        "point": 2,
+        "wilson": 0
+      },
+      "coyote": {
+        "suggested": 134,
+        "point": 3,
+        "wilson": 0
+      },
+      "dog": {
+        "suggested": 45,
+        "point": 1,
+        "wilson": 0
+      },
+      "empty": {
+        "suggested": 222,
+        "point": 20,
+        "wilson": 0
+      },
+      "opossum": {
+        "suggested": 133,
+        "point": 47,
+        "wilson": 0
+      },
+      "rabbit": {
+        "suggested": 45,
+        "point": 0,
+        "wilson": 0
+      },
+      "raccoon": {
+        "suggested": 73,
+        "point": 3,
+        "wilson": 0
+      }
+    }
+  }
+}

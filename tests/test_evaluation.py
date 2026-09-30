@@ -147,14 +147,15 @@ def test_classifier_matches_sklearn_and_keeps_config_order(tmp_path: Path) -> No
 # ------------------------------------------------------------ final test
 
 
-def test_final_test_is_refused_everywhere(tmp_path: Path) -> None:
+@pytest.mark.parametrize("locked", [Partition.FINAL_TEST, Partition.FRESH_TEST])
+def test_locked_tests_are_refused_everywhere(tmp_path: Path, locked: Partition) -> None:
     with pytest.raises(FinalTestAccessError):
-        assert_development(["calibration", "final_test"])
+        assert_development(["calibration", locked.value])
     with pytest.raises(FinalTestAccessError):
-        load_rows(tmp_path, [Partition.FINAL_TEST])
-    with pytest.raises(ValueError, match="locked final test"):
+        load_rows(tmp_path, [locked])
+    with pytest.raises(ValueError, match="locked test partition"):
         EvaluationSpec(
-            partitions=[Partition.FINAL_TEST],
+            partitions=[locked],
             unseen_camera_partitions=[Partition.CALIBRATION],
             empty_thresholds=[0.9],
             species_thresholds=[0.9],

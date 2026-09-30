@@ -1,0 +1,17 @@
+{
+  "archives": {},
+  "counts": {
+    "by_reason": {},
+    "by_status": {
+      "accepted": 11837,
+      "excluded": 0,
+      "quarantined": 0
+    },
+    "near_duplicate_pairs": 0,
+    "orphan_annotations": 0,
+    "orphan_files": 0,
+    "source_records": 11837
+  },
+  "manifest_version": "cct_fresh_test-43449f891707",
+  "source": "cct_fresh_test"
+}

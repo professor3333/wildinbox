@@ -1,0 +1,17 @@
+{
+  "archives": {},
+  "counts": {
+    "by_reason": {},
+    "by_status": {
+      "accepted": 8956,
+      "excluded": 0,
+      "quarantined": 0
+    },
+    "near_duplicate_pairs": 0,
+    "orphan_annotations": 0,
+    "orphan_files": 0,
+    "source_records": 8956
+  },
+  "manifest_version": "cct_fresh_dev-8d6becd9da6c",
+  "source": "cct_fresh_dev"
+}

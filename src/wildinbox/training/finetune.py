@@ -60,6 +60,13 @@ class OptimSpec(_Strict):
     warmup_steps: int = Field(ge=0)
 
 
+class AdaptationSpec(_Strict):
+    split: str  # data/splits/<split>, built by `wildinbox dataset fresh`
+    images: str  # data/raw/<images>/images
+    camera: str
+    reviewed_events: int = Field(gt=0)
+
+
 class FinetuneConfig(_Strict):
     name: str = Field(pattern=r"^[a-z0-9_.-]+$")
     description: str
@@ -76,6 +83,9 @@ class FinetuneConfig(_Strict):
     # Reviewed deployment data (wildinbox snapshot build) added to the training
     # partition; None trains on the training partition only.
     snapshot: Path | None = None
+    # v2 experiment: one development camera's first reviewed events added to
+    # the training partition (per-camera fine-tuning); None: not an adaptation.
+    adaptation: AdaptationSpec | None = None
 
 
 def load_finetune_config(path: str | Path) -> FinetuneConfig:
@@ -255,6 +265,49 @@ def snapshot_rows(snapshot_dir: Path) -> tuple[list[ImageRow], dict[str, Path], 
     return rows, sources, summary
 
 
+def adaptation_rows(
+    spec: AdaptationSpec, data_dir: Path
+) -> tuple[list[ImageRow], dict[str, Path], dict[str, Any]]:
+    """Fit rows for one development camera's first reviewed events (their
+    ground truth standing in for reviews), their source files, and a record
+    for the model's metadata. Locked partitions are refused by the loader."""
+    from wildinbox.adaptation.data import load_camera_events
+    from wildinbox.adaptation.methods import reviewed_frames
+
+    split_dir = data_dir / "splits" / spec.split
+    cams, rows = load_camera_events(split_dir, [Partition.ADAPTATION_DEVELOPMENT])
+    events = cams[spec.camera][: spec.reviewed_events]
+    ids, labels = reviewed_frames(events, with_other=False)
+    by_id = {r.source_id: r for r in rows}
+    root = data_dir / "raw" / spec.images / "images"
+    out, sources = [], {}
+    for sid, label in zip(ids, labels, strict=True):
+        r = by_id[sid]
+        storage = f"adaptation-{spec.split}/{r.storage_path}"
+        sources[storage] = root / r.storage_path
+        out.append(
+            ImageRow(
+                source_id=sid,
+                event_id=r.event_id,
+                partition=Partition.TRAIN,  # a fitting row; origin recorded in meta
+                camera_id=r.camera_id,
+                storage_path=storage,
+                image_label=label,
+                event_label=label,
+                event_role=Role.EMPTY if label == EMPTY_CLASS else Role.SUPPORTED,
+                use_for_fit=True,
+            )
+        )
+    record = {
+        **spec.model_dump(),
+        "events": [e.event_id for e in events],
+        "last_reviewed_start": events[-1].start if events else None,
+        "frames": len(out),
+        "frames_per_class": dict(sorted(Counter(labels).items())),
+    }
+    return out, sources, record
+
+
 def snapshot_record(snapshot_dir: Path, summary: dict[str, Any]) -> dict[str, Any]:
     """The model metadata's `trained_on.snapshot`: which snapshot, whose reviews,
     and the SHA-256 of every frame fit from it, so later update cycles can
@@ -291,13 +344,18 @@ def train(config_path: Path, data_dir: Path, models_dir: Path) -> Path:
     if cfg.snapshot is not None:
         extra, sources, snapshot = snapshot_rows(cfg.snapshot)
         fit_rows = fit_rows + extra
+    adaptation: dict[str, Any] | None = None
+    boxes = box_lists(ctx.inventory_db)
+    if cfg.adaptation is not None:
+        extra, more, adaptation = adaptation_rows(cfg.adaptation, data_dir)
+        fit_rows, sources = fit_rows + extra, {**sources, **more}
+        boxes |= box_lists(data_dir / "inventory" / f"{cfg.adaptation.images}.sqlite")
     classes = ctx.classes
     labels = [r.image_label or "" for r in fit_rows]
     counts = Counter(labels)
 
     cache_root = data_dir / "cache" / f"train-s{cfg.cache_short_side}"
     build_input_cache(fit_rows, ctx.images_root, cache_root, cfg.cache_short_side, sources=sources)
-    boxes = box_lists(ctx.inventory_db)
     aug = make_augmentation(cfg, run.preprocessing)
     dataset = TrainImages(fit_rows, cache_root, boxes, classes, aug, run.seed)
 
@@ -440,6 +498,7 @@ def train(config_path: Path, data_dir: Path, models_dir: Path) -> Path:
             "snapshot": None
             if snapshot is None or cfg.snapshot is None
             else snapshot_record(cfg.snapshot, snapshot),
+            "adaptation": adaptation,
         },
         "device": device,
         "history": history,

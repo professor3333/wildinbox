@@ -7,6 +7,7 @@ import logging
 from pathlib import Path
 from typing import Any
 
+from wildinbox.config import ConfigError
 from wildinbox.ingestion.download import download, extract
 from wildinbox.ingestion.inventory import IngestResult, Paths
 from wildinbox.ingestion.sources import SourceConfig
@@ -19,6 +20,8 @@ class LockMismatchError(RuntimeError):
 
 
 def fetch(source: SourceConfig, paths: Paths, *, images: bool = True) -> None:
+    if source.annotations_archive is None or source.images_archive is None:
+        raise ConfigError(f"source {source.name!r} has no archives to download")
     ann = download(source.annotations_archive, paths.downloads)
     extract(ann, paths.annotations)
     if images:
@@ -34,6 +37,7 @@ def lock_payload(source: SourceConfig, result: IngestResult) -> dict[str, Any]:
         "archives": {
             a.filename: {"md5": a.md5, "size": a.size}
             for a in (source.images_archive, source.annotations_archive)
+            if a is not None
         },
         "counts": result.counts,
     }

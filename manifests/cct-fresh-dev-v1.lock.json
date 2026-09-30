@@ -1,0 +1,80 @@
+{
+  "cameras": {
+    "107": {
+      "empty": 54,
+      "events": 445,
+      "images": 1273,
+      "supported_species": 375,
+      "unsupported_animal": 16
+    },
+    "112": {
+      "empty": 83,
+      "events": 710,
+      "images": 2061,
+      "supported_species": 583,
+      "unsupported_animal": 44
+    },
+    "137": {
+      "empty": 8,
+      "events": 215,
+      "images": 606,
+      "supported_species": 59,
+      "unsupported_animal": 148
+    },
+    "14": {
+      "empty": 9,
+      "events": 216,
+      "images": 624,
+      "supported_species": 148,
+      "unsupported_animal": 59
+    },
+    "18": {
+      "empty": 109,
+      "events": 274,
+      "images": 783,
+      "supported_species": 164,
+      "unsupported_animal": 1
+    },
+    "58": {
+      "empty": 53,
+      "events": 270,
+      "images": 762,
+      "supported_species": 184,
+      "unsupported_animal": 33
+    },
+    "64": {
+      "empty": 158,
+      "events": 336,
+      "images": 963,
+      "supported_species": 171,
+      "unsupported_animal": 7
+    },
+    "94": {
+      "empty": 153,
+      "events": 641,
+      "images": 1884,
+      "supported_species": 69,
+      "unsupported_animal": 419
+    }
+  },
+  "checks": {
+    "cameras_are_the_selected_group": true,
+    "no_camera_shared_with_cct20": true,
+    "no_file_shared_with_cct20": true,
+    "no_near_duplicate_of_cct20": true
+  },
+  "grouping_rule": "sequence_id/v1",
+  "inventory_manifest_version": "cct_fresh_dev-8d6becd9da6c",
+  "partition": "adaptation_development",
+  "split_version": "cct-fresh-dev-v1-5d5be44dd545",
+  "supported_classes": [
+    "empty",
+    "bobcat",
+    "cat",
+    "coyote",
+    "dog",
+    "opossum",
+    "rabbit",
+    "raccoon"
+  ]
+}

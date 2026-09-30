@@ -1,0 +1,82 @@
+# v2 fresh-test protocol (docs/v2_experiment.md, step 4). Frozen 2026-09-30.
+#
+# Committed BEFORE any fresh-test image is downloaded. Everything below is
+# chosen on development data only (reports/adaptation/development). The fresh
+# test is used once, to MEASURE: no method, N, configuration, or threshold is
+# changed after seeing it, and the result is reported whatever it is.
+name: fresh-test-v2
+
+cameras:                      # the 12 locked fresh-test cameras, by rule
+  rule: configs/experiments/fresh_cameras_v2.yaml
+  rule_sha256: 1f5519a2a64b0643beaba3f2d2d5c23e048be4df1fd9e56dfa9e95b12efe7dfa
+  manifest: manifests/fresh-cameras-v2.json
+  manifest_sha256: e4bd36fa579f6ad78d785bd305d5971bdd51363d6b835a26ed26742abb23ade3
+  locations: ["24", "81", "103", "41", "95", "75", "98", "126", "135", "93", "13", "117"]
+  expected: {sequences: 4233, images: 11837}
+  # Acquired, validated, and grouped exactly as the development cameras were
+  # (scripts/fetch_fresh_cameras.py, wildinbox data ingest, wildinbox dataset
+  # fresh). Files the ingest rejects are reported, not replaced.
+
+model:                        # the released model, unchanged
+  dir: models/finetune-e3-deep-balanced
+  weights_sha256: 3ab6fec236ce4b418acdda78f94078ec3bd6331983e2186bd52aa11a1fd9b360
+  policy_sha256: 7ce10d8631f8c37e4944932083f209d345709ec90f2addc5d95fa96d09489df6
+
+method:                       # development iteration 2, species labels only
+  name: camera_head_other
+  base: CCT20 calibration and policy-validation cameras (5,305 frames, 976 as other_animal)
+  c: 0.001
+  camera_share: 0.1
+  n_reviewed: 50              # each camera's first 50 events, oldest first
+  reviews: ground truth stands in for the reviewer, as in the update cycle
+  other_animal_accepted: false
+  thresholds:
+    empty: null               # empty filtering OFF: it failed per camera on development
+    species: 0.82             # the release rule on all 8 development cameras
+
+# How the operating point was chosen, on the 8 adaptation-development cameras
+# (N = 50; configuration grid C 0.001-0.03, share 0.1-0.5); numbers from
+# reports/adaptation/development/metrics.json, camera_head_other_species_only@50
+# and camera_head_other@50 (uv run wildinbox adaptation develop):
+#   - release rule (95% Wilson lower bound on accepted precision) applied to
+#     all 8 cameras' later events, empty filter off: C = 0.001, share = 0.1,
+#     t_species = 0.82 (in-sample: 216/220 correct, 6.7% review reduction;
+#     optimistic, thresholds fitted to the scored events);
+#   - the same procedure by nested leave-one-camera-out, the estimate for a
+#     new camera: 161/172 correct (93.6%, Wilson 88.9-96.4), 5.3% review
+#     reduction, 100% animal retention; gain on cameras 112 and 58.
+#   - with empty filtering on, 9.4% reduction but camera 18 keeps only 82.8%
+#     of its animal events, so it is not used.
+#   - rejected: per-camera fine-tuning (iteration 3), prior shift, head
+#     without other_animal (iteration 1).
+
+report:                       # all of it, whatever the result
+  - "pooled accepted-species precision on later events, with Wilson 95% interval and a camera bootstrap interval"
+  - "review reduction over ALL events of each camera: the 50 reviewed ones count as reviewed, 5% audit charged on automated events"
+  - "animal retention (100% by construction, empty filter off)"
+  - "per camera: events, accepted, correct, precision, review reduction"
+  - "accepted errors by true label (supported species confused, unsupported animal, empty, mixed)"
+  - "comparisons, same frozen operating point: unadapted release (thresholds by the rule on development: none accepted) and the head without the camera's reviews (ablation)"
+  - "development estimate vs fresh result, side by side"
+  - "the original 50% review-reduction target, restated as not met by v1 and not addressed by this operating point"
+bootstrap:
+  unit: camera                # 12 cameras resampled with replacement
+  resamples: 1000
+  seed: 20260930
+
+# v2 target, set prospectively from the development evidence above.
+target:
+  claim: >-
+    After a person reviews a new camera's first 50 events, species labels
+    accepted automatically on its later events are correct at least 95% of
+    the time.
+  pass_if:
+    min_accepted: 30          # fewer: inconclusive, not a pass
+    precision_point: 0.95     # pooled, later events of all 12 cameras
+    precision_wilson_lower: 0.90
+  also_reported_not_gating:
+    review_reduction: "development estimate 5.3%; any value is reported"
+  expectation: >-
+    Development estimates 93.6% (88.9-96.4), below the point target: a pass
+    is not expected with confidence. A fail or inconclusive result is
+    reported as the v2 outcome, and automatic species acceptance stays off.

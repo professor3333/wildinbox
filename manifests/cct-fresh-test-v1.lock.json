@@ -1,0 +1,72 @@
+{
+  "cameras": {
+    "103": {
+      "events": 677,
+      "images": 1924
+    },
+    "117": {
+      "events": 374,
+      "images": 1048
+    },
+    "126": {
+      "events": 193,
+      "images": 562
+    },
+    "13": {
+      "events": 179,
+      "images": 493
+    },
+    "135": {
+      "events": 208,
+      "images": 579
+    },
+    "24": {
+      "events": 229,
+      "images": 616
+    },
+    "41": {
+      "events": 508,
+      "images": 1375
+    },
+    "75": {
+      "events": 478,
+      "images": 1321
+    },
+    "81": {
+      "events": 185,
+      "images": 502
+    },
+    "93": {
+      "events": 271,
+      "images": 761
+    },
+    "95": {
+      "events": 581,
+      "images": 1668
+    },
+    "98": {
+      "events": 350,
+      "images": 988
+    }
+  },
+  "checks": {
+    "cameras_are_the_selected_group": true,
+    "no_camera_shared_with_cct20": true,
+    "no_file_shared_with_cct20": true,
+    "no_near_duplicate_of_cct20": true
+  },
+  "grouping_rule": "sequence_id/v1",
+  "inventory_manifest_version": "cct_fresh_test-43449f891707",
+  "partition": "fresh_test",
+  "split_version": "cct-fresh-test-v1-7e06132ddd4c",
+  "supported_classes": [
+    "empty",
+    "bobcat",
+    "cat",
+    "coyote",
+    "dog",
+    "opossum",
+    "rabbit",
+    "raccoon"
+  ]
+}

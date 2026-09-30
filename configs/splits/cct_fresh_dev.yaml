@@ -1,0 +1,12 @@
+# Capture events for the v2 adaptation-development cameras (8 Caltech Camera
+# Traps locations outside CCT20; manifests/fresh-cameras-v2.json). Build with
+#   uv run wildinbox dataset fresh --spec configs/splits/cct_fresh_dev.yaml
+name: cct-fresh-dev-v1
+source: cct_fresh_dev
+inventory_manifest_version: cct_fresh_dev-8d6becd9da6c  # manifests/cct_fresh_dev.lock.json
+taxonomy: configs/taxonomy/cct_full.yaml
+grouping_rule: sequence_id/v1
+partition: adaptation_development
+selection: manifests/fresh-cameras-v2.json
+supported_from: manifests/cct20-splits-v1.lock.json   # the released model's classes
+reference_source: cct20                              # leakage checks against CCT20

@@ -1,0 +1,45 @@
+# Fresh cameras, amended selection rule (supersedes fresh_cameras.yaml).
+#
+# Why v1 was amended: applying v1 (manifests/fresh-cameras-v1.json) selected
+# 8 fresh-test cameras and 0 adaptation-development cameras. Only 14
+# locations were eligible, and 4 of the 8 selected have one image per
+# sequence id (e.g. 12,805 sequences for 12,805 images): their sequence ids do
+# not group trigger bursts, so events would be single photos and frames of one
+# burst could fall on both sides of the adaptation/later split.
+#
+# What was looked at before writing v2: label-free structure of all 120
+# locations outside CCT20 (images per sequence, timestamps), and how MANY
+# locations pass various count thresholds, in aggregate. No per-camera class
+# counts, no images, and no model output. v1's hash order and salt are kept,
+# so the random order is not re-drawn.
+name: fresh-cameras-v2
+supersedes: configs/experiments/fresh_cameras.yaml
+
+source:
+  metadata_url: https://storage.googleapis.com/public-datasets-lila/caltechcameratraps/labels/caltech_camera_traps.json.zip
+  metadata_size: 9013179
+  metadata_zip_sha256: 976bd9bc9380df7a03018ac70b5340bd2ff81d79a99271058f026a539450d1d6
+  # full-resolution images, one object per file_name (checked 2026-09-28)
+  image_base_url: https://storage.googleapis.com/public-datasets-lila/caltech-unzipped/cct_images/
+  license: Community Data License Agreement - Permissive 1.0
+
+exclude_locations:
+  cct20: [46, 0, 100, 78, 105, 7, 130, 28, 40, 125, 90, 51, 108, 38, 120, 43, 33, 88, 61, 115]
+
+eligibility:
+  # Sequence ids must group bursts, as in CCT20 (sequence_id/v1). Locations
+  # with about one image per sequence (20 of 120) are excluded; grouping them
+  # by time gaps is a different condition the model was never evaluated under.
+  min_images_per_sequence: 1.5
+  min_sequences: 150                  # about 50 adaptation events plus a later remainder
+  min_supported_species_sequences: 50
+  require_timestamps: 0.95
+
+selection:
+  salt: "wildinbox-fresh-v1:"         # unchanged from v1
+  order: sha256(salt + location), ascending
+  fresh_test:
+    cameras: 12                       # the first 12 eligible locations
+  adaptation_development:
+    cameras: 8                        # the next 8
+  # No image budget: every multi-frame location outside CCT20 totals 43,546 images.

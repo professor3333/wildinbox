@@ -1,0 +1,16 @@
+# Locked fresh-test cameras for the v2 experiment: 12 Caltech Camera Traps
+# locations outside CCT20, chosen by configs/experiments/fresh_cameras_v2.yaml
+# (manifests/fresh-cameras-v2.json, group fresh_test). Downloaded only under
+# the committed protocol configs/experiments/fresh_test.yaml, and read only by
+# `wildinbox adaptation fresh-test`.
+# Source: https://lila.science/datasets/caltech-camera-traps (full dataset,
+# full-resolution images, one download per file).
+# License: Community Data License Agreement (permissive variant).
+#
+# No archives: assembled by
+#   uv run python scripts/fetch_fresh_cameras.py --group fresh_test --name cct_fresh_test \
+#       --protocol configs/experiments/fresh_test.yaml
+# then validated and pinned by `wildinbox data ingest`.
+name: cct_fresh_test
+annotation_files:
+  - cct_fresh_test.json

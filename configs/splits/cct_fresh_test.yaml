@@ -1,0 +1,14 @@
+# Capture events for the v2 locked fresh-test cameras (12 Caltech Camera Traps
+# locations outside CCT20; manifests/fresh-cameras-v2.json). Read only by
+# `wildinbox adaptation fresh-test` (configs/experiments/fresh_test.yaml).
+# Build with
+#   uv run wildinbox dataset fresh --spec configs/splits/cct_fresh_test.yaml
+name: cct-fresh-test-v1
+source: cct_fresh_test
+inventory_manifest_version: cct_fresh_test-43449f891707  # manifests/cct_fresh_test.lock.json
+taxonomy: configs/taxonomy/cct_full.yaml
+grouping_rule: sequence_id/v1
+partition: fresh_test
+selection: manifests/fresh-cameras-v2.json
+supported_from: manifests/cct20-splits-v1.lock.json   # the released model's classes
+reference_source: cct20                              # leakage checks against CCT20
