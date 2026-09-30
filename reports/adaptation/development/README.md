@@ -3,6 +3,51 @@
 Iterations are kept in order; [`metrics.json`](metrics.json) holds the latest
 run, which recomputes every method below.
 
+## Iteration 3: per-camera fine-tuning
+
+**Method.** For each development camera, the deployed E3 recipe retrained with
+that camera's first 50 reviewed events added
+([`configs/experiments/adaptation/`](../../../configs/experiments/adaptation/);
+`uv run wildinbox finetune train --config ...`), 29-41 minutes per camera on
+the M1, 4.7 hours for all 8. Each camera is scored only by its own model, with
+the temperature refit on the CCT20 calibration cameras as the update gate does
+(fitted temperatures 2.06-2.61). Thresholds by leave-one-camera-out, nested for
+the head. Only N = 50 was trained. The methods from iterations 1-2 were
+recomputed in the same run and are unchanged.
+
+**Result (N = 50):**
+
+| Method | Review reduction | Accepted labels correct | Animal retention, pooled | Worst camera |
+|---|---|---|---|---|
+| Release | 3.7% | none accepted | 97.8% | 93.1% |
+| Head with other-animal class (iteration 2) | **9.4%** | **158 / 168 (94.0%, CI 89.4-96.7)** | 98.3% | 82.8% |
+| Fine-tuned per camera | 3.5% | none accepted | 98.4% | 85.1% |
+| Fine-tuned per camera + other-animal head | 6.2% | 41 / 46 (89.1%, CI 77.0-95.3) | 98.1% | 83.6% |
+
+- **Fine-tuning does not help.** Alone it accepts no species labels on any
+  camera, and none in-sample either: no threshold reaches the rule's lower
+  bound even with thresholds fitted to the scored events. Its 3.5% is empty
+  filtering, like the release.
+- **With the other-animal head it is worse than the head on the release's
+  features**: 6.2% against 9.4%, and 89.1% precision against 94.0%. Camera 58
+  gives 39 of its 46 accepted labels. Camera 112, which gave 102 accepted
+  labels to the head on release features, gives none.
+- **Empty filtering still fails per camera**: camera 18 loses 15-17% of its
+  animal events under all three adaptation methods (22 of 134 here), and camera 64 loses 8%
+  with the fine-tuned head.
+- **Cost**: a 30-40 minute GPU retrain per camera buys nothing over a linear
+  head fitted in seconds.
+
+**Reading:** none of the three candidates in
+[`docs/v2_experiment.md`](../../../docs/v2_experiment.md) reaches 95% accepted
+precision on unseen development cameras. The best, the other-animal head on the
+release's frozen features, saves 9.4% of reviews at 94.0% precision with its
+gain on two cameras, and empty filtering is unsafe per camera for every method.
+As planned, the v2 target is next set prospectively from this evidence, in the
+protocol committed before any fresh-test image is downloaded.
+
+---
+
 ## Iteration 2: a head with an other-animal class
 
 **Method.** A linear head on the released model's frozen features with 9
