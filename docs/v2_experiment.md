@@ -74,9 +74,20 @@ it is not read again, and v1's result against the 50% target stays on record.
    result.
    `uv run wildinbox adaptation fresh-test` is the only code path that reads
    the fresh-test partition. It checks the protocol is committed and unchanged,
-   every pinned hash, and a clean `src/` and `configs/`, then records
-   `reports/adaptation/fresh_test/opened.json`; a later run must reproduce the
-   recorded `metrics.json` and never rewrites it. `--dev-check` runs the same
+   every pinned hash, and a clean `src/` and `configs/`. Before reading any
+   fresh data it binds the run to the committed split and ingest locks
+   (`manifests/cct-fresh-test-v1.lock.json`, `manifests/cct_fresh_test.lock.json`),
+   whose totals must reconcile with the protocol's expected 4,233 events and
+   11,837 images, where only files the ingest declared rejected may be missing,
+   and it creates `reports/adaptation/fresh_test/opened.json` atomically with
+   that input identity, so a failed inference still leaves the opening
+   recorded. Once read, the split must reproduce the lock's content digest,
+   and every locked event and image must be loaded or excluded with a recorded
+   reason. A later run must use the same protocol and inputs, reproduce the
+   recorded `metrics.json`, and never rewrites either file. (The recorded run
+   used the earlier runner, which wrote `opened.json` after scoring and did not
+   check the locks; its split reproduces the lock digest `7e06132ddd4c` and
+   its counts match the protocol.) `--dev-check` runs the same
    procedure on the development cameras only and must reproduce the recorded
    development result (216 / 220 correct, 6.7%) and the rule's choice of 0.82;
    it passes, and never opens the test.
