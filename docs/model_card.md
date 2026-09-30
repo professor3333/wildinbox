@@ -248,12 +248,50 @@ the pre-registered gate (later events on those cameras: event macro-F1 0.486 ->
 was released, and was rolled back to E3 to demonstrate rollback. The gain
 applies to cameras that were reviewed; it is not a new-camera result.
 
+## Camera adaptation (v2, fresh cameras, measured once)
+
+Can species labels be accepted automatically once a person has reviewed a new
+camera's first events? Tested on Caltech Camera Traps locations outside
+CCT20, chosen by a pre-registered rule, amended once before any image was
+downloaded ([`fresh_cameras_v2.yaml`](../configs/experiments/fresh_cameras_v2.yaml)): 8
+for development, 12 locked and opened once under
+[`fresh_test.yaml`](../configs/experiments/fresh_test.yaml), committed before
+their images were downloaded ([plan](v2_experiment.md)).
+
+- **Development** ([report](../reports/adaptation/development/README.md)):
+  prior shift, a linear head on E3 features, a head with an `other_animal`
+  class, and per-camera fine-tuning; none reached 95% accepted precision by
+  leave-one-camera-out, and empty filtering lost animals on single cameras
+  under every method.
+- **Frozen operating point:** a logistic-regression head on the frozen E3
+  features with an `other_animal` output (never accepted), fit on the CCT20
+  calibration and policy-validation cameras plus the camera's first 50
+  reviewed events (C = 0.001, camera share 0.1); species labels only, empty
+  filtering off, threshold 0.82. Development estimate: 161 / 172 correct
+  (93.6%, 88.9-96.4).
+- **Fresh test** (12 cameras, 4,233 events;
+  [report](../reports/adaptation/fresh_test/README.md)): **505 / 570 accepted
+  labels correct (88.6%, 85.7-91.0) against the pre-registered 95% with lower
+  bound >= 90%: fail.** 12.8% review reduction with the reviews and a 5% audit
+  counted; 100% animal retention.
+- At the same threshold the unadapted release is right on 131 / 163 (80.4%):
+  a camera's reviews help, but not enough. Camera 75 gave 39 of the 65 wrong
+  labels; most errors are one supported species called another (dog called
+  bobcat 19 times), not unsupported animals.
+
+The released model and policy are unchanged: automatic species acceptance
+stays off, and adaptation is not part of serving. Reviews were simulated from
+ground truth.
+
 ## Promotion and rollback
 
 1. A retrained candidate replaces the deployed model only if it passes the same
-   evaluation on data it was not chosen on. The final test above is now spent:
-   a new candidate needs a fresh set of held-out cameras (the full Caltech
-   Camera Traps dataset has about 120 more locations).
+   evaluation on data it was not chosen on. The final test and the v2 fresh
+   test are both spent, and so is the supply of comparable cameras: of the 120
+   Caltech Camera Traps locations outside CCT20, 20 meet the selection rule
+   (burst-grouped sequences, at least 150 events and 50 supported-species
+   events, timestamps), and v2 used all 20. A new candidate needs cameras
+   from another source, such as a consenting owner's deployment.
 2. Releases are immutable; `GET /version` reports the active release's model,
    preprocessing, calibration, and policy versions. Rolling back is
    `wildinbox release activate <previous release>` (new batches only; running
