@@ -12,18 +12,29 @@ only and must reproduce the recorded development result
 (reports/adaptation/development/metrics.json) and the rule's choice of the
 frozen threshold. It never opens the fresh test.
 
-The first fresh run records `opened.json` and `metrics.json`. A later run is
-allowed only with the same protocol, never rewrites them, and must reproduce
-the recorded results exactly (on another device, within
-CROSS_DEVICE_TOLERANCE).
+The fresh split is bound to its committed lock (manifests/<split>.lock.json)
+and the ingest lock it was built from (manifests/<images>.lock.json): before
+any fresh data is read, their totals must reconcile with the protocol's
+expected counts, the only allowed difference being files the ingest declared
+rejected. Once read, the split files must reproduce the lock's content digest
+and every locked event and image must be loaded or excluded with a recorded
+reason.
+
+`opened.json` is created, once and atomically, before the first fresh data is
+read, so a failure during inference leaves the opening recorded. A later run is
+allowed only with the same protocol and inputs, never rewrites `opened.json`
+or `metrics.json`, and must reproduce the recorded results exactly (on another
+device, within CROSS_DEVICE_TOLERANCE).
 """
 
 from __future__ import annotations
 
+import gzip
 import hashlib
 import json
+import os
 import subprocess
-from collections import Counter
+from collections import Counter, defaultdict
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
@@ -57,6 +68,7 @@ from wildinbox.evaluation.metrics import wilson
 DEV_SPLIT = "cct-fresh-dev-v1"
 DEV_IMAGES = "cct_fresh_dev"
 DEV_METRICS = Path("reports/adaptation/development/metrics.json")
+MANIFESTS = Path("manifests")
 
 
 class FreshTestError(RuntimeError):
@@ -199,6 +211,205 @@ def open_fresh_test(split_dir: Path) -> tuple[dict[str, list[CameraEvent]], list
     if any(r.use_for_fit for r in rows):
         raise FreshTestError("fresh-test images are marked as fit examples")
     return camera_events_from(split_dir, {ft}, rows), rows
+
+
+# ------------------------------------------------------------------ inputs
+
+
+def split_inputs(protocol: Protocol, split_name: str, images_name: str) -> dict[str, Any]:
+    """The finalized fresh split's identity, from committed locks only (no
+    fresh data is read). The split lock must be this partition with the
+    protocol's cameras, built from the pinned ingest, with its leakage checks
+    passed; its totals must reconcile with the protocol's expected counts,
+    where only files the ingest declared rejected may be missing."""
+    split_lock = MANIFESTS / f"{split_name}.lock.json"
+    ingest_lock = MANIFESTS / f"{images_name}.lock.json"
+    for path in (split_lock, ingest_lock):
+        if not path.exists():
+            raise FreshTestError(f"{path} not found: the fresh split must be locked and ingested")
+    lock = json.loads(split_lock.read_text())
+    ingest = json.loads(ingest_lock.read_text())
+    counts, ingest_version = ingest["counts"], ingest["manifest_version"]
+    events = sum(c["events"] for c in lock["cameras"].values())
+    images = sum(c["images"] for c in lock["cameras"].values())
+    rejected = counts["by_status"]["quarantined"] + counts["by_status"]["excluded"]
+    expected = protocol.cameras.expected
+    problems = []
+    if lock["partition"] != Partition.FRESH_TEST.value:
+        problems.append(f"split lock is partition {lock['partition']!r}")
+    if not lock["split_version"].startswith(f"{split_name}-"):
+        problems.append(f"split lock version {lock['split_version']} is not split {split_name}")
+    if sorted(lock["cameras"]) != sorted(protocol.cameras.locations):
+        problems.append(f"split lock cameras {sorted(lock['cameras'])} differ from the protocol")
+    failed = sorted(k for k, ok in lock["checks"].items() if not ok)
+    if failed:
+        problems.append(f"split lock checks failed: {failed}")
+    if lock["inventory_manifest_version"] != ingest_version:
+        problems.append(
+            f"split built from {lock['inventory_manifest_version']}; ingest is {ingest_version}"
+        )
+    if counts["source_records"] != expected.images:
+        problems.append(
+            f"ingest saw {counts['source_records']} files, protocol expects {expected.images}"
+        )
+    if counts["by_status"]["accepted"] != images or images + rejected != expected.images:
+        problems.append(
+            f"split has {images} images; ingest accepted {counts['by_status']['accepted']} "
+            f"and rejected {rejected} of the {expected.images} expected"
+        )
+    if events != expected.sequences:  # a rejected file excludes its event, never removes it
+        problems.append(f"split has {events} events, protocol expects {expected.sequences}")
+    if problems:
+        raise FreshTestError("fresh split does not match its data contract: " + "; ".join(problems))
+    return {
+        "split_version": lock["split_version"],
+        "split_lock": str(split_lock),
+        "split_lock_sha256": _sha(split_lock),
+        "ingest_lock": str(ingest_lock),
+        "ingest_lock_sha256": _sha(ingest_lock),
+        "events": events,
+        "images": images,
+        "ingest_rejected": rejected,
+    }
+
+
+def split_version(split_dir: Path) -> str:
+    """The split's content digest, as the build computes it: every event row,
+    then every image row, uncompressed."""
+    digest = hashlib.sha256()
+    for name in ("events", "images"):
+        with gzip.open(split_dir / f"{name}.jsonl.gz", "rb") as f:
+            for chunk in iter(lambda: f.read(1 << 20), b""):
+                digest.update(chunk)
+    return f"{split_dir.name}-{digest.hexdigest()[:12]}"
+
+
+def reconcile(
+    split_dir: Path,
+    inputs: dict[str, Any],
+    cams: dict[str, list[CameraEvent]],
+    rows: list[ImageRow],
+) -> dict[str, int]:
+    """Every locked event and image is loaded, or excluded by the build with a
+    recorded reason; returns the exclusions."""
+    lock = json.loads(Path(inputs["split_lock"]).read_text())["cameras"]
+    ft = Partition.FRESH_TEST.value
+    found: dict[str, Counter[str]] = defaultdict(Counter)
+    for r in _jsonl(split_dir / "events.jsonl.gz"):
+        c = found[str(r["camera_id"])]
+        c["events"] += 1
+        c["images"] += len(r["image_ids"])
+        if r["excluded_reason"] or not r["image_ids"]:
+            c["excluded_events"] += 1
+            c["excluded_images"] += len(r["image_ids"])
+        elif r["partition"] != ft:
+            c["other_partition"] += 1
+    loaded_images = Counter(r.camera_id for r in rows)
+    problems = []
+    for cam in sorted(set(found) | set(lock)):
+        c, want = found[cam], lock.get(cam, {"events": 0, "images": 0})
+        if (c["events"], c["images"]) != (want["events"], want["images"]):
+            problems.append(
+                f"camera {cam}: {c['events']} events/{c['images']} images, "
+                f"locked {want['events']}/{want['images']}"
+            )
+        if c["other_partition"]:
+            problems.append(f"camera {cam}: {c['other_partition']} events in another partition")
+        if len(cams.get(cam, [])) != c["events"] - c["excluded_events"]:
+            problems.append(f"camera {cam}: {len(cams.get(cam, []))} events loaded")
+        if loaded_images[cam] != c["images"] - c["excluded_images"]:
+            problems.append(f"camera {cam}: {loaded_images[cam]} images loaded")
+    if problems:
+        raise FreshTestError("loaded fresh test differs from its lock: " + "; ".join(problems))
+    return {
+        "excluded_events": sum(c["excluded_events"] for c in found.values()),
+        "excluded_images": sum(c["excluded_images"] for c in found.values()),
+    }
+
+
+def _sha_at(commit: str, path: str) -> str | None:
+    try:
+        blob = subprocess.check_output(
+            ["git", "show", f"{commit}:{path}"], stderr=subprocess.DEVNULL
+        )
+    except (OSError, subprocess.CalledProcessError):
+        return None
+    return hashlib.sha256(blob).hexdigest()
+
+
+def check_opened(opened: dict[str, Any], protocol_sha: str, inputs: dict[str, Any]) -> None:
+    """A retry must use the protocol and inputs the test was opened with. The
+    recorded v2 opening predates the inputs field; its inputs are the locks
+    as committed at the code commit it records."""
+    if opened["protocol_sha256"] != protocol_sha:
+        raise FreshTestError("the fresh test was opened under a different protocol")
+    if "inputs" in opened:
+        if opened["inputs"] != inputs:
+            raise FreshTestError("the fresh test was opened with different inputs")
+        return
+    for key in ("split_lock", "ingest_lock"):
+        if _sha_at(opened["code"]["commit"], inputs[key]) != inputs[f"{key}_sha256"]:
+            raise FreshTestError(f"{inputs[key]} changed since the fresh test was opened")
+
+
+def create_once(path: Path, payload: dict[str, Any]) -> None:
+    """Write `path` durably, all at once, and only if it does not exist."""
+    path.parent.mkdir(parents=True, exist_ok=True)
+    tmp = path.with_name(f".{path.name}.{os.getpid()}.tmp")
+    with open(tmp, "w") as f:
+        f.write(json.dumps(payload, indent=2) + "\n")
+        f.flush()
+        os.fsync(f.fileno())
+    try:
+        os.link(tmp, path)  # fails if path exists: never overwrites
+    except FileExistsError:
+        raise FreshTestError(f"{path} appeared while opening the fresh test") from None
+    finally:
+        tmp.unlink()
+
+
+def open_locked(
+    protocol: Protocol,
+    protocol_path: Path,
+    split_dir: Path,
+    images_name: str,
+    opened_path: Path,
+    opening: dict[str, Any],
+) -> tuple[dict[str, list[CameraEvent]], list[ImageRow], dict[str, Any]]:
+    """Record the opening (or check it against the recorded one), then read
+    the fresh split and verify it is the locked one."""
+    inputs = split_inputs(protocol, split_dir.name, images_name)
+    unlocked = [
+        inputs[k]
+        for k in ("split_lock", "ingest_lock")
+        if not _committed_and_clean(Path(inputs[k]))
+    ]
+    if unlocked:
+        raise FreshTestError(f"the fresh test is opened only with committed locks: {unlocked}")
+    protocol_sha = _sha(protocol_path)
+    if opened_path.exists():
+        check_opened(json.loads(opened_path.read_text()), protocol_sha, inputs)
+    else:
+        create_once(
+            opened_path,
+            {
+                "opened_at": datetime.now(UTC).isoformat(),
+                "protocol": str(protocol_path),
+                "protocol_sha256": protocol_sha,
+                **opening,
+                "inputs": inputs,
+            },
+        )
+
+    # ---- fresh data is read only past this point
+    actual = split_version(split_dir)
+    if actual != inputs["split_version"]:
+        raise FreshTestError(f"fresh split is {actual}, its lock is {inputs['split_version']}")
+    cams, rows = open_fresh_test(split_dir)
+    exclusions = reconcile(split_dir, inputs, cams, rows)
+    if sorted(cams) != sorted(protocol.cameras.locations):
+        raise FreshTestError(f"fresh-test cameras {sorted(cams)} differ from the protocol")
+    return cams, rows, inputs | exclusions
 
 
 # ------------------------------------------------------------------ measures
@@ -386,18 +597,16 @@ def run(
     code = git_state()
     if code["dirty"]:
         raise FreshTestError("uncommitted changes under src/ or configs/: commit before opening")
-    opened_path = report_dir / "opened.json"
     metrics_path = report_dir / "metrics.json"
-    if (
-        opened_path.exists()
-        and json.loads(opened_path.read_text())["protocol_sha256"] != protocol_sha
-    ):
-        raise FreshTestError("the fresh test was opened under a different protocol")
-
     split_dir = data_dir / "splits" / split_name
-    cams, rows = open_fresh_test(split_dir)
-    if sorted(cams) != sorted(protocol.cameras.locations):
-        raise FreshTestError(f"fresh-test cameras {sorted(cams)} differ from the protocol")
+    cams, rows, inputs = open_locked(
+        protocol,
+        protocol_path,
+        split_dir,
+        images_name,
+        report_dir / "opened.json",
+        {"code": code, "device": device},
+    )
     short = [c for c, ev in cams.items() if len(ev) <= m.n_reviewed]
     if short:
         raise FreshTestError(f"cameras with no events after the reviewed ones: {short}")
@@ -410,21 +619,6 @@ def run(
         "fresh-test-v1",
         device,
     )
-    if not opened_path.exists():
-        report_dir.mkdir(parents=True, exist_ok=True)
-        opened_path.write_text(
-            json.dumps(
-                {
-                    "opened_at": datetime.now(UTC).isoformat(),
-                    "protocol": str(protocol_path),
-                    "protocol_sha256": protocol_sha,
-                    "code": code,
-                    "device": device,
-                },
-                indent=2,
-            )
-            + "\n"
-        )
     fresh = _score_all(methods, cams, m.n_reviewed, out)
 
     t = m.thresholds.species
@@ -479,6 +673,7 @@ def run(
         "protocol": str(protocol_path),
         "protocol_sha256": protocol_sha,
         "artifacts": artifacts,
+        "inputs": inputs,
         "code": code,
         "device": device,
         "dev_check": check,
