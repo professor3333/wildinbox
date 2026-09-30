@@ -72,6 +72,14 @@ it is not read again, and v1's result against the 50% target stays on record.
    (with their ground-truth labels standing in for reviews, as in the update
    cycle), score the later events, report against the protocol whatever the
    result.
+   `uv run wildinbox adaptation fresh-test` is the only code path that reads
+   the fresh-test partition. It checks the protocol is committed and unchanged,
+   every pinned hash, and a clean `src/` and `configs/`, then records
+   `reports/adaptation/fresh_test/opened.json`; a later run must reproduce the
+   recorded `metrics.json` and never rewrites it. `--dev-check` runs the same
+   procedure on the development cameras only and must reproduce the recorded
+   development result (216 / 220 correct, 6.7%) and the rule's choice of 0.82;
+   it passes, and never opens the test.
 
 ## What will not count as success
 

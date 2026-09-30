@@ -420,6 +420,23 @@ def main(argv: Sequence[str] | None = None) -> int:
     p_dev.add_argument("--model", type=Path, default=Path("models/finetune-e3-deep-balanced"))
     p_dev.add_argument("--n", type=int, nargs="+", default=[25, 50, 100])
     p_dev.add_argument("--report-dir", type=Path, default=Path("reports/adaptation/development"))
+    p_fresh = adapt_sub.add_parser(
+        "fresh-test",
+        help="Measure the frozen v2 operating point once on the locked fresh-test cameras.",
+    )
+    device_arg(p_fresh)
+    p_fresh.add_argument(
+        "--protocol", type=Path, default=Path("configs/experiments/fresh_test.yaml")
+    )
+    p_fresh.add_argument("--config", type=Path, default=Path("configs/experiments/baseline.yaml"))
+    p_fresh.add_argument("--split", default="cct-fresh-test-v1")
+    p_fresh.add_argument("--images", default="cct_fresh_test")
+    p_fresh.add_argument("--report-dir", type=Path, default=Path("reports/adaptation/fresh_test"))
+    p_fresh.add_argument(
+        "--dev-check",
+        action="store_true",
+        help="Run the frozen procedure on the development cameras only; never opens the test.",
+    )
 
     p_mon = sub.add_parser("monitoring", help="Monitoring maintenance.")
     mon_sub = p_mon.add_subparsers(dest="monitoring_command", required=True)
@@ -654,6 +671,37 @@ def main(argv: Sequence[str] | None = None) -> int:
         decision = "PROMOTE" if verdict["promote"] else "DO NOT PROMOTE"
         print(f"{decision} {verdict['candidate_release']}")
         print(f"report -> {args.report_dir / 'README.md'}")
+        return 0
+    if args.command == "adaptation" and args.adaptation_command == "fresh-test":
+        from wildinbox.adaptation.fresh_test import run as run_fresh_test
+
+        result = run_fresh_test(
+            args.protocol,
+            args.config,
+            Settings().data_dir,
+            args.split,
+            args.images,
+            args.report_dir,
+            device=resolve_device(args.device),
+            dev_only=args.dev_check,
+        )
+        if args.dev_check:
+            ins = result["dev_check"]["in_sample"]
+            chosen = result["dev_check"]["threshold_chosen_by_rule"]
+            print(
+                f"development check passed: rule chooses {chosen}; "
+                f"{ins['accepted_correct']}/{ins['accepted']} correct, "
+                f"review reduction {100 * ins['review_reduction']:.1f}%"
+            )
+        else:
+            r = result["results"]
+            p = r["adapted"]["pooled"]
+            print(
+                f"fresh test: {p['accepted_correct']}/{p['accepted']} accepted labels correct, "
+                f"review reduction {100 * p['review_reduction']:.1f}%, "
+                f"target {r['target']['outcome']}"
+            )
+            print(f"metrics -> {args.report_dir / 'metrics.json'}")
         return 0
     if args.command == "adaptation":
         from wildinbox.adaptation.run import run as run_adaptation

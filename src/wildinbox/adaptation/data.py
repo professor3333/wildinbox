@@ -38,6 +38,15 @@ def load_camera_events(
     last), and the image rows behind them."""
     wanted = {p.value for p in assert_development(partitions)}
     rows, _ = load_rows(split_dir, partitions)
+    return camera_events_from(split_dir, wanted, rows), rows
+
+
+def camera_events_from(
+    split_dir: Path, wanted: set[str], rows: list[ImageRow]
+) -> dict[str, list[CameraEvent]]:
+    """Events of the `wanted` partitions whose image rows are already loaded.
+    Development callers go through `load_camera_events`; the locked fresh test
+    only through `wildinbox.adaptation.fresh_test`."""
     image_label = {r.source_id: r.image_label for r in rows}
     cams: dict[str, list[CameraEvent]] = defaultdict(list)
     with gzip.open(split_dir / "events.jsonl.gz", "rt") as f:
@@ -59,7 +68,7 @@ def load_camera_events(
             )
     for events in cams.values():
         events.sort(key=lambda e: (e.start is None, e.start or "", e.event_id))
-    return dict(cams), rows
+    return dict(cams)
 
 
 @dataclass(frozen=True)
