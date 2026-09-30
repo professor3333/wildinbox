@@ -60,6 +60,14 @@ it is not read again, and v1's result against the 50% target stays on record.
 4. **Protocol, committed before any fresh-test image is downloaded:** method,
    N, thresholds, metrics, confidence intervals, and the v2 target with its
    justification.
+   **Frozen:** [`configs/experiments/fresh_test.yaml`](../configs/experiments/fresh_test.yaml).
+   No candidate reached the rule on development cameras
+   ([iterations 1-3](../reports/adaptation/development/README.md)), so the
+   target is set prospectively: the other-animal head at N = 50, species
+   labels only (empty filtering off), species threshold 0.82. It passes if at
+   least 30 labels are accepted with pooled precision >= 95% and Wilson lower
+   bound >= 90%. Development estimates 93.6% (88.9-96.4) and 5.3% review
+   reduction, so a pass is not expected with confidence.
 5. **Fresh test, once:** download, adapt per camera from its first N events
    (with their ground-truth labels standing in for reviews, as in the update
    cycle), score the later events, report against the protocol whatever the
