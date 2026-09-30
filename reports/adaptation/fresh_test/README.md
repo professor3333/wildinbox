@@ -68,8 +68,8 @@ precision. Review reduction is not a pass condition.
 | Empty event called bobcat or opossum | 5 |
 
 Unsupported animals are 1,271 of 4,233 fresh-test events (30%), yet they
-give 17 wrong labels; confusions between supported species give 43, most of
-them dogs called bobcat.
+give 17 wrong labels; confusions between supported species give 43, led by
+19 dogs called bobcat.
 
 ## Comparisons (protocol-defined)
 
@@ -88,7 +88,6 @@ and review reduction from 3.7% (release) and 7.6% (head without reviews) to
 
 Adapting to a new camera from its first 50 reviewed events makes automatic
 species labels more accurate and more frequent than the unadapted model. It
-is not reliable enough
-to switch on: one camera in twelve produced 41% wrong accepted labels, and
+is not reliable enough to switch on: one camera in twelve produced 41% wrong accepted labels, and
 nothing in development predicted which. This fresh test is now opened; any
 further method needs new, untouched cameras.
