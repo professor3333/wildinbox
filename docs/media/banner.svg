@@ -1,0 +1,79 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="360" viewBox="0 0 1280 360" role="img" aria-labelledby="t d">
+  <title id="t">WildInbox</title>
+  <desc id="d">Find the wildlife. Skip the empty frames. A night-time trail-camera frame with glowing eyes in the undergrowth.</desc>
+  <defs>
+    <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#0b1f1a"/>
+      <stop offset="0.6" stop-color="#11312a"/>
+      <stop offset="1" stop-color="#173f33"/>
+    </linearGradient>
+    <radialGradient id="moonglow" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#f4f1d0" stop-opacity="0.35"/>
+      <stop offset="1" stop-color="#f4f1d0" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="eye" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#fffbe0"/>
+      <stop offset="0.35" stop-color="#ffd84d"/>
+      <stop offset="1" stop-color="#ffb800" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="title" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#ffffff"/>
+      <stop offset="1" stop-color="#c8f2d8"/>
+    </linearGradient>
+  </defs>
+
+  <rect width="1280" height="360" fill="url(#sky)"/>
+
+  <!-- stars -->
+  <g fill="#e8f5ec" opacity="0.7">
+    <circle cx="90" cy="60" r="1.2"/><circle cx="210" cy="38" r="1"/><circle cx="330" cy="82" r="1.4"/>
+    <circle cx="470" cy="30" r="1"/><circle cx="620" cy="56" r="1.2"/><circle cx="760" cy="24" r="1"/>
+    <circle cx="880" cy="70" r="1.3"/><circle cx="1010" cy="34" r="1"/><circle cx="1180" cy="66" r="1.2"/>
+    <circle cx="150" cy="120" r="0.9"/><circle cx="560" cy="110" r="0.9"/><circle cx="700" cy="132" r="0.8"/>
+  </g>
+
+  <!-- moon -->
+  <mask id="crescent"><rect width="1280" height="360" fill="#fff"/><circle cx="1002" cy="112" r="25" fill="#000"/></mask>
+  <circle cx="990" cy="120" r="80" fill="url(#moonglow)"/>
+  <circle cx="990" cy="120" r="26" fill="#f4f1d0" mask="url(#crescent)"/>
+
+  <!-- far treeline -->
+  <path fill="#0e2a23" d="M0 250 L40 200 L60 225 L95 170 L130 230 L160 190 L190 240 L230 180 L270 236 L300 205
+    L340 245 L380 196 L420 240 L460 214 L500 248 L540 232 L580 252 L620 240 L660 254 L700 238 L740 252 L780 230
+    L820 246 L850 214 L880 238 L915 176 L950 232 L985 196 L1020 244 L1060 186 L1100 236
+    L1140 204 L1180 240 L1220 192 L1260 236 L1280 220 L1280 360 L0 360 Z"/>
+
+  <!-- undergrowth -->
+  <path fill="#081a15" d="M0 300 Q40 262 80 292 Q120 252 170 290 Q210 258 250 296 Q300 264 340 300 Q380 270 420 304
+    L420 360 L0 360 Z"/>
+  <path fill="#081a15" d="M860 304 Q900 266 950 296 Q990 256 1040 292 Q1080 262 1130 298 Q1180 260 1230 294 Q1260 276 1280 290
+    L1280 360 L860 360 Z"/>
+  <rect y="300" width="1280" height="60" fill="#081a15"/>
+
+  <!-- glowing eyes in the bushes -->
+  <g>
+    <circle cx="196" cy="286" r="9" fill="url(#eye)"/><circle cx="220" cy="286" r="9" fill="url(#eye)"/>
+    <circle cx="1046" cy="292" r="7" fill="url(#eye)" opacity="0.85"/><circle cx="1064" cy="292" r="7" fill="url(#eye)" opacity="0.85"/>
+  </g>
+
+  <!-- viewfinder corners -->
+  <g fill="none" stroke="#c8f2d8" stroke-width="3" stroke-linecap="round" opacity="0.85">
+    <path d="M40 72 V40 H72"/><path d="M1208 40 H1240 V72"/>
+    <path d="M40 288 V320 H72"/><path d="M1208 320 H1240 V288"/>
+  </g>
+
+  <!-- trail-camera overlay -->
+  <g font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="15" fill="#c8f2d8" opacity="0.9">
+    <circle cx="66" cy="62" r="5" fill="#ff5a4f"/>
+    <text x="80" y="67">REC · CAM 108</text>
+    <text x="1200" y="67" text-anchor="end">IR · 19:57:21</text>
+    <text x="80" y="309">3 FRAMES → 1 CAPTURE EVENT</text>
+    <text x="1200" y="309" text-anchor="end">NEEDS REVIEW</text>
+  </g>
+
+  <!-- title -->
+  <g text-anchor="middle" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif">
+    <text x="640" y="170" font-size="84" font-weight="800" letter-spacing="-2" fill="url(#title)">WildInbox</text>
+    <text x="640" y="218" font-size="26" font-weight="500" fill="#a9dcbf">Find the wildlife. Skip the empty frames.</text>
+  </g>
+</svg>
