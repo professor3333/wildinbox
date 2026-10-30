@@ -345,14 +345,14 @@ open http://localhost:8501             # review interface (API: http://localhost
 > predictor** (pseudo-random scores that exercise the pipeline, flagged on every
 > response). To serve the trained model, register it once as a release.
 
-The current release is
-[v1.6.0](https://github.com/professor3333/wildinbox/releases/tag/v1.6.0); it
-serves the same model and policy, whose weights are published with the
+Every release since v1.5.0, including the
+[latest](https://github.com/professor3333/wildinbox/releases/latest), serves
+the same model and policy, whose weights are published with the
 [v1.5.0 release](https://github.com/professor3333/wildinbox/releases/tag/v1.5.0)
 (15 MB, SHA-256 checked; no GitHub account needed):
 
 ```bash
-deploy/fetch_release.sh                # download the trained model (v1.5.0 asset, unchanged in v1.6.0), verify, unpack
+deploy/fetch_release.sh                # download the trained model (v1.5.0 asset, unchanged since), verify, unpack
 docker compose run --rm -v "$PWD/dist/release:/release:ro" worker \
   wildinbox release register --activate --model-dir /release/model --policy /release/policy.json
 curl localhost:8000/version            # deploy check: release, weights, preprocessing, calibration, policy
