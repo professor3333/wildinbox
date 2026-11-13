@@ -30,8 +30,54 @@
 
 WildInbox is a review system for trail-camera photos. Upload a memory card and it
 groups the photos into **capture events**, suggests a species for each event,
-says why an event needs a human, and lets you review, correct, and export an
-observation log with the provenance of every label.
+says why an event needs a human, and exports a corrected observation log with
+the provenance of every label.
+
+<p align="center">
+  <img src="docs/media/demo.gif" alt="Uploading a memory card, reviewing events, and exporting the observation log" width="100%">
+</p>
+
+<table>
+<tr>
+<td width="33%"><a href="docs/media/demo-upload.png"><img src="docs/media/demo-upload.png" alt="Upload a memory card"></a></td>
+<td width="33%"><a href="docs/media/demo-review.png"><img src="docs/media/demo-review.png" alt="Review queue"></a></td>
+<td width="33%"><a href="docs/media/demo-visitors.png"><img src="docs/media/demo-visitors.png" alt="Last night's visitors"></a></td>
+</tr>
+<tr>
+<td align="center"><b>Upload</b><br><sub>Frames of one trigger become one capture event</sub></td>
+<td align="center"><b>Review queue</b><br><sub>Suggestion, confidence, and why it needs a person</sub></td>
+<td align="center"><b>Last night's visitors</b><br><sub>The best frame of every animal event in a night</sub></td>
+</tr>
+</table>
+
+<p align="center">▶️ <a href="docs/media/demo.webm"><b>Full-length video</b></a> · walk-through with a real run's output in <a href="docs/demo.md"><code>docs/demo.md</code></a></p>
+
+## At a glance
+
+<table>
+<tr>
+<td align="center" width="20%"><h3>61.4%</h3>fewer items to review, from grouping alone<br><sub>23,275 photos → 8,982 events</sub></td>
+<td align="center" width="20%"><h3>0.447</h3>macro-F1 on 9 unseen cameras<br><sub>vs 0.285 frozen baseline</sub></td>
+<td align="center" width="20%"><h3>100%</h3>animal events retained, as released<br><sub>automation off</sub></td>
+<td align="center" width="20%"><h3>78.5 s</h3>for 1,000 images, one worker<br><sub>laptop CPU; 111 s on a 2-vCPU VM</sub></td>
+<td align="center" width="20%"><h3>0 / 0</h3>lost / duplicated inputs<br><sub>after a worker <code>SIGKILL</code> mid-batch</sub></td>
+</tr>
+</table>
+
+> [!IMPORTANT]
+> **The model does not yet remove review work, and the release says so.** The
+> 50% review-reduction target was not met on unseen cameras, so automatic
+> filtering and species labels are **off**: every event goes to a person with
+> its suggestion, confidence, and reasons. See [Results, honestly](#results-honestly).
+
+## The problem
+
+Trail cameras fire on wind, heat, and animals walking out of frame, so a memory
+card is mostly empty or repeated photos; about **70% of Caltech Camera Traps is
+labeled empty**. WildInbox asks one measurable question:
+
+> **How much manual review can be removed without losing animals when a camera
+> is somewhere new?**
 
 ## Architecture
 
@@ -70,54 +116,8 @@ flowchart TD
 
 <sub>🟩 ingest · 🟦 storage and queue · 🟧 serving and monitoring · 🟥 human review · 🟪 offline training and release gate</sub>
 
-## The problem
-
-Trail cameras fire on wind, heat, and animals walking out of frame, so a memory
-card is mostly empty or repeated photos that someone still has to sort. About
-**70% of the full Caltech Camera Traps dataset is labeled empty**. WildInbox aims
-to cut that reviewing while never losing a real sighting, and the central
-question is measured, not assumed:
-
-> **How much manual review can be removed without losing animals when a camera
-> is somewhere new?**
-
-## At a glance
-
-<table>
-<tr>
-<td align="center" width="20%"><h3>61.4%</h3>fewer items to review, from grouping alone<br><sub>23,275 photos → 8,982 events</sub></td>
-<td align="center" width="20%"><h3>0.447</h3>macro-F1 on 9 unseen cameras<br><sub>vs 0.285 frozen baseline</sub></td>
-<td align="center" width="20%"><h3>100%</h3>animal events retained, as released<br><sub>automation off</sub></td>
-<td align="center" width="20%"><h3>78.5 s</h3>for 1,000 images, one worker<br><sub>laptop CPU; 111 s on a 2-vCPU VM</sub></td>
-<td align="center" width="20%"><h3>0 / 0</h3>lost / duplicated inputs<br><sub>after a worker <code>SIGKILL</code> mid-batch</sub></td>
-</tr>
-</table>
-
-> [!IMPORTANT]
-> **The model does not yet remove review work, and the release says so.** The
-> 50% review-reduction target was not met on unseen cameras, so automatic
-> filtering and automatic species labels are **off**: every event goes to a
-> person with its suggestion, confidence, and reasons. Details in
-> [Results, honestly](#results-honestly).
-
-## See it in action
-
-<table>
-<tr>
-<td width="33%"><a href="docs/media/demo-upload.png"><img src="docs/media/demo-upload.png" alt="Upload a memory card"></a></td>
-<td width="33%"><a href="docs/media/demo-review.png"><img src="docs/media/demo-review.png" alt="Review queue"></a></td>
-<td width="33%"><a href="docs/media/demo-visitors.png"><img src="docs/media/demo-visitors.png" alt="Last night's visitors"></a></td>
-</tr>
-<tr>
-<td align="center"><b>Upload</b><br><sub>Frames of one trigger become one capture event</sub></td>
-<td align="center"><b>Review queue</b><br><sub>Suggestion, confidence, and why it needs a person</sub></td>
-<td align="center"><b>Last night's visitors</b><br><sub>The best frame of every animal event in a night</sub></td>
-</tr>
-</table>
-
-<p align="center">▶️ <a href="docs/media/demo.webm"><b>Watch the demo video</b></a> · step-by-step walk-through with a real run's output in <a href="docs/demo.md"><code>docs/demo.md</code></a></p>
-
-### How an event is decided
+Each event gets one disposition from a versioned policy with machine-readable
+reasons (in the current release, every event is **needs review**):
 
 | Disposition | When | What you do |
 |---|---|---|
@@ -125,56 +125,25 @@ question is measured, not assumed:
 | 🦝 **Species identified** | One supported species, confident enough under the policy | Browse or accept the label |
 | 🔍 **Needs review** | Uncertain, conflicting, unsupported, or automation off | Inspect frames and correct the label |
 
-The decision comes from a versioned policy with machine-readable reasons. In
-the current release automation is off, so every event is **needs review**.
+## Features
 
-## What it does today
-
-- 📥 **Upload and validate** JPEG/PNG batches with optional camera, time, and
-  sequence metadata; files are checked by content, duplicates recognised by
-  hash, and every unusable file gets an explicit error.
-- 🧩 **Group** photos into capture events (supplied sequence ids, or camera and
-  time gaps within a grouping interval chosen per upload, default 5 s, recorded
-  with the batch so retries group the same way).
-- 🧠 **Suggest** a species per event with a fine-tuned EfficientNet-B0, calibrated,
-  and decide each event with a versioned policy: likely empty, species
-  identified, or needs review, with machine-readable reasons.
-- 👀 **Review** in the browser: accept, correct, name an unsupported species, or
-  mark "can't tell"; see last night's visitors; export a CSV with provenance.
-- 🔁 **Process reliably**: asynchronous workers with leases, bounded retries,
-  stale-job recovery, and idempotent writes; a worker killed mid-batch loses
-  nothing and duplicates nothing.
-- 🚀 **Release safely**: immutable model releases pinned per job, a pre-registered
-  promotion gate, append-only activation, and one-command rollback.
-- ☁️ **Deploy to staging** on one AWS VM ([guide](docs/deployment.md)): bearer
-  tokens on every data endpoint, readiness that requires the expected model
-  to load, JSON logs, upload limits, nightly database backups to S3 with a
-  tested restore, and a load-tested release
-  ([report](reports/staging/README.md)).
-- 📈 **Monitor** in two views ([rules](docs/monitoring.md)). Operational health
-  covers queue, failures, latency, API errors, worker memory and deaths,
-  storage, and batch cost. Model behavior covers filtered and review shares,
-  label and confidence mixes, each camera's latest batch against its earlier
-  ones, time periods with the camera-mix effect separated, and audited
-  false-empty and species errors. Signals and measured errors are never
-  mixed: a camera with no audit labels shows unknown quality.
-- 🎓 **Learn from corrections, under control** ([workflow](docs/retraining.md)).
-  Snapshots use approved reviews only, exclude protected evaluation records
-  (with any corrections made to them), and keep per-label provenance.
-  Candidates are compared on development data only, and every comparison is
-  logged. Rolling back restores the previous release's predictions exactly.
+- 📥 **Upload and validate** JPEG/PNG batches with optional camera, time, and sequence metadata; content checks, hash-based duplicate detection, and an explicit error for every unusable file.
+- 🧩 **Group** photos into capture events by sequence id, or by camera and a per-upload time gap (default 5 s).
+- 🧠 **Suggest** a species per event with a calibrated, fine-tuned EfficientNet-B0.
+- 👀 **Review** in the browser: accept, correct, name an unsupported species, or mark "can't tell"; export a CSV with provenance.
+- 🔁 **Process reliably**: leased workers, bounded retries, stale-job recovery, idempotent writes.
+- 🚀 **Release safely**: immutable releases pinned per job, a pre-registered promotion gate, one-command rollback.
+- 📈 **Monitor** operational health and model behavior separately; signals are never presented as measured accuracy ([rules](docs/monitoring.md)).
+- 🎓 **Retrain under control** from approved reviews only, with protected evaluation data excluded ([workflow](docs/retraining.md)).
+- ☁️ **Deploy to staging** on one AWS VM with tokens, readiness checks, and tested S3 backups ([guide](docs/deployment.md)).
 
 ## Results, honestly
 
-Measured on the **locked final test** (9 cameras never used for training,
-calibration, or thresholds; 23,275 photos, 8,982 capture events), under
-protocols committed beforehand, with the release frozen
-([final test](reports/final_test/README.md),
-[final evaluation](reports/final_evaluation/README.md)).
-
-> [!NOTE]
-> Intervals are 95%. Event metrics use a cluster bootstrap over camera-nights,
-> because events from one camera on one night are not independent.
+Measured on the **locked final test**: 9 cameras never used for training,
+calibration, or thresholds (23,275 photos, 8,982 events), under protocols
+committed beforehand ([final test](reports/final_test/README.md),
+[final evaluation](reports/final_evaluation/README.md)). Intervals are 95%,
+cluster-bootstrapped over camera-nights.
 
 | | Released (automation off) | Rule's empty filter (not released) | Target |
 |---|---|---|---|
@@ -189,64 +158,21 @@ protocols committed beforehand, with the release frozen
 | Macro-F1 on unseen cameras (95% CI) | **0.447** [0.435, 0.458] | 0.285 |
 | Same model on held-out sequences of *training* cameras | 0.747 | 0.724 |
 
-- **The 50% review-reduction target is not met, so automation stays off.**
-  The only automation development evidence supported, the empty filter,
-  would save 6% of reviews, and it falls below 98% retention for unsupported
-  species, by day, and on one camera (94.2%). Every event goes to review with
-  its suggestion, confidence, and reasons.
-- **Grouping and the model are separate results.** Grouping frames into
-  capture events (from the dataset's sequence IDs; no model involved) turns
-  23,275 photos into 8,982 events to review: 61.4% fewer items than reviewing
-  every photo. The model's own contribution to review reduction, as released,
-  is 0%. Fewer items is not measured reviewer time.
-- **Suggestions are not shown to help reviewers.** Every event carries the
-  model's suggestion, but a pilot study (5 participants, below the
-  pre-registered 8) found no reliable speed gain and no accuracy gain, and
-  most participants accepted suggestions that were right on only 28 of 80
-  events ([study](reports/study/study-1/FINDINGS.md)).
-- **The gap between 0.747 and 0.447 is the new-camera problem** this project set
-  out to measure. Reviewing a camera helps that camera: one update cycle raised
-  label quality on later photos of the reviewed cameras from 0.486 to 0.548
-  ([update cycle](reports/update/README.md), reviews simulated from ground truth).
+- **Automation stays off.** The only supported candidate, the empty filter, saves 6% of reviews and drops below 98% retention for unsupported species, by day, and on one camera (94.2%).
+- **Grouping and the model are credited separately.** Grouping alone gives 61.4% fewer items; the released model adds 0%. Fewer items is not measured reviewer time.
+- **Suggestions are not shown to help reviewers.** A 5-person pilot found no reliable speed or accuracy gain ([study](reports/study/study-1/FINDINGS.md)).
+- **0.747 → 0.447 is the new-camera problem.** One update cycle raised label quality on later photos of reviewed cameras from 0.486 to 0.548 ([update cycle](reports/update/README.md), simulated reviews).
 
-### Camera adaptation (v2): pre-registered, failed
-
-Can automatic species labels become safe once a person has reviewed a new
-camera's first events? A second experiment tested this on Caltech Camera
-Traps cameras outside CCT20: 8 for development, then 12 locked cameras
-opened once under a protocol committed before their images were downloaded
-([plan](docs/v2_experiment.md),
-[protocol](configs/experiments/fresh_test.yaml)).
-
-- **Development** (8 cameras, leave-one-camera-out): prior shift, a camera
-  head, a head with an other-animal class, and per-camera fine-tuning. None
-  reached 95% precision; empty filtering lost animals on single cameras under
-  every method ([development](reports/adaptation/development/README.md)).
-- **Frozen operating point:** the other-animal head adapted from each
-  camera's first 50 events, species labels only (empty filtering off),
-  threshold 0.82.
-- **Fresh test** (4,233 events, 11,837 photos):
-
-| | Target | Fresh test |
-|---|---|---|
-| Accepted species labels correct | ≥ 95%, lower bound ≥ 90% | ❌ **88.6%** (505 / 570) [85.7, 91.0]: **fail** |
-| Review reduction, with the 50 reviews and audits counted | reported | 12.8% |
-| Animal-event retention | | 100% |
-
-Adaptation helps: at the same threshold the unadapted model is right on 80%
-of the labels it would accept and saves 3.7%. It is not reliable enough to
-switch on: one camera gave 39 of the 65 wrong labels, and development gave
-no sign of which. **Automatic species acceptance stays off**
-([fresh-test report](reports/adaptation/fresh_test/README.md)).
-
-### Supported species
+**Camera adaptation (v2), pre-registered, failed.** Adapting to each new
+camera from its first 50 reviewed events reached **88.6%** (505 / 570)
+[85.7, 91.0] accepted-label precision on 12 fresh cameras, against a ≥ 95%
+target, with 12.8% review reduction and 100% retention. One camera gave 39 of
+the 65 errors, so automatic acceptance stays off
+([plan](docs/v2_experiment.md), [report](reports/adaptation/fresh_test/README.md)).
 
 | Supported (classifier output) | Unsupported (kept for evaluation, never relabeled as empty) |
 |---|---|
 | empty · bobcat · cat · coyote · dog · opossum · rabbit · raccoon | squirrel · skunk · bird · rodent · badger · fox · deer |
-
-Supported classes were chosen from training-set counts. See the
-[model card](docs/model_card.md).
 
 <details>
 <summary><b>📷 What the supported classes look like in the dataset</b></summary>
@@ -259,23 +185,7 @@ Supported classes were chosen from training-set counts. See the
 | **dog**<br><img src="reports/data_quality/cct20/images/class_dog.jpg" alt="dog"> | **opossum**<br><img src="reports/data_quality/cct20/images/class_opossum.jpg" alt="opossum"> |
 | **rabbit**<br><img src="reports/data_quality/cct20/images/class_rabbit.jpg" alt="rabbit"> | **raccoon**<br><img src="reports/data_quality/cct20/images/class_raccoon.jpg" alt="raccoon"> |
 
-Night frames, small animals, and blur are the main failure modes (see
-[Limitations](#limitations)).
-
 </details>
-
-## For reviewers
-
-| Deliverable | Where |
-|---|---|
-| Runnable demo | [Quick start](#quick-start), [docs/demo.md](docs/demo.md), video [docs/media/demo.webm](docs/media/demo.webm) |
-| Architecture | [docs/architecture.md](docs/architecture.md) |
-| Dataset and training instructions | [Reproduce the data and models](#reproduce-the-data-and-models), [docs/dataset.md](docs/dataset.md) |
-| Model card | [docs/model_card.md](docs/model_card.md) |
-| Evaluation report | [reports/final_evaluation/](reports/final_evaluation/README.md), [reports/final_test/](reports/final_test/README.md) |
-| Error gallery | [final evaluation gallery](reports/final_evaluation/README.md#error-gallery), [development gallery](reports/baseline/README.md) |
-| Operational benchmark | [reports/staging/](reports/staging/README.md) (AWS VM), [reports/serving/](reports/serving/README.md) (laptop) |
-| Deployment, backup, rollback | [docs/deployment.md](docs/deployment.md), [docs/retraining.md](docs/retraining.md) |
 
 <details>
 <summary><b>🔎 Every headline claim, its evidence, and how to reproduce it</b></summary>
@@ -283,19 +193,19 @@ Night frames, small animals, and blur are the main failure modes (see
 
 | Claim | Evidence | Reproduce |
 |---|---|---|
-| Retention, review reduction, precision, coverage, unsupported acceptance on unseen cameras | `reports/final_evaluation/metrics.json` (plan `configs/experiments/final_evaluation.yaml`, committed first) | `uv run wildinbox final-evaluation` |
-| 61.4% fewer items to review from grouping (23,275 photos → 8,982 events); 0% review reduction from the model as released | `reports/final_evaluation/metrics.json` (`images`, `events`, `released`) | `uv run wildinbox final-evaluation` |
-| Macro-F1 0.447 vs baseline 0.285; random-image vs unseen-camera gap | `reports/final_test/metrics.json` (protocol `configs/experiments/final_test.yaml`) | `uv run wildinbox final-test` (refuses unless it reproduces: exactly on MPS, where it was recorded; within 0.005 elsewhere. On CPU: every decision identical, 1,018 of 1,020 numbers identical, two AUROCs off by 1e-6, [record](reports/final_test/cpu-reproduction.json)) |
+| Retention, review reduction, precision, unsupported acceptance on unseen cameras; grouping 61.4% vs model 0% | `reports/final_evaluation/metrics.json` (plan `configs/experiments/final_evaluation.yaml`, committed first) | `uv run wildinbox final-evaluation` |
+| Macro-F1 0.447 vs baseline 0.285; random-image vs unseen-camera gap | `reports/final_test/metrics.json` (protocol `configs/experiments/final_test.yaml`) | `uv run wildinbox final-test` (refuses unless it reproduces; [CPU record](reports/final_test/cpu-reproduction.json)) |
 | Thresholds chosen on development cameras only; automation off | `reports/calibration/`, `configs/experiments/operating_point*.yaml` | `uv run wildinbox calibrate`, `uv run wildinbox replay` |
 | Model selection | `reports/experiments/comparison.md`, `configs/experiments/selection.yaml` | `uv run wildinbox compare reports/baseline reports/experiments/finetune-e*` |
 | 1,000 images in 111 s; metadata p95 < 360 ms (2-vCPU VM) | `reports/staging/workers-1.json` | `scripts/loadtest.py` ([how](reports/staging/README.md#reproduce)) |
 | Worker crash or restart loses and duplicates nothing | `reports/serving/crash-demo.json`, `reports/staging/workers-1.json` | `scripts/crash_demo.py`, `scripts/loadtest.py --scenarios restart` |
-| Update cycle, promotion gate, rollback restores predictions | `reports/update/`, `reports/monitoring/acceptance.json` | `wildinbox update gate`, `scripts/rollback_restores.py` |
-| Deployment to retraining, gate, release, and rollback rehearsed end to end on current code (local stack, simulated reviews) | `reports/rehearsal/` | [reports/rehearsal/README.md](reports/rehearsal/README.md) |
-| Backup and restore | `reports/staging/backup-restore.log` | `deploy/staging/restore_drill.sh` |
-| A stranger can deploy the pinned release | `reports/staging/rehearsal/` | [docs/deployment.md](docs/deployment.md) |
-| v2 camera adaptation fails its pre-registered target: 88.6% of accepted labels correct vs 95% on 12 fresh cameras | `reports/adaptation/fresh_test/metrics.json` (protocol `configs/experiments/fresh_test.yaml`, committed before download) | `uv run wildinbox adaptation fresh-test` (refuses unless it reproduces the record); `--dev-check` on development cameras |
-| Pilot review study: no demonstrated time saving (5 participants, protocol needs 8) | `reports/study/study-1/` (export, pre-registered analysis, post-hoc checks) | `wildinbox study posthoc --dir reports/study/study-1 --without author` |
+| Update cycle, promotion gate, rollback restores predictions | `reports/update/`, `reports/monitoring/acceptance.json`, `reports/rehearsal/` | `wildinbox update gate`, `scripts/rollback_restores.py` |
+| Backup and restore; a stranger can deploy the pinned release | `reports/staging/backup-restore.log`, `reports/staging/rehearsal/` | `deploy/staging/restore_drill.sh`, [docs/deployment.md](docs/deployment.md) |
+| v2 adaptation fails its target (88.6% vs 95%) | `reports/adaptation/fresh_test/metrics.json` (protocol committed before download) | `uv run wildinbox adaptation fresh-test` |
+| Pilot study: no demonstrated time saving | `reports/study/study-1/` | `wildinbox study posthoc --dir reports/study/study-1 --without author` |
+
+Error galleries: [final evaluation](reports/final_evaluation/README.md#error-gallery),
+[development](reports/baseline/README.md).
 
 </details>
 
@@ -310,30 +220,15 @@ Night frames, small animals, and blur are the main failure modes (see
 | Delivery | Docker Compose, GitHub Actions |
 | Quality | ruff, mypy, pytest |
 
-## Getting started
+## Quick start
 
-### Requirements
-
-- [uv](https://docs.astral.sh/uv/) and Git (uv installs Python 3.12 and every
-  locked dependency).
-- Docker with Compose v2 for the deployment.
-- For reproducing training: about 20 GB of disk for the dataset, and a GPU or
-  Apple silicon (training runs on CPU too, much more slowly).
-
-### Installation
+**Requires** [uv](https://docs.astral.sh/uv/), Git, and Docker with Compose v2.
+Reproducing training also needs about 20 GB of disk and ideally a GPU or Apple silicon.
 
 ```bash
-git clone https://github.com/professor3333/wildinbox.git
-cd wildinbox
-uv sync --locked          # .venv with the exact locked versions
-cp .env.example .env      # local settings; contains no secrets
-```
-
-### Quick start
-
-Deploy the stack and run the demo:
-
-```bash
+git clone https://github.com/professor3333/wildinbox.git && cd wildinbox
+uv sync --locked                       # exact locked dependencies
+cp .env.example .env                   # local settings; contains no secrets
 docker compose up -d --build --wait    # Postgres, Redis, SeaweedFS, migrations, API, worker, UI
 uv run python scripts/smoke.py         # upload -> process -> results, end to end
 uv run python scripts/demo.py          # upload the sample, list uncertain events, correct one, export
@@ -341,79 +236,50 @@ open http://localhost:8501             # review interface (API: http://localhost
 ```
 
 > [!TIP]
-> Without a registered model the deployment uses the clearly labeled **test
-> predictor** (pseudo-random scores that exercise the pipeline, flagged on every
-> response). To serve the trained model, register it once as a release.
-
-Every release since v1.5.0, including the
-[latest](https://github.com/professor3333/wildinbox/releases/latest), serves
-the same model and policy, whose weights are published with the
-[v1.5.0 release](https://github.com/professor3333/wildinbox/releases/tag/v1.5.0)
-(15 MB, SHA-256 checked; no GitHub account needed):
+> Without a registered model the stack runs a clearly labeled **test predictor**
+> (pseudo-random scores, flagged on every response). To serve the trained model
+> (15 MB, published with [v1.5.0](https://github.com/professor3333/wildinbox/releases/tag/v1.5.0)
+> and unchanged in every release since), register it once:
 
 ```bash
-deploy/fetch_release.sh                # download the trained model (v1.5.0 asset, unchanged since), verify, unpack
+deploy/fetch_release.sh                # download, verify SHA-256, unpack
 docker compose run --rm -v "$PWD/dist/release:/release:ro" worker \
   wildinbox release register --activate --model-dir /release/model --policy /release/policy.json
 curl localhost:8000/version            # deploy check: release, weights, preprocessing, calibration, policy
 ```
 
-The demo walk-through, with a real run's output: [`docs/demo.md`](docs/demo.md).
 `docker compose down` stops the stack (`-v` also deletes its data).
 
 ## Usage
 
-### Review interface (`http://localhost:8501`)
-
-| Page | What it does |
-|---|---|
-| Getting started | A one-screen guide for first-time users (no other documentation needed). |
-| Upload | Upload photos with a camera name, the grouping interval, or the card's metadata file (capture times, sequences, cameras per file); follow processing; see unusable files and why. |
-| Batches | Progress, counts, and failed files for every upload, ten at a time; **Review this batch** selects any of them, however old. The sidebar's batch selector lists the 50 newest. |
-| Review queue | Events that need a person: frames, suggestion, confidence, and why. Accept, pick another species, choose empty, type an unsupported species, or "can't tell"; every event opens to all frames, per-frame predictions, and its full review history. |
-| Timeline | Every event in time order, 100 per page, filtered by any camera in the batch. |
-| Last night's visitors | The best frame of every animal event in one night, 12 per page; counts cover the whole night. |
-| Automatically filtered | Events automation set aside as empty; label one to recover it. |
-| Audit queue | A random sample (default 5%, `WILDINBOX_AUDIT_RATE`) of automatic decisions, each with the rule that chose it. |
-| Export | The observation CSV ([format](docs/export_format.md)). |
-| Monitoring | Two views: **Operational health** (queue, failures, latency, API errors, workers, storage, batch cost) and **Model behavior** (decision shares, label and confidence mixes, latest batch per camera, time periods with the camera mix separated, audited errors, review-based accuracy). Rules: [docs/monitoring.md](docs/monitoring.md). |
-| Study | The timed review study for participants ([guide](docs/review_study.md)). |
-
-Labels look different depending on where they came from:
-
-| ✅ Confirmed by a person | ⚙️ Decided automatically | 🤖 Suggestion nobody has reviewed | ❔ Unresolved |
-|---|---|---|---|
-
+**Review interface** (`http://localhost:8501`): Getting started, Upload,
+Batches, Review queue, Timeline, Last night's visitors, Automatically filtered,
+Audit queue (random 5% of automatic decisions), Export
+([CSV format](docs/export_format.md)), Monitoring, and the review Study
+([guide](docs/review_study.md)). Labels show their origin: ✅ confirmed by a
+person · ⚙️ decided automatically · 🤖 unreviewed suggestion · ❔ unresolved.
 Reviews are appended; the model's suggestion is never overwritten.
 
-### API (`http://localhost:8000`, schema at `/docs`)
+**API** (`http://localhost:8000`, schema at `/docs`; full contract in [`docs/api.md`](docs/api.md)):
 
 | Endpoint | Purpose |
 |---|---|
-| `POST /batches` | Upload `files` plus optional `metadata`; returns `202` with the batch and job. `Idempotency-Key` makes retries safe. |
-| `GET /batches`, `GET /batches/{id}` | Every batch, newest first, a page at a time; progress, counts, every failed file, job lifecycle, pinned release |
-| `GET /batches/{id}/export` | Observations with provenance (`?format=csv` or `json`); columns in [`docs/export_format.md`](docs/export_format.md) |
-| `GET /events`, `GET /events/{id}` | Paginated, filterable events (including `animal`, by current label); frames, predictions, decision, reviews |
-| `GET /cameras` | Every camera with events, and how many |
+| `POST /batches` | Upload `files` plus optional `metadata`; `202` with batch and job. `Idempotency-Key` makes retries safe. |
+| `GET /batches`, `GET /batches/{id}` | Batches, progress, counts, failed files, pinned release |
+| `GET /batches/{id}/export` | Observations with provenance (`?format=csv` or `json`) |
+| `GET /events`, `GET /events/{id}` | Paginated, filterable events with frames, predictions, decision, reviews |
 | `POST /events/{id}/reviews` | Append a review |
-| `GET /version`, `GET /releases` | Active release; all releases and the activation history |
-| `GET /health`, `GET /ready` | Liveness; readiness (database, queue, object store, expected release loaded) |
-| `GET /whoami` | The principal behind the token |
-| `GET /monitoring`, `GET /metrics` | Monitoring as JSON and in Prometheus text format |
-
-Full contract, job lifecycle, and recovery rules: [`docs/api.md`](docs/api.md).
+| `GET /cameras`, `GET /version`, `GET /releases` | Cameras; active release; release and activation history |
+| `GET /health`, `GET /ready`, `GET /whoami` | Liveness; readiness; the principal behind the token |
+| `GET /monitoring`, `GET /metrics` | Monitoring as JSON and Prometheus text |
 
 > [!NOTE]
-> With `WILDINBOX_AUTH=tokens` (the default; staging) every endpoint except
-> `/health`, `/ready`, `/docs`, and the upload page needs
-> `Authorization: Bearer <token>`; create tokens with `wildinbox token new NAME`.
-> The local Compose stack sets `WILDINBOX_AUTH=disabled`.
-> Limits (see `.env.example`): 2,000 files and 1 GiB per batch, 20 MiB per file.
-
-### Command line (`uv run wildinbox --help`)
+> With `WILDINBOX_AUTH=tokens` (the default; staging) data endpoints need
+> `Authorization: Bearer <token>` (`wildinbox token new NAME`); the local stack
+> disables auth. Limits: 2,000 files and 1 GiB per batch, 20 MiB per file.
 
 <details>
-<summary><b>All command groups</b></summary>
+<summary><b>Command line</b> (<code>uv run wildinbox --help</code>)</summary>
 <br>
 
 | Area | Commands |
@@ -430,12 +296,11 @@ Full contract, job lifecycle, and recovery rules: [`docs/api.md`](docs/api.md).
 
 ## Reproduce the data and models
 
-Everything is rebuilt from the pinned manifests; nothing downloaded or trained
-is committed.
+Everything is rebuilt from pinned manifests; nothing downloaded or trained is committed.
 
 ```bash
-uv run wildinbox data acquire      # download (resumable, MD5-checked) -> extract -> ingest -> lock check -> report
-uv run wildinbox dataset build     # events -> labels -> species -> camera-disjoint partitions -> leakage checks
+uv run wildinbox data acquire      # download (resumable, MD5-checked) -> extract -> ingest -> lock check
+uv run wildinbox dataset build     # events -> labels -> camera-disjoint partitions -> leakage checks
 uv run wildinbox baseline train    # frozen EfficientNet-B0 embeddings + logistic regression
 uv run wildinbox evaluate --compare-to reports/baseline/metrics.json
 uv run wildinbox finetune train --config configs/experiments/finetune-e3-deep-balanced.yaml
@@ -447,52 +312,32 @@ uv run wildinbox calibrate         # temperature, pre-registered operating point
 uv run wildinbox replay            # every saved decision reproduces from saved predictions
 ```
 
-`--compare-to` fails unless the fresh run matches the committed report within
-the documented tolerances. Every evaluation command (`evaluate`, `calibrate`,
-`unfamiliar`, `final-test`, `final-evaluation`, `update gate`) takes
-`--device auto|cpu|mps|cuda` and runs all of its models there (`auto`: CUDA,
-then MPS, then CPU; an unavailable device is an error). Cached predictions are
-kept per device, so a run on a new device recomputes rather than reusing
-another device's scores. The other experiments, the selection rule, and the
-final test have their own commands and reports:
-[experiments](reports/experiments/README.md),
-[unfamiliar inputs](reports/unfamiliar/README.md),
-[final test](reports/final_test/README.md) (`wildinbox final-test` refuses to
-run unless every pinned artifact matches, and a re-run must reproduce the
-recorded numbers). MLflow runs are local:
-`uvx mlflow ui --backend-store-uri sqlite:///mlruns/mlflow.db`.
+`--compare-to` fails unless the run matches the committed report within
+documented tolerances. Evaluation commands take `--device auto|cpu|mps|cuda`.
+MLflow runs are local: `uvx mlflow ui --backend-store-uri sqlite:///mlruns/mlflow.db`.
+More: [experiments](reports/experiments/README.md),
+[unfamiliar inputs](reports/unfamiliar/README.md).
 
 ## Data source and manifest
 
 [Caltech Camera Traps](https://lila.science/datasets/caltech-camera-traps)
-(CCT20 subset, resized images, about 6.5 GB), released under the Community Data
-License Agreement (permissive variant); archive sizes and MD5s are pinned in
+(CCT20 subset, resized, about 6.5 GB), Community Data License Agreement
+(permissive variant); archive sizes and MD5s are pinned in
 [`configs/sources/cct20.yaml`](configs/sources/cct20.yaml).
 
-- [`manifests/cct20.lock.json`](manifests/cct20.lock.json) pins the inventory:
-  manifest version, archive checksums, and record counts (57,864 source
-  records: 57,855 accepted, 7 excluded duplicates, 2 quarantined).
-- Each manifest record (`data/manifests/<version>.jsonl.gz`) holds
-  `source_id`, `file_name`, `storage_path`, `sha256`, `width`, `height`,
-  `camera_id`, `sequence_id`, `frame_num`, `seq_num_frames`, `captured_at`,
-  `original_labels`, `normalized_label` with its `label_rule`, `status`
-  (accepted / quarantined / excluded), `reasons`, and `warnings`.
-- [`manifests/cct20-splits-v1.lock.json`](manifests/cct20-splits-v1.lock.json)
-  pins the camera-disjoint partitions; rules in [`docs/dataset.md`](docs/dataset.md),
-  leakage checks in [`reports/splits/cct20/README.md`](reports/splits/cct20/README.md).
-
-### What is and is not committed
+- [`manifests/cct20.lock.json`](manifests/cct20.lock.json) pins the inventory (57,864 records: 57,855 accepted, 7 duplicates excluded, 2 quarantined).
+- Each record (`data/manifests/<version>.jsonl.gz`) holds `source_id`, `file_name`, `storage_path`, `sha256`, `width`, `height`, `camera_id`, `sequence_id`, `frame_num`, `seq_num_frames`, `captured_at`, `original_labels`, `normalized_label`, `label_rule`, `status`, `reasons`, `warnings`.
+- [`manifests/cct20-splits-v1.lock.json`](manifests/cct20-splits-v1.lock.json) pins the camera-disjoint splits ([rules](docs/dataset.md), [leakage checks](reports/splits/cct20/README.md)).
 
 | Committed | Not committed (reproduced or local) |
 |---|---|
-| Code, configs, migrations, tests, pinned manifests (lock files) | Downloaded archives and extracted images (`data/`) |
-| Reports, metrics, curves, policy artifacts, saved development decisions | Trained weights (`models/`), MLflow runs (`mlruns/`) |
-| The 37-photo demo sample [`samples/cct-dev`](samples/cct-dev) with its license | Uploads, thumbnails, and database contents |
-| JSON Schemas of the shared contracts (`docs/schemas`) | `.env`, `.venv/` |
+| Code, configs, migrations, tests, pinned manifests | Downloaded archives and images (`data/`) |
+| Reports, metrics, policy artifacts, saved decisions | Trained weights (`models/`), MLflow runs (`mlruns/`) |
+| 37-photo demo sample [`samples/cct-dev`](samples/cct-dev) with its license | Uploads, thumbnails, database contents, `.env`, `.venv/` |
 
-## Testing
+## Testing and development
 
-No network is needed.
+No network is needed:
 
 ```bash
 uv run ruff check && uv run ruff format --check && uv run mypy src/
@@ -504,8 +349,8 @@ uv run pytest -m "not slow"
 <summary><b>Running the database-backed tests locally</b></summary>
 <br>
 
-The API, worker, and monitoring tests need a PostgreSQL they may wipe; without
-one they are skipped locally (CI always runs them):
+API, worker, and monitoring tests need a PostgreSQL they may wipe; without one
+they are skipped locally (CI always runs them):
 
 ```bash
 docker run -d --name wildinbox-test-pg -p 55432:5432 -e POSTGRES_USER=wildinbox \
@@ -516,157 +361,72 @@ uv run pytest -m "not slow"
 
 </details>
 
-CI ([`.github/workflows/ci.yml`](.github/workflows/ci.yml)) runs lint, format,
-types, config and schema checks, migrations up/check/down, the tests
-(including preprocessing consistency between training and serving, API
-contracts, and retry behaviour), then builds the Compose stack and runs the
-smoke test and the demo.
+[CI](.github/workflows/ci.yml) runs lint, types, config and schema checks,
+migrations, the tests (preprocessing consistency, API contracts, retry
+behaviour), then builds the Compose stack and runs the smoke test and demo.
 
-## Development
-
-The Docker Compose loop: edit code, then `docker compose up -d --build --wait`
-rebuilds and restarts the API, worker, and UI (migrations run first). Useful
-while developing:
-
-- `uv run wildinbox ui --api-url http://localhost:8000` runs the review UI
-  against any API.
-- `docker compose logs -f worker` follows processing.
+**Development loop:** edit code, then `docker compose up -d --build --wait`
+rebuilds the API, worker, and UI. `docker compose logs -f worker` follows
+processing; `uv run wildinbox ui --api-url http://localhost:8000` runs the UI
+against any API.
 
 ## Deployment and rollback
 
-**Staging** runs on one AWS VM with Docker Compose, originals and weights in
-S3, and access only over SSH: [docs/deployment.md](docs/deployment.md) covers
-creating the stack, secrets, deploying a pinned release, the deploy check,
-backups and restore, and teardown. The steps below apply to both staging and
-the local stack.
+Staging runs on one AWS VM with Docker Compose and S3 ([docs/deployment.md](docs/deployment.md));
+the same steps apply locally.
 
-1. Train and evaluate offline; `wildinbox calibrate` writes the policy
-   artifact for the weights.
-2. Copy `models/<name>/` and the policy artifact to the VM and run
-   `wildinbox release register --activate` (as in [Quick start](#quick-start)).
-   Registration refuses a policy artifact that belongs to other weights.
-3. Check the deploy: `curl localhost:8000/version` must report the expected
-   release, weights SHA-256, preprocessing, calibration, and policy versions.
-4. **Roll back:** `docker compose exec api wildinbox release activate <previous-release-id>`.
-   New batches use it immediately; running jobs keep the release they started
-   with; the activation history is in `GET /releases`. Reverting restores the
-   previous release's predictions exactly (`scripts/rollback_restores.py`).
+1. Train and evaluate offline; `wildinbox calibrate` writes the policy artifact.
+2. Register it: `wildinbox release register --activate` (as in [Quick start](#quick-start)); a policy for other weights is refused.
+3. Check the deploy: `curl localhost:8000/version` reports release, weights SHA-256, preprocessing, calibration, and policy.
+4. **Roll back:** `docker compose exec api wildinbox release activate <previous-release-id>`. New batches switch immediately; running jobs keep their release; history is in `GET /releases`.
 
-Model updates follow [docs/retraining.md](docs/retraining.md): approved
-corrections, then `wildinbox snapshot build`, a candidate trained with the
-unchanged recipe, `wildinbox update gate` (development data only, comparisons
-logged), release, monitoring, and rollback if needed. Alerts and what to do
-about each: [docs/monitoring.md](docs/monitoring.md).
-
-Scale by running more workers (`docker compose up -d --scale worker=3`): jobs
-are claimed under leases, so workers never process the same job at once.
+Model updates follow [docs/retraining.md](docs/retraining.md); alerts follow
+[docs/monitoring.md](docs/monitoring.md). Scale with
+`docker compose up -d --scale worker=3`; leases keep workers off each other's jobs.
 
 ## Measured processing cost
 
-On an Apple M1 (8 GB), Docker VM with 8 vCPUs and 3.9 GB, CPU inference, one
-worker ([serving report](reports/serving/README.md)):
+Apple M1 (8 GB), Docker VM with 8 vCPUs, CPU inference, one worker
+([serving report](reports/serving/README.md)):
 
 | Measure | Result | Target |
 |---|---|---|
 | 1,000 images scored, grouped, and decided | ✅ 78.5 s (12.7 images/s) | within 10 minutes |
-| Metadata API p95 latency, near-empty database | ✅ 3.5-139 ms | < 500 ms |
-| Metadata API p95 latency, a year of history (~115,000 events), idle: worst route | ✅ 145-208 ms ([concurrency report](reports/history/concurrency/README.md)) | < 500 ms |
-| The same while one 1,000-image batch processes: every metadata request pooled | ⚠️ 495-871 ms across the final runs: **not reliably within target** | < 500 ms |
-| The same while two batches are uploaded and processed, or a worker restarts: pooled | ❌ 538-923 ms: **target missed** | < 500 ms |
-| `GET /monitoring` with that history (not a metadata route) | 0.14-2.2 s under load (0.08-0.26 s idle); the first call after a restart, uncached, about 7 s | |
+| Metadata API p95, a year of history (~115,000 events), idle | ✅ 145-208 ms | < 500 ms |
+| The same while one batch processes | ⚠️ 495-871 ms: **not reliably within target** | < 500 ms |
+| The same during two batches or a worker restart | ❌ 538-923 ms: **target missed** | < 500 ms |
 | Worker killed mid-batch (real `SIGKILL`) | ✅ resumed; no lost inputs, duplicates, or early events | |
 
-Training the released model: 70 minutes on the M1's GPU (Metal).
-
-<details>
-<summary><b>How to read the latency rows</b></summary>
-<br>
-
-The latency rows are from a laptop that was 13-16 GB into swap, not from the
-declared server hardware, and its load moved results by up to 2x between runs
-of the same code. The earlier
-[history load test](reports/history/README.md) reported the worst route's p95
-(idle 6-402 ms, one batch 104-475 ms, two batches or a restart 154-980 ms,
-monitoring up to 13 s). Its probe shared the uploader's process, which
-overstated latency around uploads; those figures are kept there as measured.
-
-</details>
+Latency was measured on a laptop deep in swap, not the declared server
+hardware ([concurrency report](reports/history/concurrency/README.md)).
+Training the released model took 70 minutes on the M1's GPU.
 
 ## Limitations
 
-- **Metadata latency is within target idle but not while batches process**
-  on the laptop: with a year of history, pooled p95 was 495-871 ms during one
-  batch and 538-923 ms during two batches or a restart, against 145-208 ms for
-  the worst idle route. Each cause found was fixed and measured, but whether
-  the target holds on the declared server hardware has not been measured
-  ([concurrency report](reports/history/concurrency/README.md)).
-- **New cameras remain hard:** macro-F1 falls from 0.75 on training cameras to
-  0.45 on new ones and varies from 0.24 to 0.57 by camera; small animals (36%
-  recall), night frames, and blur are the main failure modes.
-- **No automation is released:** evaluation did not support a threshold, and
-  the one candidate (the empty filter) would save 6% of reviews on unseen
-  cameras against a 50% target, so review reduction comes only from grouping
-  ([final evaluation](reports/final_evaluation/README.md)).
-- **The final test has been used:** it was measured twice without any choice
-  made from it. So has the v2 fresh test, once. A genuinely fresh assessment,
-  or any automation restricted to particular cameras or hours, needs new
-  held-out cameras.
-- **Unfamiliar species are not flagged:** the distance-based score was not
-  adopted (it mostly measures "new camera", not "new species"), so serving
-  computes none. Their ground-truth labels are preserved for evaluation, and
-  "0 of 594 accepted as known" holds because nothing is accepted
-  automatically: the protection today is that a person reviews every event
-  ([requirements](docs/requirements.md#status-in-the-v1-release)).
-- **Evaluated species were in pretraining:** every unsupported species that
-  could be evaluated (except deer) appears in ImageNet-1k.
-- **Reviews in the update cycle were simulated** from ground truth.
-- **Reviewer benefit is not demonstrated.** A pilot of the pre-registered
-  timed review study ([`reports/study/study-1/`](reports/study/study-1/FINDINGS.md),
-  [`docs/review_study.md`](docs/review_study.md)) ran with 5 participants (the
-  author and four volunteers, none trained field reviewers); the protocol needs
-  8, so it is descriptive only. With suggestions, median time per event changed
-  by -1.4 s (95% interval -3.8 to +0.5) and accuracy by -4.2 points (-17.5 to
-  +9.1); without the author, -0.6 s (-1.6 to +0.5). Both intervals include zero.
-  Three participants accepted nearly every suggestion, which were right on 28
-  of 80 events, so the study's projected 57% time saving reflects accepting
-  unchecked suggestions and is not a demonstrated benefit.
-- **Measured on two machines:** a laptop and a 2-vCPU AWS VM with one and two
-  workers. One batch is always processed by one worker. `GET /events` (100 per
-  page) is the slowest metadata call (p95 360 ms).
-- **Staging access is single-workspace** (every token holder sees every batch)
-  and reached over SSH; a public endpoint needs a TLS proxy.
-- Capture events are not individual animals; nothing here estimates population
-  counts.
+- **New cameras remain hard:** macro-F1 falls from 0.75 to 0.45 on new cameras (0.24-0.57 by camera); small animals (36% recall), night frames, and blur fail most.
+- **No automation is released;** review reduction comes only from grouping.
+- **Both test sets are spent:** the final test (measured twice, no choices made from it) and the v2 fresh test. New claims need new held-out cameras.
+- **Unfamiliar species are not flagged:** the distance score mostly measured "new camera", so it was not adopted. Every event being reviewed is the protection today ([requirements](docs/requirements.md#status-in-the-v1-release)).
+- **Evaluated unsupported species** (except deer) appear in ImageNet-1k pretraining.
+- **Reviewer benefit is not demonstrated:** the pilot had 5 of 8 required participants; both time and accuracy intervals include zero, and its projected 57% saving reflects accepting unchecked suggestions ([findings](reports/study/study-1/FINDINGS.md)).
+- **Update-cycle reviews were simulated** from ground truth.
+- **Metadata latency under load** misses target on the laptop; server hardware is unmeasured.
+- **Staging is single-workspace** (every token sees every batch) and SSH-only; a public endpoint needs TLS.
+- Capture events are not individual animals; nothing estimates population counts.
 
 ## Project structure
 
 ```
-src/wildinbox/
-  api/          FastAPI app, upload validation, export
-  workers/      job lifecycle: leases, retries, recovery, processing, worker liveness
-  inference/    releases, serving scorer, calibration, unfamiliar-input score
-  policy/       versioned event policies and decision replay
-  ui/           Streamlit review interface (talks only to the API)
-  monitoring/   operational health, model behavior, audits, alert rules, Prometheus text
-  training/     baseline, fine-tuning, snapshots, promotion gate
-  evaluation/   evaluation, comparison, calibration, final test, reports
-  datasets/     events, labels, splits, leakage checks
-  ingestion/    download, validation, inventory
-  storage/      PostgreSQL models, object storage
-  preprocessing.py, quality.py, class_map.py, schemas.py, config.py, settings.py, cli.py
+src/wildinbox/  api, workers, inference, policy, ui, monitoring, training,
+                evaluation, datasets, ingestion, storage, shared preprocessing, cli
 configs/        run config, dataset sources, splits, taxonomy, experiments, monitoring
 manifests/      pinned dataset and split locks
 migrations/     Alembic migrations
-reports/        every committed evaluation, experiment, final test and final evaluation,
-                serving, staging, and monitoring report
+reports/        every evaluation, experiment, final test, serving, staging, monitoring report
 samples/        the demo sample batch
-scripts/        smoke, demo, crash demo, sample batches, simulated deployment, release/rollback,
-                monitoring acceptance demo, rollback-restores check, staging load test,
-                demo video recording
-deploy/         AWS CloudFormation template, staging compose, deploy/backup/restore scripts
-docs/           architecture, requirements, dataset rules, API, deployment, export format,
-                monitoring and alert rules, retraining workflow, review study, demo (and video),
-                model card, JSON Schemas
+scripts/        smoke, demo, crash demo, load test, release/rollback checks, demo recording
+deploy/         CloudFormation template, staging compose, deploy/backup/restore scripts
+docs/           architecture, API, dataset, deployment, monitoring, retraining, model card, schemas
 tests/
 ```
 

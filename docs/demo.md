@@ -26,6 +26,14 @@ uv run --with playwright playwright install chromium
 uv run --with playwright python scripts/record_demo.py --out docs/media/demo.webm
 ```
 
+The README's [`media/demo.gif`](media/demo.gif) is the same video at 1.5× speed,
+8 fps, 880 px wide:
+
+```bash
+FFMPEG=$(uv run --no-project --with imageio-ffmpeg python -c "import imageio_ffmpeg; print(imageio_ffmpeg.get_ffmpeg_exe())")
+"$FFMPEG" -i docs/media/demo.webm -vf "setpts=PTS/1.5,fps=8,scale=880:-1:flags=lanczos,split[a][b];[a]palettegen=max_colors=96:stats_mode=diff[p];[b][p]paletteuse=dither=bayer:bayer_scale=5:diff_mode=rectangle" docs/media/demo.gif
+```
+
 ## 1. Start the deployment
 
 ```bash
