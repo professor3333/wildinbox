@@ -2,6 +2,8 @@
 
 Stage 12. The release was deployed with [docs/deployment.md](../../docs/deployment.md) to one
 AWS VM and measured there. Every number below comes from a JSON file in this directory.
+The VM, its bucket, and its key pair were deleted on 2026-11-23 (the project was closed); the
+measurements and logs here remain.
 
 ## Summary against the targets
 
@@ -153,7 +155,7 @@ and the first to optimise (the `max` exceeds 500 ms).
 - **The next bottleneck is CPU.** At 80% busy, a third worker on this machine would have
   little left to use. More throughput needs more cores or a larger instance.
 
-Staging now runs two workers (`WILDINBOX_WORKERS=2`).
+Staging then ran two workers (`WILDINBOX_WORKERS=2`) until it was torn down.
 
 ## Memory
 
@@ -217,7 +219,8 @@ unchanged). Log: [`upgrade-v1.5.3.log`](upgrade-v1.5.3.log).
 Not yet done after this upgrade: the token-authenticated part of the
 [deploy check](../../docs/deployment.md#deploy-check). That means `/version` with a token,
 and an upload → process → review smoke test (`scripts/smoke.py`). The VM holds only token
-hashes, so these need the owner's token.
+hashes, so these need the owner's token. They were never run: the VM was torn down on
+2026-11-23 without being started again.
 
 ## Cost assumptions
 
