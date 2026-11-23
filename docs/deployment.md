@@ -5,6 +5,10 @@ check it, back it up, restore it, and tear it down. Everything below was run
 as written for the Stage 12 staging deployment; the measurements are in
 [`reports/staging/`](../reports/staging/README.md).
 
+> [!NOTE]
+> That deployment was torn down on 2026-11-23 with the steps in
+> [Tear down](#tear-down). Following this guide rebuilds it.
+
 ```
  your machine                          AWS (one region)
  ─────────────                         ───────────────────────────────────────────────

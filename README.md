@@ -141,7 +141,7 @@ flowchart TD
 <tr>
 <td valign="top">📈 <b>Monitor honestly</b><br><sub>Operational health and model behavior are tracked separately; signals are never presented as measured accuracy (<a href="docs/monitoring.md">rules</a>).</sub></td>
 <td valign="top">🎓 <b>Retrain under control</b><br><sub>From approved reviews only, with protected evaluation data excluded (<a href="docs/retraining.md">workflow</a>).</sub></td>
-<td valign="top">☁️ <b>Deploy to one VM</b><br><sub>Staging on one AWS VM with tokens, readiness checks, and tested S3 backups (<a href="docs/deployment.md">guide</a>).</sub></td>
+<td valign="top">☁️ <b>Deploy to one VM</b><br><sub>A CloudFormation template deploys to one AWS VM with tokens, readiness checks, and tested S3 backups (<a href="docs/deployment.md">guide</a>).</sub></td>
 </tr>
 </table>
 
@@ -394,7 +394,9 @@ against any API.
 
 ## Deployment and rollback
 
-Staging runs on one AWS VM with Docker Compose and S3 ([docs/deployment.md](docs/deployment.md));
+Staging ran on one AWS VM with Docker Compose and S3, where it was measured
+([report](reports/staging/README.md)), and was torn down on 2026-11-23.
+[docs/deployment.md](docs/deployment.md) rebuilds it from the CloudFormation template;
 the same steps apply locally.
 
 1. Train and evaluate offline; `wildinbox calibrate` writes the policy artifact.
@@ -433,7 +435,7 @@ Training the released model took 70 minutes on the M1's GPU.
 - **Reviewer benefit is not demonstrated:** the pilot had 5 of 8 required participants; both time and accuracy intervals include zero, and its projected 57% saving reflects accepting unchecked suggestions ([findings](reports/study/study-1/FINDINGS.md)).
 - **Update-cycle reviews were simulated** from ground truth.
 - **Metadata latency under load** misses target on the laptop; server hardware is unmeasured.
-- **Staging is single-workspace** (every token sees every batch) and SSH-only; a public endpoint needs TLS.
+- **The staging design is single-workspace** (every token sees every batch) and SSH-only; a public endpoint needs TLS.
 - Capture events are not individual animals; nothing estimates population counts.
 
 ## Project structure
