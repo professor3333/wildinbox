@@ -1,0 +1,79 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1100" height="272" viewBox="0 0 1100 272" role="img" aria-labelledby="t d">
+<title id="t">How WildInbox works</title>
+<desc id="d">Six steps. Automatic: upload a memory card of photos; score each frame with a calibrated EfficientNet-B0; group frames of one trigger into a capture event; decide likely empty, species identified, or needs review, with reasons. A person: review, accepting or correcting the suggestion, which is kept; export an observation log with provenance.</desc>
+<g font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" text-anchor="middle">
+<rect x="0.75" y="14.75" width="163.5" height="194.5" rx="14" fill="#f5faf7" stroke="#d4e6dc" stroke-width="1.5"/>
+<text x="18" y="40" font-size="12" font-weight="600" fill="#6a7f75" text-anchor="start" letter-spacing="1">01</text>
+<circle cx="82.5" cy="76" r="29" fill="#e2f2e9"/>
+<g transform="translate(82.5 76)" fill="none" stroke="#2e7d5b" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M-9 -13 H4 L10 -7 V13 H-9 Z" fill="none"/>
+      <path d="M-5 -13 V-9 M-1 -13 V-9 M3 -13 V-9" />
+      <path d="M0.5 9 V-2 M-3.5 2 L0.5 -2 L4.5 2" /></g>
+<text x="82.5" y="138" font-size="19" font-weight="700" fill="#10291f">Upload</text>
+<text x="82.5" y="164" font-size="13.5" font-weight="400" fill="#3b5248">A memory card of</text>
+<text x="82.5" y="183" font-size="13.5" font-weight="400" fill="#3b5248">JPEG/PNG photos</text>
+<path d="M172.5 105.0 L179.5 112.0 L172.5 119.0" fill="none" stroke="#9db5a9" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
+<rect x="187.75" y="14.75" width="163.5" height="194.5" rx="14" fill="#f5faf7" stroke="#d4e6dc" stroke-width="1.5"/>
+<text x="205" y="40" font-size="12" font-weight="600" fill="#6a7f75" text-anchor="start" letter-spacing="1">02</text>
+<circle cx="269.5" cy="76" r="29" fill="#e2f2e9"/>
+<g transform="translate(269.5 76)" fill="none" stroke="#2e7d5b" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M-14 12 H14" />
+      <rect x="-11" y="3" width="6" height="9" rx="1.5" fill="none"/>
+      <rect x="-3" y="-11" width="6" height="23" rx="1.5" fill="#2e7d5b"/>
+      <rect x="5" y="-2" width="6" height="14" rx="1.5" fill="none"/></g>
+<text x="269.5" y="138" font-size="19" font-weight="700" fill="#10291f">Score</text>
+<text x="269.5" y="164" font-size="13.5" font-weight="400" fill="#3b5248">EfficientNet-B0,</text>
+<text x="269.5" y="183" font-size="13.5" font-weight="400" fill="#3b5248">calibrated per frame</text>
+<path d="M359.5 105.0 L366.5 112.0 L359.5 119.0" fill="none" stroke="#9db5a9" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
+<rect x="374.75" y="14.75" width="163.5" height="194.5" rx="14" fill="#f5faf7" stroke="#d4e6dc" stroke-width="1.5"/>
+<text x="392" y="40" font-size="12" font-weight="600" fill="#6a7f75" text-anchor="start" letter-spacing="1">03</text>
+<circle cx="456.5" cy="76" r="29" fill="#e2f2e9"/>
+<g transform="translate(456.5 76)" fill="none" stroke="#2e7d5b" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+      <rect x="-5" y="-14" width="19" height="14" rx="2.5" fill="#e2f2e9"/>
+      <rect x="-9" y="-9" width="19" height="14" rx="2.5" fill="#e2f2e9"/>
+      <rect x="-13" y="-4" width="19" height="14" rx="2.5" fill="#e2f2e9"/>
+      <path d="M-10 7 L-6 2 L-3 5 L0 1 L3 7" /></g>
+<text x="456.5" y="138" font-size="19" font-weight="700" fill="#10291f">Group</text>
+<text x="456.5" y="164" font-size="13.5" font-weight="400" fill="#3b5248">Frames of one trigger</text>
+<text x="456.5" y="183" font-size="13.5" font-weight="400" fill="#3b5248">become one event</text>
+<path d="M546.5 105.0 L553.5 112.0 L546.5 119.0" fill="none" stroke="#9db5a9" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
+<rect x="561.75" y="14.75" width="163.5" height="194.5" rx="14" fill="#f5faf7" stroke="#d4e6dc" stroke-width="1.5"/>
+<text x="579" y="40" font-size="12" font-weight="600" fill="#6a7f75" text-anchor="start" letter-spacing="1">04</text>
+<circle cx="643.5" cy="76" r="29" fill="#e2f2e9"/>
+<g transform="translate(643.5 76)" fill="none" stroke="#2e7d5b" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M-13 0 H-4" />
+      <path d="M-4 0 C2 0 2 -10 9 -10 M-4 0 H9 M-4 0 C2 0 2 10 9 10" fill="none"/>
+      <circle cx="11" cy="-10" r="2.6" fill="#2e7d5b" stroke="none"/>
+      <circle cx="11" cy="0" r="2.6" fill="#2e7d5b" stroke="none"/>
+      <circle cx="11" cy="10" r="2.6" fill="#2e7d5b" stroke="none"/></g>
+<text x="643.5" y="138" font-size="19" font-weight="700" fill="#10291f">Decide</text>
+<text x="643.5" y="164" font-size="13.5" font-weight="400" fill="#3b5248">Likely empty, species,</text>
+<text x="643.5" y="183" font-size="13.5" font-weight="400" fill="#3b5248">or needs review</text>
+<path d="M733.5 105.0 L740.5 112.0 L733.5 119.0" fill="none" stroke="#9db5a9" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
+<rect x="748.75" y="14.75" width="163.5" height="194.5" rx="14" fill="#f5faf7" stroke="#d4e6dc" stroke-width="1.5"/>
+<text x="766" y="40" font-size="12" font-weight="600" fill="#6a7f75" text-anchor="start" letter-spacing="1">05</text>
+<circle cx="830.5" cy="76" r="29" fill="#fdf0dc"/>
+<g transform="translate(830.5 76)" fill="none" stroke="#b4690e" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+      <circle cx="-3" cy="-5" r="5.5" fill="none"/>
+      <path d="M-13.5 13 C-13.5 5 -8.5 2 -3 2 C2.5 2 7.5 5 7.5 13" fill="none"/>
+      <path d="M6 -8 L9.5 -4.5 L15 -11" /></g>
+<text x="830.5" y="138" font-size="19" font-weight="700" fill="#10291f">Review</text>
+<text x="830.5" y="164" font-size="13.5" font-weight="400" fill="#3b5248">Accept or correct;</text>
+<text x="830.5" y="183" font-size="13.5" font-weight="400" fill="#3b5248">the suggestion is kept</text>
+<path d="M920.5 105.0 L927.5 112.0 L920.5 119.0" fill="none" stroke="#9db5a9" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
+<rect x="935.75" y="14.75" width="163.5" height="194.5" rx="14" fill="#f5faf7" stroke="#d4e6dc" stroke-width="1.5"/>
+<text x="953" y="40" font-size="12" font-weight="600" fill="#6a7f75" text-anchor="start" letter-spacing="1">06</text>
+<circle cx="1017.5" cy="76" r="29" fill="#fdf0dc"/>
+<g transform="translate(1017.5 76)" fill="none" stroke="#b4690e" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M-10 -13 H3 L9 -7 V13 H-10 Z" fill="none"/>
+      <path d="M3 -13 V-7 H9" fill="none"/>
+      <path d="M-6 -2 H5 M-6 3 H5 M-6 8 H1" /></g>
+<text x="1017.5" y="138" font-size="19" font-weight="700" fill="#10291f">Export</text>
+<text x="1017.5" y="164" font-size="13.5" font-weight="400" fill="#3b5248">Observation log</text>
+<text x="1017.5" y="183" font-size="13.5" font-weight="400" fill="#3b5248">with provenance</text>
+<path d="M10 223 V232 H716 V223" fill="none" stroke="#2e7d5b" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" opacity="0.8"/>
+<text x="363" y="260" font-size="14" font-weight="600" fill="#2e7d5b">Automatic: background workers, idempotent and retry-safe</text>
+<path d="M758 223 V232 H1090 V223" fill="none" stroke="#b4690e" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" opacity="0.8"/>
+<text x="924" y="260" font-size="14" font-weight="600" fill="#b4690e">A person, in the browser</text>
+</g>
+</svg>

@@ -21,6 +21,7 @@ from sqlalchemy.orm import Session, aliased, selectinload, sessionmaker
 from starlette.datastructures import UploadFile
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
+from wildinbox import __version__
 from wildinbox.api import views
 from wildinbox.api.auth import PUBLIC_PATHS, principal
 from wildinbox.api.originals import writer as originals_writer
@@ -436,7 +437,7 @@ def create_app(
         finally:
             close_originals()
 
-    app = FastAPI(title="WildInbox", version="0.1.0", lifespan=lifespan)
+    app = FastAPI(title="WildInbox", version=__version__, lifespan=lifespan)
     latency: dict[str, deque[float]] = defaultdict(lambda: deque(maxlen=2000))
     # Response status classes per route since the API started (2xx, 4xx, 5xx).
     statuses: dict[str, Counter[str]] = defaultdict(Counter)

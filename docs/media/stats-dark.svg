@@ -1,0 +1,31 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1100" height="146" viewBox="0 0 1100 146" role="img" aria-labelledby="t d">
+<title id="t">WildInbox at a glance</title>
+<desc id="d">61.4% fewer items to review (from grouping photos alone); 0.447 macro-F1, unseen cameras (frozen baseline: 0.285); 100% animal events kept (as released: automation off); 78.5 s per 1,000 images (one worker, laptop CPU); 0 / 0 lost / duplicated inputs (after a worker SIGKILL)</desc>
+<g font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" text-anchor="middle">
+<rect x="0.75" y="4.75" width="202.5" height="136.5" rx="14" fill="#0f231d" stroke="#21473a" stroke-width="1.5"/>
+<rect x="84" y="18" width="36" height="4" rx="2" fill="#74d6a4"/>
+<text x="102" y="70" font-size="40" font-weight="750" fill="#74d6a4" letter-spacing="-1" style="font-variant-numeric: tabular-nums">61.4%</text>
+<text x="102" y="100" font-size="15" font-weight="600" fill="#ecf7f0">fewer items to review</text>
+<text x="102" y="122" font-size="13" font-weight="400" fill="#7d998b">from grouping photos alone</text>
+<rect x="224.75" y="4.75" width="202.5" height="136.5" rx="14" fill="#0f231d" stroke="#21473a" stroke-width="1.5"/>
+<rect x="308" y="18" width="36" height="4" rx="2" fill="#74d6a4"/>
+<text x="326" y="70" font-size="40" font-weight="750" fill="#74d6a4" letter-spacing="-1" style="font-variant-numeric: tabular-nums">0.447</text>
+<text x="326" y="100" font-size="15" font-weight="600" fill="#ecf7f0">macro-F1, unseen cameras</text>
+<text x="326" y="122" font-size="13" font-weight="400" fill="#7d998b">frozen baseline: 0.285</text>
+<rect x="448.75" y="4.75" width="202.5" height="136.5" rx="14" fill="#0f231d" stroke="#21473a" stroke-width="1.5"/>
+<rect x="532" y="18" width="36" height="4" rx="2" fill="#74d6a4"/>
+<text x="550" y="70" font-size="40" font-weight="750" fill="#74d6a4" letter-spacing="-1" style="font-variant-numeric: tabular-nums">100%</text>
+<text x="550" y="100" font-size="15" font-weight="600" fill="#ecf7f0">animal events kept</text>
+<text x="550" y="122" font-size="13" font-weight="400" fill="#7d998b">as released: automation off</text>
+<rect x="672.75" y="4.75" width="202.5" height="136.5" rx="14" fill="#0f231d" stroke="#21473a" stroke-width="1.5"/>
+<rect x="756" y="18" width="36" height="4" rx="2" fill="#74d6a4"/>
+<text x="774" y="70" font-size="40" font-weight="750" fill="#74d6a4" letter-spacing="-1" style="font-variant-numeric: tabular-nums">78.5 s</text>
+<text x="774" y="100" font-size="15" font-weight="600" fill="#ecf7f0">per 1,000 images</text>
+<text x="774" y="122" font-size="13" font-weight="400" fill="#7d998b">one worker, laptop CPU</text>
+<rect x="896.75" y="4.75" width="202.5" height="136.5" rx="14" fill="#0f231d" stroke="#21473a" stroke-width="1.5"/>
+<rect x="980" y="18" width="36" height="4" rx="2" fill="#74d6a4"/>
+<text x="998" y="70" font-size="40" font-weight="750" fill="#74d6a4" letter-spacing="-1" style="font-variant-numeric: tabular-nums">0 / 0</text>
+<text x="998" y="100" font-size="15" font-weight="600" fill="#ecf7f0">lost / duplicated inputs</text>
+<text x="998" y="122" font-size="13" font-weight="400" fill="#7d998b">after a worker SIGKILL</text>
+</g>
+</svg>

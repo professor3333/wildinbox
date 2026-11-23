@@ -38,3 +38,21 @@ def test_empty_class_literal_only_in_class_map() -> None:
 def test_normalization_constants_not_hard_coded() -> None:
     offenders = [p for p, text in _sources_except() if "0.485" in text or "0.229" in text]
     assert not offenders, f"normalization constants belong in configs/, found in: {offenders}"
+
+
+def test_package_version_matches_pyproject() -> None:
+    """`GET /version` reports `wildinbox.__version__`; it must match the
+    released package version."""
+    import tomllib
+
+    import wildinbox
+
+    pyproject = tomllib.loads((SRC.parents[1] / "pyproject.toml").read_text())
+    assert wildinbox.__version__ == pyproject["project"]["version"]
+
+
+def test_version_not_hard_coded() -> None:
+    offenders = [
+        p for p, text in _sources_except("__init__.py") if re.search(r"\bversion=[\"']\d", text)
+    ]
+    assert not offenders, f"use wildinbox.__version__ instead of a literal in: {offenders}"
