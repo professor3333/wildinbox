@@ -1,8 +1,10 @@
 [project]
 name = "wildinbox"
-version = "0.1.0"
+version = "2.0.2"
 description = "Find the wildlife. Skip the empty frames. Trail-camera review with calibrated abstention."
 readme = "README.md"
+license = "MIT"
+license-files = ["LICENSE"]
 requires-python = ">=3.12,<3.13"
 dependencies = [
     "alembic>=1.14",
@@ -26,6 +28,11 @@ dependencies = [
     "torchvision>=0.20",
     "uvicorn[standard]>=0.32",
 ]
+
+[project.urls]
+Repository = "https://github.com/professor3333/wildinbox"
+Documentation = "https://github.com/professor3333/wildinbox#readme"
+"Model card" = "https://github.com/professor3333/wildinbox/blob/main/docs/model_card.md"
 
 [project.scripts]
 wildinbox = "wildinbox.cli:main"

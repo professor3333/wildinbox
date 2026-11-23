@@ -125,6 +125,12 @@ def _small_batch() -> list[tuple[str, bytes]]:
     return [(n, d if d is not None else buf.getvalue()) for n, d in SMALL_BATCH]
 
 
+def test_version_reports_the_package_version(client: TestClient) -> None:
+    import wildinbox
+
+    assert client.get("/version").json()["api_version"] == wildinbox.__version__
+
+
 def test_small_batch_travels_from_upload_to_results(client: TestClient) -> None:
     items = _small_batch()
     res = client.post(
