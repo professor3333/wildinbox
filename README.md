@@ -2,22 +2,18 @@
 
 <img src="docs/media/banner.svg" alt="WildInbox: find the wildlife, skip the empty frames" width="100%">
 
-### Turn a trail-camera memory card into a diary of animal sightings, and send a person only what needs one.
+### Turn a trail-camera memory card into a diary of animal sightings,<br>and send a person only what needs one.
 
 [![ci](https://github.com/professor3333/wildinbox/actions/workflows/ci.yml/badge.svg)](https://github.com/professor3333/wildinbox/actions/workflows/ci.yml)
 [![release](https://img.shields.io/github/v/release/professor3333/wildinbox?color=2e7d5b&label=release)](https://github.com/professor3333/wildinbox/releases)
-![python](https://img.shields.io/badge/python-3.12-3776AB?logo=python&logoColor=white)
+[![python 3.12](https://img.shields.io/badge/python-3.12-3776AB?logo=python&logoColor=white)](.python-version)
+[![license: MIT](https://img.shields.io/badge/license-MIT-2e7d5b)](LICENSE)
 [![data: CDLA-Permissive-1.0](https://img.shields.io/badge/data-CDLA--Permissive--1.0-6a737d)](https://cdla.dev/permissive-1-0/)
-
-![PyTorch](https://img.shields.io/badge/PyTorch-EE4C2C?logo=pytorch&logoColor=white)
-![FastAPI](https://img.shields.io/badge/FastAPI-009688?logo=fastapi&logoColor=white)
-![Streamlit](https://img.shields.io/badge/Streamlit-FF4B4B?logo=streamlit&logoColor=white)
-![PostgreSQL](https://img.shields.io/badge/PostgreSQL_16-4169E1?logo=postgresql&logoColor=white)
-![Redis](https://img.shields.io/badge/Redis_%2B_RQ-DC382D?logo=redis&logoColor=white)
-![MLflow](https://img.shields.io/badge/MLflow-0194E2?logo=mlflow&logoColor=white)
-![Docker](https://img.shields.io/badge/Docker_Compose-2496ED?logo=docker&logoColor=white)
+[![ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)
+[![mypy: strict](https://img.shields.io/badge/mypy-strict-1f5082)](pyproject.toml)
 
 [**Quick start**](#quick-start) ·
+[**How it works**](#how-it-works) ·
 [**Results**](#results-honestly) ·
 [**Demo video**](docs/media/demo.webm) ·
 [**Model card**](docs/model_card.md) ·
@@ -26,7 +22,7 @@
 
 </div>
 
----
+<br>
 
 WildInbox is a review system for trail-camera photos. Upload a memory card and it
 groups the photos into **capture events**, suggests a species for each event,
@@ -45,7 +41,7 @@ the provenance of every label.
 </tr>
 <tr>
 <td align="center"><b>Upload</b><br><sub>Frames of one trigger become one capture event</sub></td>
-<td align="center"><b>Review queue</b><br><sub>Suggestion, confidence, and why it needs a person</sub></td>
+<td align="center"><b>Review queue</b><br><sub>Suggestion, confidence, and reasons for review</sub></td>
 <td align="center"><b>Last night's visitors</b><br><sub>The best frame of every animal event in a night</sub></td>
 </tr>
 </table>
@@ -54,15 +50,10 @@ the provenance of every label.
 
 ## At a glance
 
-<table>
-<tr>
-<td align="center" width="20%"><h3>61.4%</h3>fewer items to review, from grouping alone<br><sub>23,275 photos → 8,982 events</sub></td>
-<td align="center" width="20%"><h3>0.447</h3>macro-F1 on 9 unseen cameras<br><sub>vs 0.285 frozen baseline</sub></td>
-<td align="center" width="20%"><h3>100%</h3>animal events retained, as released<br><sub>automation off</sub></td>
-<td align="center" width="20%"><h3>78.5 s</h3>for 1,000 images, one worker<br><sub>laptop CPU; 111 s on a 2-vCPU VM</sub></td>
-<td align="center" width="20%"><h3>0 / 0</h3>lost / duplicated inputs<br><sub>after a worker <code>SIGKILL</code> mid-batch</sub></td>
-</tr>
-</table>
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/media/stats-dark.svg">
+  <img src="docs/media/stats-light.svg" width="100%" alt="61.4% fewer items to review, from grouping photos alone (23,275 photos into 8,982 events). Macro-F1 0.447 on 9 unseen cameras, against 0.285 for the frozen baseline. 100% of animal events kept as released, with automation off. 78.5 seconds per 1,000 images with one worker on a laptop CPU. 0 lost and 0 duplicated inputs after a worker SIGKILL.">
+</picture>
 
 > [!IMPORTANT]
 > **The model does not yet remove review work, and the release says so.** The
@@ -78,6 +69,24 @@ labeled empty**. WildInbox asks one measurable question:
 
 > **How much manual review can be removed without losing animals when a camera
 > is somewhere new?**
+
+## How it works
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/media/pipeline-dark.svg">
+  <img src="docs/media/pipeline-light.svg" width="100%" alt="Six steps. Automatic, in background workers that are idempotent and retry-safe: 1 upload a memory card of JPEG or PNG photos; 2 score every frame with a calibrated EfficientNet-B0; 3 group frames of one trigger into one capture event; 4 decide likely empty, species identified, or needs review. A person, in the browser: 5 review, accepting or correcting the suggestion, which is kept; 6 export an observation log with provenance.">
+</picture>
+
+Workers score frames in small batches and save every prediction before grouping
+them into events, by sequence id or by camera and a per-upload time gap. A
+versioned policy then gives each event one disposition with machine-readable
+reasons (in the current release, every event is **needs review**):
+
+| Disposition | When | What you do |
+|---|---|---|
+| 🍃 **Likely empty** | Every usable frame strongly supports empty | Skip normal review; still recoverable and audited |
+| 🦝 **Species identified** | One supported species, confident enough under the policy | Browse or accept the label |
+| 🔍 **Needs review** | Uncertain, conflicting, unsupported, or automation off | Inspect frames and correct the label |
 
 ## Architecture
 
@@ -114,28 +123,27 @@ flowchart TD
     class SN,T,G ml;
 ```
 
-<sub>🟩 ingest · 🟦 storage and queue · 🟧 serving and monitoring · 🟥 human review · 🟪 offline training and release gate</sub>
-
-Each event gets one disposition from a versioned policy with machine-readable
-reasons (in the current release, every event is **needs review**):
-
-| Disposition | When | What you do |
-|---|---|---|
-| 🍃 **Likely empty** | Every usable frame strongly supports empty | Skip normal review; still recoverable and audited |
-| 🦝 **Species identified** | One supported species, confident enough under the policy | Browse or accept the label |
-| 🔍 **Needs review** | Uncertain, conflicting, unsupported, or automation off | Inspect frames and correct the label |
+<sub>🟩 ingest · 🟦 storage and queue · 🟧 serving and monitoring · 🟥 human review · 🟪 offline training and release gate · details in <a href="docs/architecture.md"><code>docs/architecture.md</code></a></sub>
 
 ## Features
 
-- 📥 **Upload and validate** JPEG/PNG batches with optional camera, time, and sequence metadata; content checks, hash-based duplicate detection, and an explicit error for every unusable file.
-- 🧩 **Group** photos into capture events by sequence id, or by camera and a per-upload time gap (default 5 s).
-- 🧠 **Suggest** a species per event with a calibrated, fine-tuned EfficientNet-B0.
-- 👀 **Review** in the browser: accept, correct, name an unsupported species, or mark "can't tell"; export a CSV with provenance.
-- 🔁 **Process reliably**: leased workers, bounded retries, stale-job recovery, idempotent writes.
-- 🚀 **Release safely**: immutable releases pinned per job, a pre-registered promotion gate, one-command rollback.
-- 📈 **Monitor** operational health and model behavior separately; signals are never presented as measured accuracy ([rules](docs/monitoring.md)).
-- 🎓 **Retrain under control** from approved reviews only, with protected evaluation data excluded ([workflow](docs/retraining.md)).
-- ☁️ **Deploy to staging** on one AWS VM with tokens, readiness checks, and tested S3 backups ([guide](docs/deployment.md)).
+<table>
+<tr>
+<td width="33%" valign="top">📥 <b>Upload and validate</b><br><sub>JPEG/PNG batches with optional camera, time, and sequence metadata; content checks, hash-based duplicate detection, and an explicit error for every unusable file.</sub></td>
+<td width="33%" valign="top">🧩 <b>Group into events</b><br><sub>Photos become capture events by sequence id, or by camera and a per-upload time gap (default 5 s).</sub></td>
+<td width="33%" valign="top">🧠 <b>Suggest a species</b><br><sub>A fine-tuned, temperature-calibrated EfficientNet-B0 suggests one species per event.</sub></td>
+</tr>
+<tr>
+<td valign="top">👀 <b>Review in the browser</b><br><sub>Accept, correct, name an unsupported species, or mark "can't tell"; export a CSV with provenance.</sub></td>
+<td valign="top">🔁 <b>Process reliably</b><br><sub>Leased workers, bounded retries, stale-job recovery, and idempotent writes.</sub></td>
+<td valign="top">🚀 <b>Release safely</b><br><sub>Immutable releases pinned per job, a pre-registered promotion gate, and one-command rollback.</sub></td>
+</tr>
+<tr>
+<td valign="top">📈 <b>Monitor honestly</b><br><sub>Operational health and model behavior are tracked separately; signals are never presented as measured accuracy (<a href="docs/monitoring.md">rules</a>).</sub></td>
+<td valign="top">🎓 <b>Retrain under control</b><br><sub>From approved reviews only, with protected evaluation data excluded (<a href="docs/retraining.md">workflow</a>).</sub></td>
+<td valign="top">☁️ <b>Deploy to one VM</b><br><sub>Staging on one AWS VM with tokens, readiness checks, and tested S3 backups (<a href="docs/deployment.md">guide</a>).</sub></td>
+</tr>
+</table>
 
 ## Results, honestly
 
@@ -158,17 +166,31 @@ cluster-bootstrapped over camera-nights.
 | Macro-F1 on unseen cameras (95% CI) | **0.447** [0.435, 0.458] | 0.285 |
 | Same model on held-out sequences of *training* cameras | 0.747 | 0.724 |
 
+<table>
+<tr>
+<td width="50%"><a href="reports/final_test/README.md#error-versus-coverage"><img src="reports/final_test/curve-empty-filter.svg" alt="Final test: animal events filtered as empty against the share of events filtered automatically, with the 2% target line"></a></td>
+<td width="50%"><a href="reports/final_test/README.md#error-versus-coverage"><img src="reports/final_test/curve-species-accept.svg" alt="Final test: wrong accepted labels against the share of events accepted automatically, with the 5% target line"></a></td>
+</tr>
+<tr>
+<td valign="top"><sub><b>Empty filter.</b> Animal events lost as more events are filtered; the target allows 2%. The rule's threshold (0.65) met it overall, but not for unsupported species, by day, or on one camera, so it is not released.</sub></td>
+<td valign="top"><sub><b>Species acceptance.</b> Wrong labels as more events are accepted; the target allows 5%. No threshold met it on the development cameras, where thresholds were chosen, so acceptance is off.</sub></td>
+</tr>
+</table>
+
+<p align="center"><sub>Blue: the final test with its 95% band. Orange: the development cameras, where every threshold was fixed before the test was opened.</sub></p>
+
 - **Automation stays off.** The only supported candidate, the empty filter, saves 6% of reviews and drops below 98% retention for unsupported species, by day, and on one camera (94.2%).
 - **Grouping and the model are credited separately.** Grouping alone gives 61.4% fewer items; the released model adds 0%. Fewer items is not measured reviewer time.
 - **Suggestions are not shown to help reviewers.** A 5-person pilot found no reliable speed or accuracy gain ([study](reports/study/study-1/FINDINGS.md)).
 - **0.747 → 0.447 is the new-camera problem.** One update cycle raised label quality on later photos of reviewed cameras from 0.486 to 0.548 ([update cycle](reports/update/README.md), simulated reviews).
 
-**Camera adaptation (v2), pre-registered, failed.** Adapting to each new
-camera from its first 50 reviewed events reached **88.6%** (505 / 570)
-[85.7, 91.0] accepted-label precision on 12 fresh cameras, against a ≥ 95%
-target, with 12.8% review reduction and 100% retention. One camera gave 39 of
-the 65 errors, so automatic acceptance stays off
-([plan](docs/v2_experiment.md), [report](reports/adaptation/fresh_test/README.md)).
+> [!NOTE]
+> **Camera adaptation (v2) was pre-registered and failed.** Adapting to each new
+> camera from its first 50 reviewed events reached **88.6%** (505 / 570)
+> [85.7, 91.0] accepted-label precision on 12 fresh cameras, against a ≥ 95%
+> target, with 12.8% review reduction and 100% retention. One camera gave 39 of
+> the 65 errors, so automatic acceptance stays off
+> ([plan](docs/v2_experiment.md), [report](reports/adaptation/fresh_test/README.md)).
 
 | Supported (classifier output) | Unsupported (kept for evaluation, never relabeled as empty) |
 |---|---|
@@ -213,12 +235,12 @@ Error galleries: [final evaluation](reports/final_evaluation/README.md#error-gal
 
 | Layer | Tools |
 |---|---|
-| Language and packaging | Python 3.12, uv |
-| Machine learning | PyTorch and torchvision (EfficientNet-B0), scikit-learn, MLflow tracking |
-| Serving | FastAPI, Streamlit, Redis and RQ workers |
-| Storage | PostgreSQL 16 (SQLAlchemy, Alembic), SeaweedFS (S3-compatible object storage) |
-| Delivery | Docker Compose, GitHub Actions |
-| Quality | ruff, mypy, pytest |
+| Language and packaging | ![Python 3.12](https://img.shields.io/badge/Python_3.12-3776AB?logo=python&logoColor=white) ![uv](https://img.shields.io/badge/uv-DE5FE9?logo=uv&logoColor=white) |
+| Machine learning | ![PyTorch](https://img.shields.io/badge/PyTorch-EE4C2C?logo=pytorch&logoColor=white) ![torchvision EfficientNet-B0](https://img.shields.io/badge/torchvision-EfficientNet--B0-EE4C2C) ![scikit-learn](https://img.shields.io/badge/scikit--learn-F7931E?logo=scikitlearn&logoColor=white) ![MLflow](https://img.shields.io/badge/MLflow-0194E2?logo=mlflow&logoColor=white) |
+| Serving | ![FastAPI](https://img.shields.io/badge/FastAPI-009688?logo=fastapi&logoColor=white) ![Streamlit](https://img.shields.io/badge/Streamlit-FF4B4B?logo=streamlit&logoColor=white) ![Redis and RQ](https://img.shields.io/badge/Redis_%2B_RQ-DC382D?logo=redis&logoColor=white) |
+| Storage | ![PostgreSQL 16](https://img.shields.io/badge/PostgreSQL_16-4169E1?logo=postgresql&logoColor=white) ![SQLAlchemy and Alembic](https://img.shields.io/badge/SQLAlchemy_%2B_Alembic-D71F00?logo=sqlalchemy&logoColor=white) ![SeaweedFS (S3-compatible)](https://img.shields.io/badge/SeaweedFS-S3--compatible-4a6b8a) |
+| Delivery | ![Docker Compose](https://img.shields.io/badge/Docker_Compose-2496ED?logo=docker&logoColor=white) ![GitHub Actions](https://img.shields.io/badge/GitHub_Actions-2088FF?logo=githubactions&logoColor=white) ![AWS CloudFormation and S3](https://img.shields.io/badge/AWS-CloudFormation_%2B_S3-232F3E) |
+| Quality | ![ruff](https://img.shields.io/badge/ruff-D7FF64?logo=ruff&logoColor=black) ![mypy strict](https://img.shields.io/badge/mypy-strict-1f5082) ![pytest](https://img.shields.io/badge/pytest-0A9EDC?logo=pytest&logoColor=white) |
 
 ## Quick start
 
@@ -363,7 +385,7 @@ uv run pytest -m "not slow"
 
 [CI](.github/workflows/ci.yml) runs lint, types, config and schema checks,
 migrations, the tests (preprocessing consistency, API contracts, retry
-behaviour), then builds the Compose stack and runs the smoke test and demo.
+behavior), then builds the Compose stack and runs the smoke test and demo.
 
 **Development loop:** edit code, then `docker compose up -d --build --wait`
 rebuilds the API, worker, and UI. `docker compose logs -f worker` follows
@@ -430,11 +452,17 @@ docs/           architecture, API, dataset, deployment, monitoring, retraining, 
 tests/
 ```
 
-## Data license and attribution
+## License and attribution
 
-Images and annotations: Caltech Camera Traps (Beery, Van Horn, and Perona,
-"Recognition in Terra Incognita", ECCV 2018), distributed by LILA BC under the
-[Community Data License Agreement - Permissive, Version 1.0](https://cdla.dev/permissive-1-0/).
+- **Code:** [MIT](LICENSE).
+- **Data:** images and annotations are from Caltech Camera Traps (Beery, Van
+  Horn, and Perona, "Recognition in Terra Incognita", ECCV 2018), distributed
+  by LILA BC under the
+  [Community Data License Agreement - Permissive, Version 1.0](https://cdla.dev/permissive-1-0/).
+  The demo sample carries its own [license and attribution](samples/cct-dev/LICENSE.md).
+- **Trained weights:** fine-tuned from torchvision's ImageNet-1k EfficientNet-B0
+  weights and shared with the [v1.5.0 release](https://github.com/professor3333/wildinbox/releases/tag/v1.5.0)
+  to reproduce these results, within the limits in the [model card](docs/model_card.md).
 
 ---
 
