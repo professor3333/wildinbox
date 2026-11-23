@@ -94,12 +94,21 @@ class S3Store:
         )
 
     def ensure_bucket(self) -> None:
+        """Create the bucket if it is missing. The API and workers start together
+        against a fresh store, so another of our processes can create it between
+        the check and the create; that is success, not a startup failure."""
         from botocore.exceptions import ClientError
 
         try:
             self.client.head_bucket(Bucket=self.bucket)
+            return
         except ClientError:
+            pass
+        try:
             self.client.create_bucket(Bucket=self.bucket)
+        except ClientError as e:
+            if e.response.get("Error", {}).get("Code") != "BucketAlreadyOwnedByYou":
+                raise
 
     def check(self) -> None:
         self.client.head_bucket(Bucket=self.bucket)
